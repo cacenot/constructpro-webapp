@@ -5,6 +5,7 @@ import {
   FileText,
   Home,
   LogOut,
+  Moon,
   Receipt,
   Search,
   Settings,
@@ -16,10 +17,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { useAuth } from '@/contexts/auth-context'
+import { useTheme } from '@/hooks/use-theme'
 import { cn } from '@/lib/utils'
 
 type NavItem =
@@ -101,11 +106,12 @@ function NavDropdown({
 
 export function TopNavbar() {
   const { user, signOut } = useAuth()
+  const { theme, setTheme } = useTheme()
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/'
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm pt-4 pb-2">
-      <nav className="mx-auto flex h-16 max-w-[1400px] items-center gap-4 rounded-2xl bg-card px-6 shadow-sm border border-border/50">
+      <nav className="mx-auto flex h-16 max-w-7xl items-center gap-4 rounded-xl bg-card px-6 shadow-sm border border-border">
         {/* Logo */}
         <a href="/dashboard" className="flex items-center gap-2.5 shrink-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-sm">
@@ -167,6 +173,24 @@ export function TopNavbar() {
               <div className="px-3 py-2">
                 <p className="text-sm font-medium">{user?.displayName || 'Usuário'}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-medium">
+                Aparência
+              </DropdownMenuLabel>
+              <div className="flex items-center justify-between px-2 py-2 mx-1">
+                <Label
+                  htmlFor="dark-mode"
+                  className="text-sm font-normal cursor-pointer flex items-center gap-2"
+                >
+                  <Moon className="size-4" />
+                  Modo escuro
+                </Label>
+                <Switch
+                  id="dark-mode"
+                  checked={theme === 'dark'}
+                  onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                />
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem>

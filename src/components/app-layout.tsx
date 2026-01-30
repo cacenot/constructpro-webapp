@@ -11,7 +11,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <TooltipProvider>
       <div className="min-h-screen bg-background">
         <TopNavbar />
-        <main className="mx-auto max-w-[1400px] px-6 py-6">{children}</main>
+        <main className="mx-auto max-w-7xl px-6 py-6">{children}</main>
       </div>
     </TooltipProvider>
   )

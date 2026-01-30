@@ -29,6 +29,9 @@ dist-ssr
 .env.local
 .env.*.local
 
+# NPM config
+.npmrc
+
 # OS files
 Thumbs.db
 
