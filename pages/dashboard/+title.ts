@@ -1,0 +1,1 @@
+export default 'Painel | ConstructPro'

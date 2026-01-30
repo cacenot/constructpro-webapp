@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "biomejs.biome",
+    "bradlc.vscode-tailwindcss",
+    "dsznajder.es7-react-js-snippets",
+    "prisma.prisma",
+    "esbenp.prettier-vscode",
+    "usernamehw.errorlens"
+  ]
+}
