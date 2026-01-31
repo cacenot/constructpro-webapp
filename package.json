@@ -13,7 +13,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@cacenot/construct-pro-api-client": "^0.2.1",
+    "@cacenot/construct-pro-api-client": "^0.3.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
