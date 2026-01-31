@@ -1,16 +1,4 @@
-import {
-  Bell,
-  Building2,
-  ChevronDown,
-  FileText,
-  Home,
-  LogOut,
-  Moon,
-  Receipt,
-  Search,
-  Settings,
-  TrendingUp,
-} from 'lucide-react'
+import { Bell, LogOut, Moon, Search, Settings } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,7 +10,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Label } from '@/components/ui/label'
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from '@/components/ui/navigation-menu'
 import { Switch } from '@/components/ui/switch'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
 import { cn } from '@/lib/utils'
@@ -32,7 +29,7 @@ type NavItem =
   | {
       title: string
       href?: never
-      children: { title: string; icon: React.ComponentType<{ className?: string }>; href: string }[]
+      children: { title: string; description: string; href: string }[]
     }
 
 const navigation: NavItem[] = [
@@ -41,16 +38,28 @@ const navigation: NavItem[] = [
   {
     title: 'Comercial',
     children: [
-      { title: 'Vendas', icon: TrendingUp, href: '/sales' },
-      { title: 'Contratos', icon: FileText, href: '/contracts' },
-      { title: 'Parcelas', icon: Receipt, href: '/installments' },
+      { title: 'Vendas', description: 'Gerencie suas vendas e oportunidades', href: '/sales' },
+      {
+        title: 'Contratos',
+        description: 'Controle seus contratos e documentos',
+        href: '/contracts',
+      },
+      {
+        title: 'Parcelas',
+        description: 'Acompanhe pagamentos e recebimentos',
+        href: '/installments',
+      },
     ],
   },
   {
     title: 'Empreendimentos',
     children: [
-      { title: 'Empreendimentos', icon: Building2, href: '/projects' },
-      { title: 'Unidades', icon: Home, href: '/units' },
+      {
+        title: 'Empreendimentos',
+        description: 'Cadastre e gerencie seus empreendimentos',
+        href: '/projects',
+      },
+      { title: 'Unidades', description: 'Controle unidades e disponibilidade', href: '/units' },
     ],
   },
 ]
@@ -65,42 +74,32 @@ function getInitials(name: string | null | undefined): string {
     .toUpperCase()
 }
 
-function NavDropdown({
-  item,
-  currentPath,
+const ListItem = ({
+  title,
+  href,
+  description,
+  isActive,
 }: {
-  item: Extract<NavItem, { children: unknown[] }>
-  currentPath: string
-}) {
-  const isActive = item.children.some((child) => currentPath === child.href)
-
+  title: string
+  href: string
+  description: string
+  isActive: boolean
+}) => {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
+    <li>
+      <NavigationMenuLink asChild>
+        <a
+          href={href}
           className={cn(
-            'inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-full transition-colors whitespace-nowrap',
-            isActive
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+            'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+            isActive && 'bg-accent'
           )}
         >
-          {item.title}
-          <ChevronDown className="size-3.5" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={8}>
-        {item.children.map((child) => (
-          <DropdownMenuItem key={child.href} asChild>
-            <a href={child.href} className={cn(currentPath === child.href && 'font-semibold')}>
-              <child.icon className="mr-2 size-4" />
-              {child.title}
-            </a>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <div className="text-sm font-medium leading-none">{title}</div>
+          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">{description}</p>
+        </a>
+      </NavigationMenuLink>
+    </li>
   )
 }
 
@@ -123,41 +122,99 @@ export function TopNavbar() {
         </a>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1 mx-auto">
-          {navigation.map((item) => {
-            if (item.children) {
-              return <NavDropdown key={item.title} item={item} currentPath={currentPath} />
-            }
+        <NavigationMenu className="mx-auto">
+          <NavigationMenuList className="gap-1">
+            {navigation.map((item) => {
+              if (item.children) {
+                const isActive = item.children.some((child) => currentPath === child.href)
 
-            const isActive = currentPath === item.href
-            return (
-              <a
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'px-3.5 py-2 text-sm font-medium rounded-full transition-colors whitespace-nowrap',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                )}
-              >
-                {item.title}
-              </a>
-            )
-          })}
-        </div>
+                return (
+                  <NavigationMenuItem key={item.title}>
+                    <NavigationMenuTrigger
+                      className={cn(
+                        'px-3.5 py-2 text-sm font-medium !rounded-full transition-colors whitespace-nowrap h-auto bg-accent/50',
+                        isActive
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90 data-[state=open]:bg-primary/90'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent data-[state=open]:bg-accent'
+                      )}
+                    >
+                      {item.title}
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <div className="w-[400px] p-2">
+                        <ul className="space-y-1">
+                          {item.children.map((child) => (
+                            <ListItem
+                              key={child.href}
+                              title={child.title}
+                              href={child.href}
+                              description={child.description}
+                              isActive={currentPath === child.href}
+                            />
+                          ))}
+                        </ul>
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                )
+              }
+
+              const isActive = currentPath === item.href
+              return (
+                <NavigationMenuItem key={item.href}>
+                  <NavigationMenuLink asChild>
+                    <a
+                      href={item.href}
+                      className={cn(
+                        'px-3.5 py-2 text-sm font-medium !rounded-full transition-colors whitespace-nowrap inline-flex items-center bg-accent/50',
+                        isActive
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                      )}
+                    >
+                      {item.title}
+                    </a>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              )
+            })}
+          </NavigationMenuList>
+        </NavigationMenu>
 
         {/* Right Actions */}
         <div className="flex items-center gap-1 shrink-0">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Search className="size-[18px]" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Settings className="size-[18px]" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full relative">
-            <Bell className="size-[18px]" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Search className="size-[18px]" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Buscar</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Settings className="size-[18px]" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Configurações</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full relative">
+                  <Bell className="size-[18px]" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Notificações</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

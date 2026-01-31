@@ -84,7 +84,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="w-full max-w-sm space-y-8">
         <div className="flex flex-col items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+          <div className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Building2 className="size-6" />
           </div>
           <div className="text-center">
@@ -129,7 +129,7 @@ export default function LoginPage() {
                         <button
                           type="button"
                           onClick={() => setResetDialogOpen(true)}
-                          className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                          className="text-xs text-muted-foreground hover:text-primary transition-colors outline-none focus-visible:text-primary focus-visible:underline"
                         >
                           Esqueceu a senha?
                         </button>

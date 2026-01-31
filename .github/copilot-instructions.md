@@ -61,6 +61,8 @@ A React 19 SPA (Single Page Application) for construction management built with 
 - Single quotes, no semicolons, import organization enabled
 - Biome catches unused imports/variables at `warn` level
 - Avoid non-null assertions (`!`) — use proper null checks
+- **Icon buttons must always have tooltips** — wrap icon buttons with `<Tooltip>` component to provide accessible labels (use Portuguese labels)
+- **Dropdown menus in tables** — use `DropdownMenuLabel` at top with action group label (e.g., "Ações"), wrap trigger button in `<Tooltip>`, remove icons from menu items, use `DropdownMenuSeparator` to group related actions
 
 ### Environment Variables
 - Client-side env vars must have `VITE_` prefix (Vite requirement)

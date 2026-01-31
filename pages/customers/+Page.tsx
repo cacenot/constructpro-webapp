@@ -1,5 +1,10 @@
-import { getCustomerTypeOptions, useCustomers } from '@cacenot/construct-pro-api-client'
-import { Edit, Eye, MoreVertical, Search, TrendingUp, UserPlus, Users } from 'lucide-react'
+import {
+  CustomerType,
+  getCustomerTypeOptions,
+  useApiClient,
+} from '@cacenot/construct-pro-api-client'
+import { useQuery } from '@tanstack/react-query'
+import { MoreVertical, Search, UserPlus, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { AppLayout } from '@/components/app-layout'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +14,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -21,6 +27,32 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+
+type ApiClient = ReturnType<typeof useApiClient>['client']
+type CustomersQueryParams = {
+  search?: string
+  type?: string[]
+  page?: number
+  page_size?: number
+}
+
+async function fetchCustomers(client: ApiClient, params: CustomersQueryParams) {
+  const { data, error } = await client.GET('/api/v1/customers', {
+    params: {
+      query: params,
+    },
+  })
+
+  if (error) {
+    throw new Error('Falha ao carregar clientes')
+  }
+
+  return data
+}
+
+type CustomersResponse = Awaited<ReturnType<typeof fetchCustomers>>
+type Customer = NonNullable<CustomersResponse>['items'][number]
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -87,8 +119,6 @@ function CustomerSkeleton() {
   )
 }
 
-type Customer = NonNullable<ReturnType<typeof useCustomers>['data']>['items'][number]
-
 function CustomerRow({ customer }: { customer: Customer }) {
   const location =
     customer.city && customer.state ? `${customer.city} - ${customer.state}` : customer.city || ''
@@ -120,15 +150,21 @@ function CustomerRow({ customer }: { customer: Customer }) {
             <span className="hidden sm:inline text-sm tabular-nums text-muted-foreground">
               {formatPhone(customer.phone)}
             </span>
-            <a
-              href={whatsappLink(customer.phone)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-success hover:text-success/80 transition-colors"
-              title="Abrir WhatsApp"
-            >
-              <WhatsAppIcon className="size-4" />
-            </a>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href={whatsappLink(customer.phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-success hover:text-success/80 transition-colors"
+                >
+                  <WhatsAppIcon className="size-4" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Abrir WhatsApp</p>
+              </TooltipContent>
+            </Tooltip>
           </>
         ) : (
           <span className="text-xs text-muted-foreground">—</span>
@@ -137,25 +173,24 @@ function CustomerRow({ customer }: { customer: Customer }) {
 
       {/* Actions Menu */}
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" className="shrink-0">
-            <MoreVertical className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" className="shrink-0">
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Ações</p>
+          </TooltipContent>
+        </Tooltip>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
-            <Eye className="size-4" />
-            Ver detalhes
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Edit className="size-4" />
-            Editar
-          </DropdownMenuItem>
+          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+          <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+          <DropdownMenuItem>Editar</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <TrendingUp className="size-4" />
-            Nova venda
-          </DropdownMenuItem>
+          <DropdownMenuItem>Nova venda</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
@@ -166,19 +201,40 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [page, setPage] = useState(1)
+  const { client } = useApiClient()
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300)
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 300)
     return () => clearTimeout(timer)
   }, [search])
 
-  const { data, isLoading } = useCustomers({
-    search: debouncedSearch || undefined,
-    type: typeFilter !== 'all' ? [typeFilter] : undefined,
-    page_size: 50,
+  const pageSize = Number.parseInt(import.meta.env.VITE_CUSTOMERS_PAGE_SIZE ?? '', 10) || 20
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['customers', debouncedSearch || '', typeFilter, page, pageSize],
+    queryFn: () =>
+      fetchCustomers(client, {
+        search: debouncedSearch || undefined,
+        type: typeFilter !== 'all' ? [typeFilter] : undefined,
+        page,
+        page_size: pageSize,
+      }),
   })
 
   const customers = data?.items ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const maxPagesToShow = 5
+  const startPage = Math.max(
+    1,
+    Math.min(page - Math.floor(maxPagesToShow / 2), totalPages - maxPagesToShow + 1)
+  )
+  const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
+  const visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i)
 
   return (
     <AppLayout>
@@ -206,17 +262,26 @@ export default function CustomersPage() {
               className="pl-9"
             />
           </div>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <Select
+            value={typeFilter}
+            onValueChange={(value) => {
+              setTypeFilter(value)
+              setPage(1)
+            }}
+          >
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Tipo de pessoa" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
-              {typeOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
+              {Object.values(CustomerType).map((value) => {
+                const option = typeOptions.find((opt) => opt.value === value)
+                return (
+                  <SelectItem key={value} value={value}>
+                    {option?.label || value}
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
         </div>
@@ -241,12 +306,66 @@ export default function CustomersPage() {
               </div>
             ) : (
               <div className="divide-y">
-                {customers.map((customer) => (
+                {customers.map((customer: Customer) => (
                   <CustomerRow key={customer.id} customer={customer} />
                 ))}
               </div>
             )}
           </CardContent>
+          {totalPages > 1 && (
+            <div className="flex flex-col gap-3 border-t px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-sm text-muted-foreground">
+                Página {page} de {totalPages}
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 1 || isLoading}
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                >
+                  Anterior
+                </Button>
+                {startPage > 1 && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => setPage(1)}>
+                      1
+                    </Button>
+                    {startPage > 2 && <span className="px-1 text-muted-foreground">…</span>}
+                  </>
+                )}
+                {visiblePages.map((pageNumber) => (
+                  <Button
+                    key={pageNumber}
+                    variant={pageNumber === page ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPage(pageNumber)}
+                    disabled={isLoading}
+                  >
+                    {pageNumber}
+                  </Button>
+                ))}
+                {endPage < totalPages && (
+                  <>
+                    {endPage < totalPages - 1 && (
+                      <span className="px-1 text-muted-foreground">…</span>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => setPage(totalPages)}>
+                      {totalPages}
+                    </Button>
+                  </>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === totalPages || isLoading}
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       </div>
     </AppLayout>

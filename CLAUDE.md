@@ -39,6 +39,8 @@ Add shadcn components: `npx shadcn@latest add <component>`
 
 - **Language:** All UI text is in Brazilian Portuguese
 - **Code style:** BiomeJS enforces single quotes, no semicolons, 2-space indent, 100-char line width. Pre-commit hooks auto-fix via Husky + lint-staged
+- **Icon buttons:** All icon buttons must have tooltips with Portuguese labels (use `<Tooltip>` component)
+- **Dropdown menus in tables:** Use `DropdownMenuLabel` at top with action group label (e.g., "Ações"). Wrap trigger button in `<Tooltip>`. Remove icons from menu items. Use `DropdownMenuSeparator` to group related actions
 - **Path alias:** `@/*` maps to `src/*`
 - **Env vars:** Must use `VITE_` prefix, accessed via `import.meta.env.VITE_*`
 - **Design system:** OKLch color space, Inter font, `tabular-nums` on monetary values, 8px grid spacing. Details in `.design-engineer/system.md`
