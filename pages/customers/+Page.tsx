@@ -6,6 +6,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { MoreVertical, Search, UserPlus, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -188,7 +189,9 @@ function CustomerRow({ customer }: { customer: Customer }) {
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Ações</DropdownMenuLabel>
           <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-          <DropdownMenuItem>Editar</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate(`/clientes/${customer.id}/editar`)}>
+            Editar
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem>Nova venda</DropdownMenuItem>
         </DropdownMenuContent>
@@ -245,7 +248,7 @@ export default function CustomersPage() {
             <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
             <p className="mt-2 text-muted-foreground">Gerencie sua base de clientes e contatos.</p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => navigate('/clientes/novo')}>
             <UserPlus className="size-4" />
             Novo Cliente
           </Button>

@@ -14,7 +14,7 @@ export function TenantLoader({ children }: { children: ReactNode }) {
   const { data, isLoading } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: async () => {
-      const { data, error } = await client.GET('/api/users/me')
+      const { data, error } = await client.GET('/api/v1/users/me')
       if (error) throw new Error('Failed to fetch user profile')
       return data
     },

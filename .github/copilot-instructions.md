@@ -11,6 +11,8 @@ A React 19 SPA (Single Page Application) for construction management built with 
 - Example structure: `pages/(auth)/login/+Page.tsx` → `/login`, `pages/dashboard/+Page.tsx` → `/dashboard`
 - Global config in `pages/+config.ts` sets `ssr: false` for SPA mode
 - **Key file:** `pages/+Layout.tsx` wraps all routes with providers
+- **URL Convention (PT-BR):** New routes should use Portuguese paths (e.g., `/clientes`, `/clientes/novo`, `/clientes/@id/editar`)
+- Use `@param` directory syntax for dynamic route segments (e.g., `pages/clientes/@id/+Page.tsx`)
 
 ### 2. **Authentication Architecture**
 - **Firebase Auth** initialized in `src/lib/firebase.ts` (handles app singleton)
