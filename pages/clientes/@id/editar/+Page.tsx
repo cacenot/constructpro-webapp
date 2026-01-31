@@ -6,6 +6,7 @@ import { navigate } from 'vike/client/router'
 import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
 import { CustomerPFForm, CustomerPJForm } from '@/components/customers'
+import { Button } from '@/components/ui/button'
 import type { CustomerPFCreateFormData, CustomerPJCreateFormData } from '@/schemas/customer.schema'
 
 export default function CustomerEditPage() {
@@ -91,9 +92,9 @@ export default function CustomerEditPage() {
       <AppLayout>
         <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
           <p className="text-lg text-muted-foreground">Cliente não encontrado</p>
-          <button type="button" onClick={handleBack} className="text-primary hover:underline">
+          <Button variant="link" onClick={handleBack}>
             Voltar para lista
-          </button>
+          </Button>
         </div>
       </AppLayout>
     )

@@ -43,7 +43,7 @@ interface CustomerTypeCardProps {
 function CustomerTypeCard({ title, description, icon: Icon, onClick }: CustomerTypeCardProps) {
   return (
     <Card
-      className="cursor-pointer transition-all hover:border-primary hover:shadow-md"
+      className="cursor-pointer transition-all hover:border-primary hover:shadow-sm"
       role="button"
       tabIndex={0}
       onClick={onClick}
@@ -56,10 +56,10 @@ function CustomerTypeCard({ title, description, icon: Icon, onClick }: CustomerT
     >
       <CardHeader className="p-8">
         <div className="flex items-center gap-5">
-          <div className="flex size-14 items-center justify-center rounded-xl bg-primary/10">
-            <Icon className="size-7 text-primary" />
+          <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10">
+            <Icon className="size-6 text-primary" />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <CardTitle className="text-xl font-semibold">{title}</CardTitle>
             <CardDescription className="text-sm font-medium">{description}</CardDescription>
           </div>

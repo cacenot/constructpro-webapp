@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { UFSelect } from '@/components/ui/uf-select'
 import { capitalizeNameBR, formatISOToBirthDate, parseBirthDateToISO } from '@/lib/text-formatters'
 import {
@@ -111,14 +112,21 @@ export function CustomerPFForm({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button type="button" variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="size-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
+                <ArrowLeft className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Voltar</p>
+            </TooltipContent>
+          </Tooltip>
           <div>
             <h2 className="text-2xl font-bold tracking-tight">
               {isEdit ? 'Editar Cliente' : 'Novo Cliente'} - Pessoa Física
             </h2>
-            <p className="text-muted-foreground mt-1">
+            <p className="mt-1 text-muted-foreground">
               {isEdit
                 ? 'Atualize os dados do cliente'
                 : 'Preencha os dados para cadastrar um novo cliente'}
@@ -363,6 +371,9 @@ export function CustomerPFForm({
 
         {/* Address */}
         <Card>
+          <CardHeader>
+            <CardTitle>Endereço</CardTitle>
+          </CardHeader>
           <CardContent>
             <AddressFormFields />
           </CardContent>

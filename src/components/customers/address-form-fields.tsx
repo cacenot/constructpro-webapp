@@ -66,8 +66,6 @@ export function AddressFormFields({ prefix = '' }: AddressFormFieldsProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Endereço</h3>
-
       {/* Line 1: Country, CEP, City, UF */}
       <div className="grid gap-4 sm:grid-cols-12">
         {/* Country (col-span-3) */}
