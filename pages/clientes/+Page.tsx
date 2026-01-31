@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { formatId } from '@/lib/utils'
 
 type ApiClient = ReturnType<typeof useApiClient>['client']
 type CustomersQueryParams = {
@@ -128,7 +129,7 @@ function CustomerRow({ customer }: { customer: Customer }) {
     <div className="flex items-center gap-4 px-6 py-3">
       {/* ID Badge */}
       <Badge variant="secondary" className="shrink-0 tabular-nums font-mono text-xs">
-        #{customer.id}
+        {formatId(customer.id)}
       </Badge>
 
       {/* Customer Info */}
@@ -331,10 +332,15 @@ export default function CustomersPage() {
                 </Button>
                 {startPage > 1 && (
                   <>
-                    <Button variant="outline" size="sm" onClick={() => setPage(1)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(1)}
+                      disabled={isLoading}
+                    >
                       1
                     </Button>
-                    {startPage > 2 && <span className="px-1 text-muted-foreground">…</span>}
+                    {startPage > 2 && <span className="px-1 text-muted-foreground">...</span>}
                   </>
                 )}
                 {visiblePages.map((pageNumber) => (
@@ -351,9 +357,14 @@ export default function CustomersPage() {
                 {endPage < totalPages && (
                   <>
                     {endPage < totalPages - 1 && (
-                      <span className="px-1 text-muted-foreground">…</span>
+                      <span className="px-1 text-muted-foreground">...</span>
                     )}
-                    <Button variant="outline" size="sm" onClick={() => setPage(totalPages)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(totalPages)}
+                      disabled={isLoading}
+                    >
                       {totalPages}
                     </Button>
                   </>

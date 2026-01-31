@@ -41,7 +41,7 @@ export default function CustomerNewPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       toast.success('Cliente cadastrado com sucesso!')
-      navigate('/customers')
+      navigate('/clientes')
     },
     onError: (error) => {
       toast.error(error.message || 'Erro ao cadastrar cliente')
@@ -52,7 +52,7 @@ export default function CustomerNewPage() {
     if (customerType) {
       setCustomerType(null)
     } else {
-      navigate('/customers')
+      navigate('/clientes')
     }
   }
 
@@ -77,7 +77,7 @@ export default function CustomerNewPage() {
                     variant="ghost"
                     size="icon"
                     className="mt-1"
-                    onClick={() => navigate('/customers')}
+                    onClick={() => navigate('/clientes')}
                   >
                     <ArrowLeft className="size-5" />
                   </Button>

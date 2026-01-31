@@ -34,7 +34,7 @@ type NavItem =
 
 const navigation: NavItem[] = [
   { title: 'Início', href: '/dashboard' },
-  { title: 'Clientes', href: '/customers' },
+  { title: 'Clientes', href: '/clientes' },
   {
     title: 'Comercial',
     children: [
@@ -59,7 +59,7 @@ const navigation: NavItem[] = [
         description: 'Cadastre e gerencie seus empreendimentos',
         href: '/projects',
       },
-      { title: 'Unidades', description: 'Controle unidades e disponibilidade', href: '/units' },
+      { title: 'Unidades', description: 'Controle unidades e disponibilidade', href: '/unidades' },
     ],
   },
 ]
@@ -107,6 +107,7 @@ export function TopNavbar() {
   const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/'
+  const isPathActive = (href: string) => currentPath === href || currentPath.startsWith(`${href}/`)
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm pt-4 pb-2">
@@ -126,7 +127,7 @@ export function TopNavbar() {
           <NavigationMenuList className="gap-1">
             {navigation.map((item) => {
               if (item.children) {
-                const isActive = item.children.some((child) => currentPath === child.href)
+                const isActive = item.children.some((child) => isPathActive(child.href))
 
                 return (
                   <NavigationMenuItem key={item.title}>
@@ -149,7 +150,7 @@ export function TopNavbar() {
                               title={child.title}
                               href={child.href}
                               description={child.description}
-                              isActive={currentPath === child.href}
+                              isActive={isPathActive(child.href)}
                             />
                           ))}
                         </ul>
@@ -159,7 +160,7 @@ export function TopNavbar() {
                 )
               }
 
-              const isActive = currentPath === item.href
+              const isActive = isPathActive(item.href)
               return (
                 <NavigationMenuItem key={item.href}>
                   <NavigationMenuLink asChild>

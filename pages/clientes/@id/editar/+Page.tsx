@@ -57,7 +57,7 @@ export default function CustomerEditPage() {
       queryClient.invalidateQueries({ queryKey: ['customers'] })
       queryClient.invalidateQueries({ queryKey: ['customers', customerId] })
       toast.success('Cliente atualizado com sucesso!')
-      navigate('/customers')
+      navigate('/clientes')
     },
     onError: (error) => {
       toast.error(error.message || 'Erro ao atualizar cliente')
@@ -65,7 +65,7 @@ export default function CustomerEditPage() {
   })
 
   const handleBack = () => {
-    navigate('/customers')
+    navigate('/clientes')
   }
 
   const handleSubmitPF = async (data: CustomerPFCreateFormData) => {
