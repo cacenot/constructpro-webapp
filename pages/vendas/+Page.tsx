@@ -1,18 +1,16 @@
 import {
-  getUnitCategoryOptions,
-  getUnitStatusOptions,
-  UnitCategory,
-  UnitStatus,
-  useApiClient,
+  SaleStatus,
+  getSaleStatusOptions,
+  useSales,
 } from '@cacenot/construct-pro-api-client'
-import { useQuery } from '@tanstack/react-query'
-import { Building2, Plus, Search } from 'lucide-react'
+import { Plus, Search, TrendingUp } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -20,60 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { UnitRow } from '@/components/unidades/unit-row'
-import { UnitRowSkeleton } from '@/components/unidades/unit-row-skeleton'
+import { Switch } from '@/components/ui/switch'
+import { SaleRow } from '@/components/vendas/sale-row'
+import { SaleRowSkeleton } from '@/components/vendas/sale-row-skeleton'
+import { useAuth } from '@/contexts/auth-context'
 
-type ApiClient = ReturnType<typeof useApiClient>['client']
+const statusOptions = getSaleStatusOptions('pt-BR')
 
-type UnitsQueryParams = {
-  search?: string
-  status?: string[]
-  category?: string[]
-  page?: number
-  page_size?: number
-}
-
-async function fetchUnits(client: ApiClient, params: UnitsQueryParams) {
-  const { data, error } = await client.GET('/api/v1/units', {
-    params: {
-      query: params,
-    },
-  })
-
-  if (error) {
-    throw new Error('Falha ao carregar unidades')
-  }
-
-  return data
-}
-
-async function fetchAllProjects(client: ApiClient) {
-  const { data, error } = await client.GET('/api/v1/projects', {
-    params: {
-      query: { page: 1, page_size: 100 },
-    },
-  })
-
-  if (error) {
-    throw new Error('Falha ao carregar empreendimentos')
-  }
-
-  return data
-}
-
-type UnitsResponse = Awaited<ReturnType<typeof fetchUnits>>
-type Unit = NonNullable<UnitsResponse>['items'][number]
-
-const statusOptions = getUnitStatusOptions('pt-BR')
-const categoryOptions = getUnitCategoryOptions('pt-BR')
-
-export default function UnidadesPage() {
+export default function VendasPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [periodFilter, setPeriodFilter] = useState<string>('all')
+  const [onlyMySales, setOnlyMySales] = useState(false)
   const [page, setPage] = useState(1)
-  const { client } = useApiClient()
+  const { user } = useAuth()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -83,35 +42,40 @@ export default function UnidadesPage() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const pageSize = Number.parseInt(import.meta.env.VITE_UNITS_PAGE_SIZE ?? '', 10) || 20
+  const pageSize = Number.parseInt(import.meta.env.VITE_SALES_PAGE_SIZE ?? '', 10) || 20
 
-  const unitsQuery = useQuery({
-    queryKey: ['units', debouncedSearch || '', statusFilter, categoryFilter, page, pageSize],
-    queryFn: () =>
-      fetchUnits(client, {
-        search: debouncedSearch || undefined,
-        status: statusFilter !== 'all' ? [statusFilter] : undefined,
-        category: categoryFilter !== 'all' ? [categoryFilter] : undefined,
-        page,
-        page_size: pageSize,
-      }),
-  })
+  // Build query params
+  const queryParams = useMemo(() => {
+    const params: {
+      page: number
+      page_size: number
+      search?: string
+      status?: string[]
+      user_id?: string
+    } = {
+      page,
+      page_size: pageSize,
+    }
 
-  const projectsQuery = useQuery({
-    queryKey: ['projects-all'],
-    queryFn: () => fetchAllProjects(client),
-    staleTime: 5 * 60 * 1000, // 5 min cache
-  })
+    if (debouncedSearch) {
+      params.search = debouncedSearch
+    }
 
-  const projectMap = useMemo(
-    () => new Map(projectsQuery.data?.items?.map((p) => [p.id, p.name]) ?? []),
-    [projectsQuery.data]
-  )
+    if (statusFilter !== 'all') {
+      params.status = [statusFilter]
+    }
 
-  const units = unitsQuery.data?.items ?? []
-  const total = unitsQuery.data?.total ?? 0
-  const isLoading = unitsQuery.isLoading || projectsQuery.isLoading
+    if (onlyMySales && user) {
+      params.user_id = user.uid
+    }
 
+    return params
+  }, [page, pageSize, debouncedSearch, statusFilter, onlyMySales, user])
+
+  const { data, isLoading } = useSales(queryParams)
+
+  const sales = data?.items ?? []
+  const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const maxPagesToShow = 5
   const startPage = Math.max(
@@ -121,12 +85,14 @@ export default function UnidadesPage() {
   const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
   const visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i)
 
-  const hasActiveFilters = search || statusFilter !== 'all' || categoryFilter !== 'all'
+  const hasActiveFilters =
+    search || statusFilter !== 'all' || periodFilter !== 'all' || onlyMySales
 
   const handleClearFilters = () => {
     setSearch('')
     setStatusFilter('all')
-    setCategoryFilter('all')
+    setPeriodFilter('all')
+    setOnlyMySales(false)
     setPage(1)
   }
 
@@ -136,23 +102,23 @@ export default function UnidadesPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Unidades</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Vendas</h1>
             <p className="mt-2 text-muted-foreground">
-              Gerencie as unidades dos seus empreendimentos e controle disponibilidade.
+              Acompanhe o funil de vendas e gerencie propostas, reservas e contratos.
             </p>
           </div>
-          <Button className="gap-2" onClick={() => navigate('/unidades/novo')}>
+          <Button className="gap-2" onClick={() => navigate('/vendas/novo')}>
             <Plus className="size-4" />
-            Nova Unidade
+            Nova Venda
           </Button>
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome, empreendimento..."
+              placeholder="Buscar por cliente, unidade, empreendimento..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -170,7 +136,7 @@ export default function UnidadesPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os status</SelectItem>
-              {Object.values(UnitStatus).map((value) => {
+              {Object.values(SaleStatus).map((value) => {
                 const option = statusOptions.find((opt) => opt.value === value)
                 return (
                   <SelectItem key={value} value={value}>
@@ -181,49 +147,58 @@ export default function UnidadesPage() {
             </SelectContent>
           </Select>
           <Select
-            value={categoryFilter}
+            value={periodFilter}
             onValueChange={(value) => {
-              setCategoryFilter(value)
+              setPeriodFilter(value)
               setPage(1)
             }}
           >
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Categoria" />
+              <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {Object.values(UnitCategory).map((value) => {
-                const option = categoryOptions.find((opt) => opt.value === value)
-                return (
-                  <SelectItem key={value} value={value}>
-                    {option?.label || value}
-                  </SelectItem>
-                )
-              })}
+              <SelectItem value="all">Todo o período</SelectItem>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="year">Este ano</SelectItem>
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-2 border rounded-lg px-3 py-2">
+            <Switch
+              id="my-sales"
+              checked={onlyMySales}
+              onCheckedChange={(checked) => {
+                setOnlyMySales(checked)
+                setPage(1)
+              }}
+            />
+            <Label htmlFor="my-sales" className="text-sm cursor-pointer">
+              Apenas minhas vendas
+            </Label>
+          </div>
         </div>
 
-        {/* Units list */}
+        {/* Sales list */}
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <Building2 className="size-4" />
-                {isLoading ? 'Carregando...' : `${total} unidades`}
+                <TrendingUp className="size-4" />
+                {isLoading ? 'Carregando...' : `${total} vendas`}
               </CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
-              <UnitRowSkeleton />
-            ) : units.length === 0 ? (
+              <SaleRowSkeleton />
+            ) : sales.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <Building2 className="size-10 mb-4 opacity-40" />
+                <TrendingUp className="size-10 mb-4 opacity-40" />
                 <p className="text-sm mb-2">
                   {hasActiveFilters
-                    ? 'Nenhuma unidade encontrada com os filtros aplicados.'
-                    : 'Nenhuma unidade cadastrada.'}
+                    ? 'Nenhuma venda encontrada com os filtros aplicados.'
+                    : 'Nenhuma venda cadastrada.'}
                 </p>
                 {hasActiveFilters && (
                   <Button variant="ghost" size="sm" className="mt-2" onClick={handleClearFilters}>
@@ -233,8 +208,8 @@ export default function UnidadesPage() {
               </div>
             ) : (
               <div className="divide-y">
-                {units.map((unit: Unit) => (
-                  <UnitRow key={unit.id} unit={unit} projectMap={projectMap} />
+                {sales.map((sale) => (
+                  <SaleRow key={sale.id} sale={sale} />
                 ))}
               </div>
             )}
@@ -255,7 +230,12 @@ export default function UnidadesPage() {
                 </Button>
                 {startPage > 1 && (
                   <>
-                    <Button variant="outline" size="sm" onClick={() => setPage(1)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(1)}
+                      disabled={isLoading}
+                    >
                       1
                     </Button>
                     {startPage > 2 && <span className="px-1 text-muted-foreground">…</span>}
@@ -277,7 +257,12 @@ export default function UnidadesPage() {
                     {endPage < totalPages - 1 && (
                       <span className="px-1 text-muted-foreground">…</span>
                     )}
-                    <Button variant="outline" size="sm" onClick={() => setPage(totalPages)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(totalPages)}
+                      disabled={isLoading}
+                    >
                       {totalPages}
                     </Button>
                   </>

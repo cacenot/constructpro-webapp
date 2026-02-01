@@ -1,5 +1,6 @@
 import { translateUnitCategory, type UnitResponse } from '@cacenot/construct-pro-api-client'
 import { MoreVertical } from 'lucide-react'
+import { navigate } from 'vike/client/router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -71,8 +72,12 @@ export function UnitRow({ unit, projectMap }: UnitRowProps) {
         </Tooltip>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Ações</DropdownMenuLabel>
-          <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-          <DropdownMenuItem>Editar</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate(`/unidades/${unit.id}`)}>
+            Ver detalhes
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate(`/unidades/${unit.id}/editar`)}>
+            Editar
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem>Criar venda</DropdownMenuItem>
         </DropdownMenuContent>

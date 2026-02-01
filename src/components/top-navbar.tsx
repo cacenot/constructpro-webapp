@@ -38,7 +38,7 @@ const navigation: NavItem[] = [
   {
     title: 'Comercial',
     children: [
-      { title: 'Vendas', description: 'Gerencie suas vendas e oportunidades', href: '/sales' },
+      { title: 'Vendas', description: 'Gerencie suas vendas e oportunidades', href: '/vendas' },
       {
         title: 'Contratos',
         description: 'Controle seus contratos e documentos',
@@ -57,7 +57,7 @@ const navigation: NavItem[] = [
       {
         title: 'Empreendimentos',
         description: 'Cadastre e gerencie seus empreendimentos',
-        href: '/projects',
+        href: '/empreendimentos',
       },
       { title: 'Unidades', description: 'Controle unidades e disponibilidade', href: '/unidades' },
     ],
