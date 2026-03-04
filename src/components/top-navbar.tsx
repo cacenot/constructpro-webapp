@@ -42,12 +42,12 @@ const navigation: NavItem[] = [
       {
         title: 'Contratos',
         description: 'Controle seus contratos e documentos',
-        href: '/contracts',
+        href: '/contratos',
       },
       {
         title: 'Parcelas',
         description: 'Acompanhe pagamentos e recebimentos',
-        href: '/installments',
+        href: '/parcelas',
       },
     ],
   },
@@ -197,8 +197,10 @@ export function TopNavbar() {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Settings className="size-[18px]" />
+                <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                  <a href="/configuracoes">
+                    <Settings className="size-[18px]" />
+                  </a>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -251,9 +253,11 @@ export function TopNavbar() {
                 />
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Configurações
+              <DropdownMenuItem asChild>
+                <a href="/configuracoes">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Configurações
+                </a>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => signOut()}>

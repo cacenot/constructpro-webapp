@@ -1,8 +1,4 @@
-import {
-  SaleStatus,
-  getSaleStatusOptions,
-  useSales,
-} from '@cacenot/construct-pro-api-client'
+import { getSaleStatusOptions, SaleStatus, useSales } from '@cacenot/construct-pro-api-client'
 import { Plus, Search, TrendingUp } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { navigate } from 'vike/client/router'
@@ -85,8 +81,7 @@ export default function VendasPage() {
   const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
   const visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i)
 
-  const hasActiveFilters =
-    search || statusFilter !== 'all' || periodFilter !== 'all' || onlyMySales
+  const hasActiveFilters = search || statusFilter !== 'all' || periodFilter !== 'all' || onlyMySales
 
   const handleClearFilters = () => {
     setSearch('')

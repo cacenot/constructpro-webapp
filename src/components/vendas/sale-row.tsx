@@ -53,7 +53,9 @@ export function SaleRow({ sale }: SaleRowProps) {
 
       {/* Venda Info (2 lines) */}
       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-        <span className="truncate text-sm font-medium">{sale.unit?.name || 'Unidade não informada'}</span>
+        <span className="truncate text-sm font-medium">
+          {sale.unit?.name || 'Unidade não informada'}
+        </span>
         <span className="text-xs text-muted-foreground truncate">
           {sale.unit?.project?.name || 'Empreendimento não informado'}
         </span>
@@ -66,7 +68,9 @@ export function SaleRow({ sale }: SaleRowProps) {
             {getInitials(sale.customer?.full_name)}
           </AvatarFallback>
         </Avatar>
-        <span className="truncate text-sm">{sale.customer?.full_name || 'Cliente não informado'}</span>
+        <span className="truncate text-sm">
+          {sale.customer?.full_name || 'Cliente não informado'}
+        </span>
       </div>
 
       {/* Vendedor (hidden lg:flex) */}
