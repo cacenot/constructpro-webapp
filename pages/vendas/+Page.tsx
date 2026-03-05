@@ -104,7 +104,7 @@ export default function VendasPage() {
           </div>
           <Button className="gap-2" onClick={() => navigate('/vendas/novo')}>
             <Plus className="size-4" />
-            Nova Venda
+            Nova Proposta
           </Button>
         </div>
 
