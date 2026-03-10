@@ -15,7 +15,7 @@ npm run format     # BiomeJS formatting only
 
 No test framework is configured.
 
-Add shadcn components: `npx shadcn@latest add <component>`
+Add shadcn components: `pnpm dlx shadcn@latest add <component>`
 
 ## Architecture
 
@@ -45,6 +45,19 @@ Add shadcn components: `npx shadcn@latest add <component>`
 - **Env vars:** Must use `VITE_` prefix, accessed via `import.meta.env.VITE_*`
 - **Design system:** OKLch color space, Inter font, `tabular-nums` on monetary values, 8px grid spacing. Details in `.design-engineer/system.md`
 - **File organization:** `src/lib/` (core utils), `src/schemas/` (Zod schemas by domain), `src/contexts/` (React contexts), `src/stores/` (Zustand), `src/services/` (API wrappers using Query), `src/hooks/` (custom hooks)
+
+## Table Pattern
+
+Data list pages use **TanStack Table + shadcn Table** — not custom row components.
+
+- **Hook:** `src/hooks/use-<domain>-table.ts` — encapsulates all filter/pagination state and API call. Returns `{ data, isLoading, total, hasActiveFilters, handleClearFilters, filters, pagination }`.
+- **Columns:** `src/components/<domain>/<domain>-columns.tsx` — exports `ColumnDef[]`. Responsive columns use Tailwind breakpoints directly in cell renderers (`hidden md:flex`, `hidden lg:block`, etc.).
+- **Table component:** `src/components/<domain>/<domain>-table.tsx` — uses `useReactTable` with `getCoreRowModel` and `manualPagination: true`. Handles loading (skeleton rows), empty state, and data rows.
+- **Pagination component:** `src/components/<domain>/<domain>-pagination.tsx` — uses shadcn `<Pagination>` primitives with `<Button>` for page numbers. Shows "X–Y de Z items" info.
+- **Filters component:** `src/components/<domain>/<domain>-filters.tsx` — receives filter state/setters as props from the hook.
+- **Page:** Thin orchestrator — calls the hook, renders header + filters + `<Card>` wrapping table + pagination.
+- **Page size minimum:** 10 items per page.
+- **Server-side:** All filtering, sorting, and pagination happens on the server. Pass params to the API hook.
 
 ## Common Gotchas
 

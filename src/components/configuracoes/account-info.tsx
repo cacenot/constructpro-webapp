@@ -88,7 +88,9 @@ export function AccountInfo({ profile }: AccountInfoProps) {
                     <p className="font-medium">{tenant.name}</p>
                     <div className="flex flex-col gap-1">
                       {tenant.cnpj && (
-                        <p className="text-xs text-muted-foreground font-mono">CNPJ: {tenant.cnpj}</p>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          CNPJ: {tenant.cnpj}
+                        </p>
                       )}
                       {tenant.phone && (
                         <p className="text-xs text-muted-foreground">Tel: {tenant.phone}</p>
