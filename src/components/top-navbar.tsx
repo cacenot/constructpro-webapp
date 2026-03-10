@@ -44,13 +44,9 @@ const navigation: NavItem[] = [
         description: 'Controle seus contratos e documentos',
         href: '/contratos',
       },
-      {
-        title: 'Parcelas',
-        description: 'Acompanhe pagamentos e recebimentos',
-        href: '/parcelas',
-      },
     ],
   },
+  { title: 'Financeiro', href: '/financeiro' },
   {
     title: 'Empreendimentos',
     children: [
