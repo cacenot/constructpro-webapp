@@ -85,7 +85,10 @@ export type SaleFormData = z.infer<typeof saleFormSchema>
 export type InstallmentScheduleFormData = z.infer<typeof installmentScheduleSchema>
 
 export const saleEditFormSchema = z.object({
-  amount_cents: z.number().min(1, 'O valor negociado deve ser maior que zero'),
+  index_type_code: z.string().min(1, 'Índice de correção é obrigatório'),
+  installment_schedules: z
+    .array(installmentScheduleSchema)
+    .min(1, 'Pelo menos uma parcela é obrigatória'),
 })
 
 export type SaleEditFormData = z.infer<typeof saleEditFormSchema>

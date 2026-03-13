@@ -1,7 +1,12 @@
-import { useApiClient } from '@cacenot/construct-pro-api-client'
+import {
+  type components,
+  translateSaleStatus,
+  useApiClient,
+} from '@cacenot/construct-pro-api-client'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import {
+  AlertTriangle,
   ArrowDown,
   ArrowLeft,
   ArrowUp,
@@ -14,11 +19,11 @@ import {
 } from 'lucide-react'
 import * as React from 'react'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CurrencyInput, formatCentsToDisplay } from '@/components/ui/currency-input'
-import { CustomerAutocomplete, type SelectedCustomer } from '@/components/ui/customer-autocomplete'
 import { DatePicker } from '@/components/ui/date-picker'
 import {
   Form,
@@ -38,7 +43,6 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { type SelectedUnit, UnitAutocomplete } from '@/components/ui/unit-autocomplete'
 import {
   computeAllowedDates,
   computeContractEndDate,
@@ -49,19 +53,23 @@ import { cn } from '@/lib/utils'
 import {
   INSTALLMENT_KIND_LABELS,
   PAYMENT_METHOD_LABELS,
-  type SaleFormData,
-  saleFormSchema,
+  type SaleEditFormData,
+  saleEditFormSchema,
 } from '@/schemas/sale.schema'
+import { SaleStatusBadge } from './sale-status-badge'
 
-interface SaleFormProps {
-  onSubmit: (data: SaleFormData) => Promise<void>
+type SaleResponse = components['schemas']['SaleResponse']
+
+interface SaleEditFormProps {
+  sale: SaleResponse
+  onSubmit: (data: SaleEditFormData) => Promise<void>
   onBack: () => void
   isSubmitting?: boolean
 }
 
-export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormProps) {
+export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: SaleEditFormProps) {
   const { client } = useApiClient()
-  const [selectedUnit, setSelectedUnit] = React.useState<SelectedUnit | null>(null)
+  const isEditable = sale.status === 'offer'
 
   const indexTypesQuery = useQuery({
     queryKey: ['index-types'],
@@ -77,12 +85,10 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
 
   const indexTypes = indexTypesQuery.data?.items ?? []
 
-  const form = useForm<SaleFormData>({
-    resolver: zodResolver(saleFormSchema),
+  const form = useForm<SaleEditFormData>({
+    resolver: zodResolver(saleEditFormSchema),
     defaultValues: {
-      unit_id: undefined,
-      customer_id: undefined,
-      index_type_code: '',
+      index_type_code: sale.contract?.index_type_code ?? '',
       installment_schedules: [
         {
           kind: 'entry',
@@ -111,9 +117,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
 
   const totalFinanced = React.useMemo(() => {
     if (!watchedSchedules) return 0
-    return watchedSchedules.reduce((sum, s) => {
-      return sum + (s.quantity ?? 0) * (s.amount_cents ?? 0)
-    }, 0)
+    return watchedSchedules.reduce((sum, s) => sum + (s.quantity ?? 0) * (s.amount_cents ?? 0), 0)
   }, [watchedSchedules])
 
   const contractEnd = React.useMemo(() => {
@@ -121,24 +125,8 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     return computeContractEndDate(watchedSchedules)
   }, [watchedSchedules])
 
-  const handleUnitChange = React.useCallback(
-    (unit: SelectedUnit | null) => {
-      setSelectedUnit(unit)
-      form.setValue('unit_id', unit?.id ?? (undefined as unknown as number), {
-        shouldValidate: true,
-      })
-    },
-    [form]
-  )
-
-  const handleCustomerChange = React.useCallback(
-    (customer: SelectedCustomer | null) => {
-      form.setValue('customer_id', customer?.id ?? (undefined as unknown as number), {
-        shouldValidate: true,
-      })
-    },
-    [form]
-  )
+  const diff = totalFinanced - sale.unit_price_cents
+  const diffPercent = sale.unit_price_cents > 0 ? (diff / sale.unit_price_cents) * 100 : 0
 
   const quantityInputRefs = React.useRef<(HTMLInputElement | null)[]>([])
 
@@ -175,24 +163,18 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     })
   }, [append])
 
-  // Focus on quantity input when new installment is added
   React.useEffect(() => {
     const lastIndex = fields.length - 1
     if (lastIndex > 0) {
-      // Defer focus to allow DOM to update
       setTimeout(() => {
         quantityInputRefs.current[lastIndex]?.focus()
       }, 0)
     }
   }, [fields.length])
 
-  const handleSubmit = async (data: SaleFormData) => {
+  const handleSubmit = async (data: SaleEditFormData) => {
     await onSubmit(data)
   }
-
-  const unitPriceCents = selectedUnit?.price_cents ?? 0
-  const diff = totalFinanced - unitPriceCents
-  const diffPercent = unitPriceCents > 0 ? (diff / unitPriceCents) * 100 : 0
 
   return (
     <Form {...form}>
@@ -210,49 +192,59 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
             </TooltipContent>
           </Tooltip>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Nova Proposta</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Editar Proposta</h2>
             <p className="mt-1 text-muted-foreground">
-              Preencha os dados para cadastrar uma nova proposta de venda
+              Altere o índice de correção e o cronograma de parcelas
             </p>
           </div>
         </div>
 
-        {/* Card 1: Dados da Venda */}
+        {/* Guard: not editable */}
+        {!isEditable && sale.status && (
+          <Alert>
+            <AlertTriangle className="size-4" />
+            <AlertTitle>Edição não disponível</AlertTitle>
+            <AlertDescription>
+              Esta proposta não pode ser editada pois seu status é{' '}
+              <strong>{translateSaleStatus(sale.status, 'pt-BR')}</strong>. Apenas propostas em
+              aberto podem ter índice e parcelas alterados.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Card 1: Dados da Venda (read-only) */}
         <Card>
           <CardHeader>
             <CardTitle>Dados da Venda</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <div className="grid gap-4 sm:grid-cols-12">
-              <FormField
-                control={form.control}
-                name="unit_id"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-6">
-                    <FormLabel>Unidade *</FormLabel>
-                    <FormControl>
-                      <UnitAutocomplete value={field.value} onChange={handleUnitChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+              <div className="sm:col-span-5">
+                <p className="text-sm text-muted-foreground">Unidade</p>
+                <p className="text-sm font-medium">{sale.unit?.name ?? '—'}</p>
+              </div>
+              <div className="sm:col-span-5">
+                <p className="text-sm text-muted-foreground">Cliente</p>
+                <p className="text-sm font-medium">{sale.customer?.full_name ?? '—'}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-sm text-muted-foreground">Status</p>
+                {sale.status ? (
+                  <SaleStatusBadge status={sale.status} />
+                ) : (
+                  <span className="text-sm font-medium">—</span>
                 )}
-              />
-
-              <FormField
-                control={form.control}
-                name="customer_id"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-6">
-                    <FormLabel>Cliente *</FormLabel>
-                    <FormControl>
-                      <CustomerAutocomplete value={field.value} onChange={handleCustomerChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
+        {/* Card 2: Índice de Correção */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuração</CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="grid gap-4 sm:grid-cols-12">
               <FormField
                 control={form.control}
@@ -260,7 +252,11 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                 render={({ field }) => (
                   <FormItem className="sm:col-span-4">
                     <FormLabel>Índice de Correção *</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={!isEditable}
+                    >
                       <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione" />
@@ -282,7 +278,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           </CardContent>
         </Card>
 
-        {/* Card 2: Pagamento (Entrada + Parcelas) */}
+        {/* Card 3: Pagamento (Entrada + Parcelas) */}
         <Card>
           <CardHeader>
             <CardTitle>Pagamento</CardTitle>
@@ -299,7 +295,11 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                     <FormItem className="sm:col-span-4">
                       <FormLabel>Valor da Entrada *</FormLabel>
                       <FormControl>
-                        <CurrencyInput value={field.value} onChange={field.onChange} />
+                        <CurrencyInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          disabled={!isEditable}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -313,7 +313,11 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                     <FormItem className="sm:col-span-4">
                       <FormLabel>Data de Pagamento *</FormLabel>
                       <FormControl>
-                        <DatePicker value={field.value} onChange={field.onChange} />
+                        <DatePicker
+                          value={field.value}
+                          onChange={field.onChange}
+                          disabled={!isEditable}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -326,7 +330,11 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                   render={({ field }) => (
                     <FormItem className="sm:col-span-4">
                       <FormLabel>Forma de Pagamento *</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={!isEditable}
+                      >
                         <FormControl>
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione" />
@@ -353,16 +361,18 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-sm font-medium">Parcelas</p>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={addMonthlySchedule}>
-                    <Plus className="mr-2 size-4" />
-                    Mensais
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={addYearlySchedule}>
-                    <Plus className="mr-2 size-4" />
-                    Anuais
-                  </Button>
-                </div>
+                {isEditable && (
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={addMonthlySchedule}>
+                      <Plus className="mr-2 size-4" />
+                      Mensais
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={addYearlySchedule}>
+                      <Plus className="mr-2 size-4" />
+                      Anuais
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {fields.length <= 1 && (
@@ -400,21 +410,23 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                         <Badge variant="secondary">
                           {INSTALLMENT_KIND_LABELS[kind ?? ''] ?? kind}
                         </Badge>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => remove(index)}
-                            >
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Remover parcela</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        {isEditable && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => remove(index)}
+                              >
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Remover parcela</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-12">
@@ -432,6 +444,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                                   type="number"
                                   min="1"
                                   value={f.value ?? ''}
+                                  disabled={!isEditable}
                                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                     f.onChange(
                                       e.target.value ? Number.parseInt(e.target.value, 10) : 1
@@ -451,7 +464,11 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                             <FormItem className="sm:col-span-3">
                               <FormLabel>Valor da Parcela *</FormLabel>
                               <FormControl>
-                                <CurrencyInput value={f.value} onChange={f.onChange} />
+                                <CurrencyInput
+                                  value={f.value}
+                                  onChange={f.onChange}
+                                  disabled={!isEditable}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -464,7 +481,11 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                           render={({ field: f }) => (
                             <FormItem className="sm:col-span-3">
                               <FormLabel>Pagamento *</FormLabel>
-                              <Select value={f.value} onValueChange={f.onChange}>
+                              <Select
+                                value={f.value}
+                                onValueChange={f.onChange}
+                                disabled={!isEditable}
+                              >
                                 <FormControl>
                                   <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Selecione" />
@@ -495,12 +516,12 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                                   min="1"
                                   max="31"
                                   value={f.value ?? ''}
+                                  disabled={!isEditable}
                                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     const val = e.target.value
                                       ? Number.parseInt(e.target.value, 10)
                                       : null
                                     f.onChange(val)
-                                    // Update start_date with new default
                                     if (kind && (kind === 'monthly' || kind === 'yearly')) {
                                       const newStartDate = computeDefaultStartDate(
                                         kind,
@@ -533,12 +554,12 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                                     min="1"
                                     max="12"
                                     value={f.value ?? ''}
+                                    disabled={!isEditable}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                       const val = e.target.value
                                         ? Number.parseInt(e.target.value, 10)
                                         : null
                                       f.onChange(val)
-                                      // Update start_date with new default
                                       if (kind === 'yearly') {
                                         const newStartDate = computeDefaultStartDate(
                                           kind,
@@ -571,7 +592,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                                 <DatePicker
                                   value={f.value}
                                   onChange={f.onChange}
-                                  disabled={isDateDisabled}
+                                  disabled={isDateDisabled || !isEditable}
                                   disabledDates={disabledDates}
                                 />
                               </FormControl>
@@ -594,7 +615,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           </CardContent>
         </Card>
 
-        {/* Card 3: Resumo Financeiro */}
+        {/* Card 4: Resumo Financeiro */}
         <Card>
           <CardHeader>
             <CardTitle>Resumo Financeiro</CardTitle>
@@ -608,16 +629,14 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                 </p>
               </div>
 
-              {selectedUnit && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Preço da Unidade</p>
-                  <p className="text-2xl font-bold tabular-nums">
-                    R$ {formatCentsToDisplay(unitPriceCents) || '0,00'}
-                  </p>
-                </div>
-              )}
+              <div>
+                <p className="text-sm text-muted-foreground">Preço de Tabela</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  R$ {formatCentsToDisplay(sale.unit_price_cents) || '0,00'}
+                </p>
+              </div>
 
-              {selectedUnit && totalFinanced > 0 && (
+              {totalFinanced > 0 && (
                 <div>
                   <p className="text-sm text-muted-foreground">Diferença</p>
                   <div className="flex items-center gap-2">
@@ -718,16 +737,16 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || !isEditable}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
-                Cadastrando...
+                Salvando...
               </>
             ) : (
               <>
                 <Save className="mr-2 size-4" />
-                Cadastrar Proposta
+                Salvar Alterações
               </>
             )}
           </Button>
