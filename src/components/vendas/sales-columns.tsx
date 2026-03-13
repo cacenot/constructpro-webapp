@@ -116,12 +116,12 @@ export const salesColumns: ColumnDef<SaleSummaryResponse>[] = [
             <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}`)}>
               Ver detalhes
             </DropdownMenuItem>
-            {sale.status === 'offer' && (
+            {sale.status === 'pending_signature' && (
               <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}/editar`)}>
                 Editar
               </DropdownMenuItem>
             )}
-            {sale.status === 'reserved' && (
+            {sale.status === 'pending_payment' && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}/contrato`)}>

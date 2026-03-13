@@ -69,7 +69,7 @@ interface SaleEditFormProps {
 
 export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: SaleEditFormProps) {
   const { client } = useApiClient()
-  const isEditable = sale.status === 'offer'
+  const isEditable = sale.status === 'pending_signature'
 
   const indexTypesQuery = useQuery({
     queryKey: ['index-types'],
