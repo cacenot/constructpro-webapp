@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
 import { InstallmentsFilters } from '@/components/financeiro/installments-filters'
 import { InstallmentsPagination } from '@/components/financeiro/installments-pagination'
+import { InstallmentsSummaryCards } from '@/components/financeiro/installments-summary-cards'
 import { InstallmentsTable } from '@/components/financeiro/installments-table'
 import { PayInstallmentDialog } from '@/components/financeiro/pay-installment-dialog'
 import { Card, CardContent } from '@/components/ui/card'
@@ -13,7 +14,7 @@ import { installmentKeys } from '@/hooks/use-installments'
 import { useInstallmentsTable } from '@/hooks/use-installments-table'
 
 export default function FinanceiroPage() {
-  const { data, isLoading, hasActiveFilters, handleClearFilters, filters, pagination } =
+  const { data, isLoading, summary, hasActiveFilters, handleClearFilters, filters, pagination } =
     useInstallmentsTable()
 
   const { client } = useApiClient()
@@ -64,6 +65,8 @@ export default function FinanceiroPage() {
             Acompanhe parcelas, recebimentos e vencimentos.
           </p>
         </div>
+
+        <InstallmentsSummaryCards summary={summary} isLoading={isLoading} />
 
         <InstallmentsFilters {...filters} />
 

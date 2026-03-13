@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
 import type { DateRangeValue } from '@/components/ui/date-range-filter'
-import { type InstallmentResponse, useInstallments } from './use-installments'
+import {
+  type InstallmentListSummary,
+  type InstallmentResponse,
+  useInstallmentsSummary,
+} from './use-installments'
 
 const PAGE_SIZE = 10
 
@@ -26,6 +30,7 @@ export interface UseInstallmentsTableReturn {
   data: InstallmentResponse[]
   isLoading: boolean
   total: number
+  summary: InstallmentListSummary | null
   hasActiveFilters: boolean
   handleClearFilters: () => void
   filters: InstallmentsTableFilters
@@ -57,10 +62,11 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     return params
   }, [page, statusFilter, kindFilter, dueDateRange])
 
-  const { data, isLoading } = useInstallments(queryParams)
+  const { data, isLoading } = useInstallmentsSummary(queryParams)
 
   const installments = data?.items ?? []
   const total = data?.total ?? 0
+  const summary = data?.summary ?? null
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const hasActiveFilters = !!(statusFilter !== 'all' || kindFilter !== 'all' || dueDateRange)
@@ -76,6 +82,7 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     data: installments,
     isLoading,
     total,
+    summary,
     hasActiveFilters,
     handleClearFilters,
     filters: {

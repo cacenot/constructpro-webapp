@@ -17,6 +17,10 @@ import type { InstallmentsTableFilters } from '@/hooks/use-installments-table'
 const statusOptions = getInstallmentStatusOptions('pt-BR')
 const kindOptions = getInstallmentKindOptions('pt-BR')
 
+const statusLabelOverrides: Partial<Record<string, string>> = {
+  overdue: 'Em atraso',
+}
+
 export function InstallmentsFilters({
   statusFilter,
   kindFilter,
@@ -39,7 +43,7 @@ export function InstallmentsFilters({
             const option = statusOptions.find((opt) => opt.value === value)
             return (
               <SelectItem key={value} value={value}>
-                {option?.label || value}
+                {statusLabelOverrides[value] ?? option?.label ?? value}
               </SelectItem>
             )
           })}
