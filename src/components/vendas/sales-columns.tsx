@@ -1,7 +1,3 @@
-import type { components } from '@cacenot/construct-pro-api-client'
-
-type SaleResponse = components['schemas']['SaleResponse']
-
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -18,15 +14,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatCurrency, formatId } from '@/lib/utils'
+import type { SaleSummaryResponse } from '@/hooks/use-sales-summary'
+import { formatDocument } from '@/lib/text-formatters'
+import { formatId } from '@/lib/utils'
 import { SaleStatusBadge } from './sale-status-badge'
 
-function calculateDiscount(salePrice: number, listPrice: number): string {
-  if (listPrice === 0) return '0'
-  return (((listPrice - salePrice) / listPrice) * 100).toFixed(0)
-}
-
-export const salesColumns: ColumnDef<SaleResponse>[] = [
+export const salesColumns: ColumnDef<SaleSummaryResponse>[] = [
   {
     id: 'id',
     header: 'ID',
@@ -47,7 +40,7 @@ export const salesColumns: ColumnDef<SaleResponse>[] = [
             {unit?.name || 'Unidade não informada'}
           </span>
           <span className="text-xs text-muted-foreground truncate">
-            {unit ? `Empreendimento #${unit.project_id}` : 'Empreendimento não informado'}
+            {unit?.project?.name || 'Empreendimento não informado'}
           </span>
         </div>
       )
@@ -59,32 +52,10 @@ export const salesColumns: ColumnDef<SaleResponse>[] = [
     cell: ({ row }) => {
       const { customer } = row.original
       return (
-        <div className="hidden md:flex w-48">
+        <div className="hidden md:flex flex-col gap-0.5 w-48">
           <span className="truncate text-sm">{customer?.full_name || 'Não informado'}</span>
-        </div>
-      )
-    },
-  },
-  {
-    id: 'amount',
-    header: 'Valor',
-    cell: ({ row }) => {
-      const { amount_cents, unit_price_cents } = row.original
-      const hasDiscount = amount_cents < unit_price_cents
-      return (
-        <div className="hidden xl:flex flex-col gap-0.5 w-44">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium tabular-nums">
-              {formatCurrency(amount_cents / 100)}
-            </span>
-            {hasDiscount && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 leading-none">
-                -{calculateDiscount(amount_cents, unit_price_cents)}%
-              </Badge>
-            )}
-          </div>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            De {formatCurrency(unit_price_cents / 100)}
+          <span className="text-xs text-muted-foreground truncate">
+            {formatDocument(customer?.cpf_cnpj) || 'CPF/CNPJ não informado'}
           </span>
         </div>
       )
@@ -105,18 +76,18 @@ export const salesColumns: ColumnDef<SaleResponse>[] = [
   },
   {
     id: 'created_at',
-    header: 'Data / Vendedor',
+    header: 'Vendedor / Data',
     cell: ({ row }) => {
       const { created_at, user } = row.original
       return (
         <div className="hidden md:flex flex-col gap-0.5 w-40">
+          <span className="text-sm font-medium">{user?.full_name || 'Não informado'}</span>
           <span className="text-xs text-muted-foreground">
             {formatDistanceToNow(new Date(created_at), {
               addSuffix: true,
               locale: ptBR,
             })}
           </span>
-          <span className="text-xs">{user?.full_name || 'Não informado'}</span>
         </div>
       )
     },
@@ -145,10 +116,12 @@ export const salesColumns: ColumnDef<SaleResponse>[] = [
             <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}`)}>
               Ver detalhes
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}/editar`)}>
-              Editar
-            </DropdownMenuItem>
-            {sale.status === 'reserved' && sale.contract && (
+            {sale.status === 'offer' && (
+              <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}/editar`)}>
+                Editar
+              </DropdownMenuItem>
+            )}
+            {sale.status === 'reserved' && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}/contrato`)}>

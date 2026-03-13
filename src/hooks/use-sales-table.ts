@@ -1,9 +1,6 @@
-import { type components, useSales } from '@cacenot/construct-pro-api-client'
-
-type SaleResponse = components['schemas']['SaleResponse']
-
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/auth-context'
+import { type SaleSummaryResponse, useSalesSummary } from '@/hooks/use-sales-summary'
 
 const PAGE_SIZE = 10
 
@@ -28,7 +25,7 @@ export interface SalesTablePagination {
 }
 
 export interface UseSalesTableReturn {
-  data: SaleResponse[]
+  data: SaleSummaryResponse[]
   isLoading: boolean
   total: number
   hasActiveFilters: boolean
@@ -70,7 +67,7 @@ export function useSalesTable(): UseSalesTableReturn {
     return params
   }, [page, debouncedSearch, statusFilter, onlyMySales, user])
 
-  const { data, isLoading } = useSales(queryParams)
+  const { data, isLoading } = useSalesSummary(queryParams)
 
   const sales = data?.items ?? []
   const total = data?.total ?? 0

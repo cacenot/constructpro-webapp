@@ -36,6 +36,17 @@ const navigation: NavItem[] = [
   { title: 'Início', href: '/dashboard' },
   { title: 'Clientes', href: '/clientes' },
   {
+    title: 'Empreendimentos',
+    children: [
+      {
+        title: 'Empreendimentos',
+        description: 'Cadastre e gerencie seus empreendimentos',
+        href: '/empreendimentos',
+      },
+      { title: 'Unidades', description: 'Controle unidades e disponibilidade', href: '/unidades' },
+    ],
+  },
+  {
     title: 'Comercial',
     children: [
       { title: 'Vendas', description: 'Gerencie suas vendas e oportunidades', href: '/vendas' },
@@ -47,17 +58,6 @@ const navigation: NavItem[] = [
     ],
   },
   { title: 'Financeiro', href: '/financeiro' },
-  {
-    title: 'Empreendimentos',
-    children: [
-      {
-        title: 'Empreendimentos',
-        description: 'Cadastre e gerencie seus empreendimentos',
-        href: '/empreendimentos',
-      },
-      { title: 'Unidades', description: 'Controle unidades e disponibilidade', href: '/unidades' },
-    ],
-  },
 ]
 
 function getInitials(name: string | null | undefined): string {
@@ -107,7 +107,7 @@ export function TopNavbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm pt-4 pb-2">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center gap-4 rounded-xl bg-card px-6 shadow-sm border border-border">
+      <nav className="mx-auto flex h-16 max-w-350 items-center gap-4 rounded-xl bg-card px-6 shadow-sm border border-border">
         {/* Logo */}
         <a href="/dashboard" className="flex items-center gap-2.5 shrink-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-sm">

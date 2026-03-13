@@ -100,3 +100,24 @@ export function formatISOToBirthDate(isoDate: string | null | undefined): string
   const [, year, month, day] = match
   return `${day}/${month}/${year}`
 }
+
+/**
+ * Format CPF or CNPJ document number
+ * - CPF (11 digits): XXX.XXX.XXX-XX
+ * - CNPJ (14 digits): XX.XXX.XXX/XXXX-XX
+ */
+export function formatDocument(doc: string | null | undefined): string {
+  if (!doc) return ''
+
+  const digits = doc.replace(/\D/g, '')
+
+  if (digits.length === 11) {
+    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+  }
+
+  if (digits.length === 14) {
+    return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+  }
+
+  return doc
+}
