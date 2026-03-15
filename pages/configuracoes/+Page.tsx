@@ -6,17 +6,18 @@ import { AppLayout } from '@/components/app-layout'
 import { AccountInfo } from '@/components/configuracoes/account-info'
 import { PasswordForm } from '@/components/configuracoes/password-form'
 import { ProfileForm } from '@/components/configuracoes/profile-form'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { TenantConfigSection } from '@/components/configuracoes/tenant-config-section'
+import { Card, CardContent } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { ProfileUpdateFormData } from '@/schemas/settings.schema'
 
 /**
- * Página de configurações do usuário
+ * Página de configurações — Minha Conta e Organização (admin/superadmin apenas)
  */
 export default function SettingsPage() {
   const { client } = useApiClient()
   const queryClient = useQueryClient()
 
-  // Fetch current user profile
   const {
     data: profile,
     isLoading,
@@ -32,7 +33,6 @@ export default function SettingsPage() {
     },
   })
 
-  // Mutation for profile update
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileUpdateFormData) => {
       const response = await client.PATCH('/api/v1/users/me', {
@@ -59,11 +59,9 @@ export default function SettingsPage() {
     },
   })
 
-  const handleProfileSubmit = async (data: ProfileUpdateFormData) => {
-    await updateProfileMutation.mutateAsync(data)
-  }
+  const isAdmin =
+    profile?.roles?.some((r) => r.name === 'admin' || r.name === 'superadmin') ?? false
 
-  // Loading state
   if (isLoading) {
     return (
       <AppLayout>
@@ -74,11 +72,10 @@ export default function SettingsPage() {
     )
   }
 
-  // Error state
   if (error) {
     return (
       <AppLayout>
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-3xl">
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
@@ -95,51 +92,71 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-3xl space-y-8 pb-12">
+      <div className="mx-auto max-w-3xl pb-12">
         {/* Header */}
-        <div className="space-y-1">
+        <div className="space-y-1 mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
           <p className="text-muted-foreground">
             Gerencie suas informações pessoais e preferências de conta
           </p>
         </div>
 
-        {/* Card 1: Informações Pessoais */}
-        <Card className="rounded-2xl border-border/50 shadow-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-lg font-semibold">Informações Pessoais</CardTitle>
-            <CardDescription>Atualize seus dados pessoais e foto de perfil</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <ProfileForm
-              initialData={profile}
-              onSubmit={handleProfileSubmit}
-              isSubmitting={updateProfileMutation.isPending}
-            />
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="conta">
+          <TabsList className="mb-6">
+            <TabsTrigger value="conta">Minha Conta</TabsTrigger>
+            {isAdmin && <TabsTrigger value="organizacao">Organização</TabsTrigger>}
+          </TabsList>
 
-        {/* Card 2: Segurança */}
-        <Card className="rounded-2xl border-border/50 shadow-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-lg font-semibold">Segurança</CardTitle>
-            <CardDescription>Altere sua senha de acesso</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <PasswordForm />
-          </CardContent>
-        </Card>
+          {/* ── Minha Conta ─────────────────────────────────────────── */}
+          <TabsContent value="conta" className="space-y-8">
+            <Card className="rounded-2xl border-border/50 shadow-sm">
+              <CardContent className="pt-6">
+                <div className="space-y-1 mb-6">
+                  <h2 className="text-lg font-semibold">Informações Pessoais</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Atualize seus dados pessoais e foto de perfil
+                  </p>
+                </div>
+                <ProfileForm
+                  initialData={profile}
+                  onSubmit={async (data) => {
+                    await updateProfileMutation.mutateAsync(data)
+                  }}
+                  isSubmitting={updateProfileMutation.isPending}
+                />
+              </CardContent>
+            </Card>
 
-        {/* Card 3: Informações da Conta (readonly) */}
-        <Card className="rounded-2xl border-border/50 shadow-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-lg font-semibold">Informações da Conta</CardTitle>
-            <CardDescription>Detalhes da sua conta e permissões</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <AccountInfo profile={profile} />
-          </CardContent>
-        </Card>
+            <Card className="rounded-2xl border-border/50 shadow-sm">
+              <CardContent className="pt-6">
+                <div className="space-y-1 mb-6">
+                  <h2 className="text-lg font-semibold">Segurança</h2>
+                  <p className="text-sm text-muted-foreground">Altere sua senha de acesso</p>
+                </div>
+                <PasswordForm />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-border/50 shadow-sm">
+              <CardContent className="pt-6">
+                <div className="space-y-1 mb-6">
+                  <h2 className="text-lg font-semibold">Informações da Conta</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Detalhes da sua conta e permissões
+                  </p>
+                </div>
+                <AccountInfo profile={profile} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── Organização ─────────────────────────────────────────── */}
+          {isAdmin && (
+            <TabsContent value="organizacao">
+              <TenantConfigSection />
+            </TabsContent>
+          )}
+        </Tabs>
       </div>
     </AppLayout>
   )
