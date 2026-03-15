@@ -1,5 +1,6 @@
 import { type FirebaseApp, getApps, initializeApp } from 'firebase/app'
 import { type Auth, getAuth } from 'firebase/auth'
+import { type FirebaseStorage, getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,20 +13,24 @@ const firebaseConfig = {
 
 let app: FirebaseApp
 let auth: Auth
+let storage: FirebaseStorage
 
 const existingApps = getApps()
 if (existingApps.length === 0) {
   app = initializeApp(firebaseConfig)
   auth = getAuth(app)
+  storage = getStorage(app)
 } else {
   const existingApp = existingApps[0]
   if (existingApp) {
     app = existingApp
     auth = getAuth(app)
+    storage = getStorage(app)
   } else {
     app = initializeApp(firebaseConfig)
     auth = getAuth(app)
+    storage = getStorage(app)
   }
 }
 
-export { app, auth }
+export { app, auth, storage }
