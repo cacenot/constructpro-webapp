@@ -1,4 +1,5 @@
 import {
+  SaleStatus,
   translateContractStatus,
   translateInstallmentKind,
   translatePaymentMethod,
@@ -6,7 +7,7 @@ import {
 } from '@cacenot/construct-pro-api-client'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowLeft, Building2, FileText, User, Wallet } from 'lucide-react'
+import { ArrowLeft, Building2, FileText, Pencil, User, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { navigate } from 'vike/client/router'
 import { usePageContext } from 'vike-react/usePageContext'
@@ -74,9 +75,12 @@ export default function SaleDetailPage() {
 
   const { data: sale, isLoading, error } = useSale(saleId)
 
-  const canSign = sale?.status === 'pending_signature' && !!sale.contract
+  const canSign = sale?.status === SaleStatus.pending_signature && !!sale.contract
   const canPayEntry =
-    (sale?.status === 'pending_signature' || sale?.status === 'pending_payment') && !!sale.contract
+    (sale?.status === SaleStatus.pending_signature ||
+      sale?.status === SaleStatus.pending_payment) &&
+    !!sale.contract
+  const canEdit = sale?.status === SaleStatus.pending_signature
 
   if (isLoading) {
     return (
@@ -112,8 +116,13 @@ export default function SaleDetailPage() {
     )
   }
 
-  const discount = sale.unit_price_cents - sale.amount_cents
-  const discountPct = sale.unit_price_cents > 0 ? (discount / sale.unit_price_cents) * 100 : 0
+  const metrics = sale.metrics
+  const discountCents = metrics?.discount_cents ?? sale.unit_price_cents - sale.amount_cents
+  const discountPctStr = metrics
+    ? metrics.discount_percentage
+    : sale.unit_price_cents > 0
+      ? ((discountCents / sale.unit_price_cents) * 100).toFixed(2)
+      : '0'
 
   const summary = sale.installment_summary
   const totalInstallments = summary?.total_count ?? 0
@@ -149,6 +158,16 @@ export default function SaleDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {canEdit && (
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => navigate(`/vendas/${saleId}/editar`)}
+              >
+                <Pencil className="size-4" />
+                Editar
+              </Button>
+            )}
             {canSign && (
               <Button variant="outline" className="gap-2" onClick={() => setSignOpen(true)}>
                 <FileText className="size-4" />
@@ -244,22 +263,30 @@ export default function SaleDetailPage() {
                   {formatCurrency(sale.unit_price_cents / 100)}
                 </span>
               </div>
-              {discount !== 0 && (
+              {discountCents !== 0 && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    {discount > 0 ? 'Desconto' : 'Acréscimo'}
+                    {discountCents > 0 ? 'Desconto' : 'Acréscimo'}
                   </span>
                   <span
                     className={cn(
                       'tabular-nums text-sm',
-                      discount > 0 ? 'text-emerald-600' : 'text-red-600'
+                      discountCents > 0 ? 'text-emerald-600' : 'text-red-600'
                     )}
                   >
-                    {discount > 0 ? '-' : '+'}
-                    {formatCurrency(Math.abs(discount) / 100)}{' '}
+                    {discountCents > 0 ? '-' : '+'}
+                    {formatCurrency(Math.abs(discountCents) / 100)}{' '}
                     <span className="text-xs opacity-70">
-                      ({Math.abs(discountPct).toFixed(1)}%)
+                      ({Math.abs(Number(discountPctStr)).toFixed(1)}%)
                     </span>
+                  </span>
+                </div>
+              )}
+              {metrics?.price_per_sqm_cents != null && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Preço por m²</span>
+                  <span className="tabular-nums text-sm">
+                    {formatCurrency(metrics.price_per_sqm_cents / 100)}
                   </span>
                 </div>
               )}
@@ -276,6 +303,27 @@ export default function SaleDetailPage() {
                     <span className="text-sm text-muted-foreground">Total de parcelas</span>
                     <span className="tabular-nums text-sm">{totalInstallments}</span>
                   </div>
+                  {metrics?.entry_amount_cents != null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Entrada</span>
+                      <span className="tabular-nums text-sm">
+                        {formatCurrency(metrics.entry_amount_cents / 100)}
+                        {metrics.entry_percentage != null && (
+                          <span className="ml-1.5 text-xs opacity-70">
+                            ({Number(metrics.entry_percentage).toFixed(1)}%)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {metrics?.financed_amount_cents != null && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Valor financiado</span>
+                      <span className="tabular-nums text-sm">
+                        {formatCurrency(metrics.financed_amount_cents / 100)}
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>
