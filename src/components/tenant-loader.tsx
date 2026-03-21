@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { type ReactNode, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
+import { useTenantConfig } from '@/hooks/use-tenant-config'
 import { useTenantStore } from '@/stores/tenant-store'
 
 export function TenantLoader({ children }: { children: ReactNode }) {
@@ -10,6 +11,7 @@ export function TenantLoader({ children }: { children: ReactNode }) {
   const { client } = useApiClient()
   const tenantId = useTenantStore((s) => s.tenantId)
   const setTenantId = useTenantStore((s) => s.setTenantId)
+  const setTenants = useTenantStore((s) => s.setTenants)
 
   const { data, isLoading } = useQuery({
     queryKey: ['users', 'me'],
@@ -21,11 +23,17 @@ export function TenantLoader({ children }: { children: ReactNode }) {
     enabled: !!user,
   })
 
+  // Prefetch tenant config enquanto o tenant estiver selecionado
+  useTenantConfig()
+
   useEffect(() => {
-    if (!tenantId && data?.tenants?.length) {
-      setTenantId(data.tenants[0].id)
+    if (data?.tenants?.length) {
+      setTenants(data.tenants)
+      if (!tenantId) {
+        setTenantId(data.tenants[0].id)
+      }
     }
-  }, [data, tenantId, setTenantId])
+  }, [data, tenantId, setTenantId, setTenants])
 
   if (user && (isLoading || (!tenantId && !data))) {
     return (

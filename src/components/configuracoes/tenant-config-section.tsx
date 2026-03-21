@@ -1,7 +1,8 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTenantConfig } from '@/hooks/use-tenant-config'
 import type { TenantConfigFormData } from '@/schemas/tenant-config.schema'
 import { TenantConfigForm } from './tenant-config-form'
 
@@ -31,26 +32,12 @@ function LoadingSkeleton() {
 
 /**
  * Seção autossuficiente de configuração da organização.
- * Gerencia internamente o fetch e a mutação do tenant config.
+ * Usa o hook useTenantConfig() compartilhado (cache global via TanStack Query).
  */
 export function TenantConfigSection() {
   const { client } = useApiClient()
   const queryClient = useQueryClient()
-
-  const {
-    data: config,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['tenant-config'],
-    queryFn: async () => {
-      const response = await client.GET('/api/v1/tenant-config')
-      if (!response.data) {
-        throw new Error('Erro ao carregar configurações da organização')
-      }
-      return response.data
-    },
-  })
+  const { data: config, isLoading, error } = useTenantConfig()
 
   const updateMutation = useMutation({
     mutationFn: async (data: TenantConfigFormData) => {

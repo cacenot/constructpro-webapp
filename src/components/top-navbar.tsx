@@ -1,5 +1,5 @@
-import { Bell, LogOut, Moon, Search, Settings } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Bell, Check, LogOut, Moon, Search, Settings } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/hooks/use-theme'
 import { cn } from '@/lib/utils'
+import { useTenantStore } from '@/stores/tenant-store'
 
 type NavItem =
   | { title: string; href: string; children?: never }
@@ -102,8 +103,19 @@ const ListItem = ({
 export function TopNavbar() {
   const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
+  const tenantId = useTenantStore((s) => s.tenantId)
+  const tenants = useTenantStore((s) => s.tenants)
+  const setTenantId = useTenantStore((s) => s.setTenantId)
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/'
   const isPathActive = (href: string) => currentPath === href || currentPath.startsWith(`${href}/`)
+
+  const activeTenant = tenants.find((t) => t.id === tenantId)
+
+  const handleTenantSwitch = (id: string) => {
+    if (id === tenantId) return
+    setTenantId(id)
+    window.location.reload()
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm pt-4 pb-2">
@@ -129,7 +141,7 @@ export function TopNavbar() {
                   <NavigationMenuItem key={item.title}>
                     <NavigationMenuTrigger
                       className={cn(
-                        'px-3.5 py-2 text-sm font-medium !rounded-full transition-colors whitespace-nowrap h-auto bg-accent/50',
+                        'px-3.5 py-2 text-sm font-medium rounded-full! transition-colors whitespace-nowrap h-auto bg-accent/50',
                         isActive
                           ? 'bg-primary text-primary-foreground hover:bg-primary/90 data-[state=open]:bg-primary/90'
                           : 'text-muted-foreground hover:text-foreground hover:bg-accent data-[state=open]:bg-accent'
@@ -138,7 +150,7 @@ export function TopNavbar() {
                       {item.title}
                     </NavigationMenuTrigger>
                     <NavigationMenuContent>
-                      <div className="w-[400px] p-2">
+                      <div className="w-100 p-2">
                         <ul className="space-y-1">
                           {item.children.map((child) => (
                             <ListItem
@@ -163,7 +175,7 @@ export function TopNavbar() {
                     <a
                       href={item.href}
                       className={cn(
-                        'px-3.5 py-2 text-sm font-medium !rounded-full transition-colors whitespace-nowrap inline-flex items-center bg-accent/50',
+                        'px-3.5 py-2 text-sm font-medium rounded-full! transition-colors whitespace-nowrap inline-flex items-center bg-accent/50',
                         isActive
                           ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                           : 'text-muted-foreground hover:text-foreground hover:bg-accent'
@@ -184,7 +196,7 @@ export function TopNavbar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
-                  <Search className="size-[18px]" />
+                  <Search className="size-4.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -195,7 +207,7 @@ export function TopNavbar() {
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full" asChild>
                   <a href="/configuracoes">
-                    <Settings className="size-[18px]" />
+                    <Settings className="size-4.5" />
                   </a>
                 </Button>
               </TooltipTrigger>
@@ -206,7 +218,7 @@ export function TopNavbar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full relative">
-                  <Bell className="size-[18px]" />
+                  <Bell className="size-4.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -219,18 +231,41 @@ export function TopNavbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full ml-1">
                 <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.photoURL || undefined} />
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                     {getInitials(user?.displayName)}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" sideOffset={8} className="w-56">
+            <DropdownMenuContent align="end" sideOffset={8} className="w-60">
               <div className="px-3 py-2">
                 <p className="text-sm font-medium">{user?.displayName || 'Usuário'}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
               <DropdownMenuSeparator />
+
+              {/* Organização */}
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-medium">
+                Organização
+              </DropdownMenuLabel>
+              {tenants.map((tenant) => (
+                <DropdownMenuItem
+                  key={tenant.id}
+                  onClick={() => handleTenantSwitch(tenant.id)}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <span className="truncate">{tenant.name}</span>
+                  {tenant.id === tenantId && <Check className="size-4 shrink-0 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+              {!activeTenant && (
+                <div className="px-2 py-1.5">
+                  <p className="text-xs text-muted-foreground">Nenhuma organização selecionada</p>
+                </div>
+              )}
+
+              {/* Aparência */}
               <DropdownMenuLabel className="text-xs text-muted-foreground font-medium">
                 Aparência
               </DropdownMenuLabel>

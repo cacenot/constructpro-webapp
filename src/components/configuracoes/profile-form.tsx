@@ -1,7 +1,10 @@
 import type { components } from '@cacenot/construct-pro-api-client'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, Save } from 'lucide-react'
+import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage'
+import { Camera, Loader2, Save } from 'lucide-react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { CPFInput } from '@/components/ui/document-input'
@@ -16,7 +19,10 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
+import { Progress } from '@/components/ui/progress'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useAuth } from '@/contexts/auth-context'
+import { storage } from '@/lib/firebase'
 import { capitalizeNameBR } from '@/lib/text-formatters'
 import { type ProfileUpdateFormData, profileUpdateSchema } from '@/schemas/settings.schema'
 
@@ -31,9 +37,6 @@ interface ProfileFormProps {
   isSubmitting?: boolean
 }
 
-/**
- * Obtém as iniciais do nome para o avatar fallback
- */
 function getInitials(name: string | null | undefined): string {
   if (!name) return '?'
   return name
@@ -44,10 +47,12 @@ function getInitials(name: string | null | undefined): string {
     .toUpperCase()
 }
 
-/**
- * Formulário de atualização de perfil do usuário
- */
 export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: ProfileFormProps) {
+  const { user } = useAuth()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+
   const form = useForm<ProfileUpdateFormData>({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
@@ -60,7 +65,6 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
   })
 
   const handleSubmit = async (data: ProfileUpdateFormData) => {
-    // Limpar strings vazias para null
     const submitData = {
       ...data,
       display_name: data.display_name?.trim() || null,
@@ -70,27 +74,93 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
     await onSubmit(submitData)
   }
 
-  // Watch photo_url e full_name para preview do avatar
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    const ext = file.name.split('.').pop()
+    const storageRef = ref(storage, `users/${user.uid}/profile-photo.${ext}`)
+    const uploadTask = uploadBytesResumable(storageRef, file)
+
+    setIsUploading(true)
+    setUploadProgress(0)
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+        setUploadProgress(progress)
+      },
+      (error) => {
+        setIsUploading(false)
+        toast.error('Erro ao enviar foto. Tente novamente.')
+        console.error('Upload error:', error)
+      },
+      async () => {
+        const url = await getDownloadURL(uploadTask.snapshot.ref)
+        form.setValue('photo_url', url, { shouldDirty: true })
+        setIsUploading(false)
+        setUploadProgress(0)
+        toast.success('Foto enviada com sucesso')
+        // Reset file input so the same file can be selected again
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      }
+    )
+  }
+
   const photoUrl = form.watch('photo_url')
   const fullName = form.watch('full_name')
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        {/* Avatar Preview */}
+        {/* Avatar + Upload */}
         <div className="flex items-center gap-6 rounded-xl bg-muted/30 p-4 transition-colors hover:bg-muted/40">
-          <Avatar className="h-20 w-20 border-2 border-border/50 shadow-sm">
-            <AvatarImage src={photoUrl || undefined} alt={fullName || 'Usuário'} />
-            <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
-              {getInitials(fullName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="space-y-0.5">
-            <h3 className="font-medium">Foto do Perfil</h3>
-            <p className="text-sm text-muted-foreground">
-              Adicione uma URL de imagem para sua foto de perfil
-            </p>
+          <div className="relative shrink-0">
+            <Avatar className="h-20 w-20 border-2 border-border/50 shadow-sm">
+              <AvatarImage src={photoUrl || undefined} alt={fullName || 'Usuário'} />
+              <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
+                {isUploading ? <Loader2 className="size-5 animate-spin" /> : getInitials(fullName)}
+              </AvatarFallback>
+            </Avatar>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  <Camera className="size-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Alterar foto</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
+
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <h3 className="font-medium">Foto do Perfil</h3>
+            {isUploading ? (
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Enviando... {uploadProgress}%</p>
+                <Progress value={uploadProgress} className="h-1.5" />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Clique no ícone para enviar uma nova foto
+              </p>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
 
         {/* Form Fields */}
@@ -186,34 +256,11 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
               <FormDescription>Email de autenticação (não pode ser alterado)</FormDescription>
             </FormItem>
           </div>
-
-          {/* URL da Foto */}
-          <FormField
-            control={form.control}
-            name="photo_url"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>URL da Foto de Perfil</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    value={field.value || ''}
-                    type="url"
-                    placeholder="https://exemplo.com/foto.jpg"
-                  />
-                </FormControl>
-                <FormDescription>
-                  Link para sua foto de perfil (deixe vazio para usar iniciais)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
 
         {/* Actions */}
         <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={isSubmitting} className="min-w-[160px]">
+          <Button type="submit" disabled={isSubmitting || isUploading} className="min-w-40">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
