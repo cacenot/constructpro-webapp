@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@cacenot/construct-pro-api-client':
-        specifier: 0.11.0
-        version: 0.11.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)
+        specifier: 0.12.0
+        version: 0.12.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.4))
@@ -327,16 +327,11 @@ packages:
   '@brillout/vite-plugin-server-entry@0.7.17':
     resolution: {integrity: sha512-MfvSytYl51J2B+RrHvRXMdRNc1U2lHG/K9Gw05/jdPY2iYU2YQKdEzsPswfEWnt3fd1TrXF27h/fx5DIRn19jw==}
 
-  '@cacenot/construct-pro-api-client@0.11.0':
-    resolution: {integrity: sha512-ElGEwwbgBqEySXGUAB5J5xFv5xyUbm0CFw04eixqK0Ul3DWpH2ISgjBTCrl63RZaNksgB+J8F330qXyTHKZQzA==, tarball: https://npm.pkg.github.com/download/@cacenot/construct-pro-api-client/0.11.0/70f949007fc168e44d3d0cc55422054ef45fc25c}
+  '@cacenot/construct-pro-api-client@0.12.0':
+    resolution: {integrity: sha512-LV4c63BajWNoDjrPB6Da22dK3QgBEUFyb9Ga+rHV/A+Sw+0cLXjq7L/qexLqr10iNBz96iCqujZThLJ0sibphQ==, tarball: https://npm.pkg.github.com/download/@cacenot/construct-pro-api-client/0.12.0/74b85fa6ea15e18c3df5e97040c8a7bd52c63fc7}
     peerDependencies:
       '@tanstack/react-query': '>=5.0.0'
       react: '>=18.0.0'
-    peerDependenciesMeta:
-      '@tanstack/react-query':
-        optional: true
-      react:
-        optional: true
 
   '@date-fns/tz@1.4.1':
     resolution: {integrity: sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA==}
@@ -3052,11 +3047,10 @@ snapshots:
       '@brillout/import': 0.2.6
       '@brillout/picocolors': 1.0.30
 
-  '@cacenot/construct-pro-api-client@0.11.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)':
+  '@cacenot/construct-pro-api-client@0.12.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)':
     dependencies:
-      openapi-fetch: 0.9.8
-    optionalDependencies:
       '@tanstack/react-query': 5.90.20(react@19.2.4)
+      openapi-fetch: 0.9.8
       react: 19.2.4
 
   '@date-fns/tz@1.4.1': {}

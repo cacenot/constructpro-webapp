@@ -93,7 +93,7 @@ export function PayInstallmentDialog({
     defaultValues: {
       amount_cents: installment?.current_amount_cents ?? 0,
       payment_method: undefined,
-      paid_at: `${format(new Date(), 'yyyy-MM-dd')}T00:00:00`,
+      paid_at: `${format(new Date(), 'yyyy-MM-dd')}T00:00:00Z`,
       note: '',
     },
   })
@@ -104,6 +104,19 @@ export function PayInstallmentDialog({
       setValue('amount_cents', entryInstallment.current_amount_cents)
     }
   }, [entryInstallment, setValue])
+
+  // Reset form when dialog opens with a new installment
+  useEffect(() => {
+    if (open && resolvedInstallment) {
+      reset({
+        amount_cents: resolvedInstallment.current_amount_cents,
+        payment_method: undefined,
+        paid_at: `${format(new Date(), 'yyyy-MM-dd')}T00:00:00Z`,
+        note: '',
+      })
+      setPaidDate(new Date())
+    }
+  }, [open, resolvedInstallment, reset])
 
   const paymentMethod = watch('payment_method')
 
@@ -142,6 +155,7 @@ export function PayInstallmentDialog({
           : 'Pagamento registrado com sucesso'
       )
       queryClient.invalidateQueries({ queryKey: installmentKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: installmentKeys.summaries() })
       if (isEntryMode) {
         queryClient.invalidateQueries({ queryKey: ['sales'] })
       }
@@ -191,7 +205,7 @@ export function PayInstallmentDialog({
                       {' — '}
                       Restante:{' '}
                       <span className="tabular-nums font-medium">
-                        {resolvedInstallment.remaining_amount}
+                        {formatCurrency(Number(resolvedInstallment.remaining_amount))}
                       </span>
                     </>
                   )}
@@ -269,7 +283,7 @@ export function PayInstallmentDialog({
                     onSelect={(date) => {
                       if (date) {
                         setPaidDate(date)
-                        setValue('paid_at', `${format(date, 'yyyy-MM-dd')}T00:00:00`)
+                        setValue('paid_at', `${format(date, 'yyyy-MM-dd')}T00:00:00Z`)
                         setCalendarOpen(false)
                       }
                     }}
