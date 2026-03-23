@@ -60,7 +60,7 @@ export default function SaleNewPage() {
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-6xl">
         <SaleForm
           onSubmit={handleSubmit}
           onBack={handleBack}

@@ -217,520 +217,538 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           </div>
         </div>
 
-        {/* Card 1: Dados da Venda */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dados da Venda</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-12">
-              <FormField
-                control={form.control}
-                name="unit_id"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-6">
-                    <FormLabel>Unidade *</FormLabel>
-                    <FormControl>
-                      <UnitAutocomplete value={field.value} onChange={handleUnitChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="customer_id"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-6">
-                    <FormLabel>Cliente *</FormLabel>
-                    <FormControl>
-                      <CustomerAutocomplete value={field.value} onChange={handleCustomerChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-12">
-              <FormField
-                control={form.control}
-                name="index_type_code"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-4">
-                    <FormLabel>Índice de Correção *</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {indexTypes.map((indexType) => (
-                          <SelectItem key={indexType.code} value={indexType.code}>
-                            {indexType.code}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 2: Pagamento (Entrada + Parcelas) */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Pagamento</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Entrada section */}
-            <div>
-              <p className="mb-3 text-sm font-medium">Entrada</p>
-              <div className="grid gap-4 sm:grid-cols-12">
-                <FormField
-                  control={form.control}
-                  name="installment_schedules.0.amount_cents"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-4">
-                      <FormLabel>Valor da Entrada *</FormLabel>
-                      <FormControl>
-                        <CurrencyInput value={field.value} onChange={field.onChange} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="installment_schedules.0.specific_date"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-4">
-                      <FormLabel>Data de Pagamento *</FormLabel>
-                      <FormControl>
-                        <DatePicker value={field.value} onChange={field.onChange} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="installment_schedules.0.payment_method"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-4">
-                      <FormLabel>Forma de Pagamento *</FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_340px]">
+          {/* Left column: Form cards */}
+          <div className="space-y-6">
+            {/* Card 1: Dados da Venda */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Dados da Venda</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-12">
+                  <FormField
+                    control={form.control}
+                    name="unit_id"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-6">
+                        <FormLabel>Unidade *</FormLabel>
                         <FormControl>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
+                          <UnitAutocomplete value={field.value} onChange={handleUnitChange} />
                         </FormControl>
-                        <SelectContent>
-                          {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Parcelas section */}
-            <div>
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-sm font-medium">Parcelas</p>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm" onClick={addMonthlySchedule}>
-                    <Plus className="mr-2 size-4" />
-                    Mensais
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={addYearlySchedule}>
-                    <Plus className="mr-2 size-4" />
-                    Anuais
-                  </Button>
-                </div>
-              </div>
-
-              {fields.length <= 1 && (
-                <p className="mb-3 text-sm text-muted-foreground">
-                  Clique em "Mensais" ou "Anuais" para adicionar parcelas.
-                </p>
-              )}
-
-              <div className="space-y-4">
-                {fields.map((field, index) => {
-                  if (index === 0) return null
-                  const schedule = watchedSchedules?.[index]
-                  const kind = schedule?.kind as 'monthly' | 'yearly' | undefined
-                  const recurrenceDay = schedule?.recurrence_day
-                  const recurrenceMonth = schedule?.recurrence_month
-
-                  const isDateDisabled =
-                    kind === 'yearly' ? !recurrenceDay || !recurrenceMonth : !recurrenceDay
-
-                  const allowedDates =
-                    kind && !isDateDisabled
-                      ? computeAllowedDates(kind, recurrenceDay, recurrenceMonth)
-                      : []
-
-                  const disabledDates = Array.from({ length: 10957 }, (_, i) => {
-                    const d = new Date()
-                    d.setDate(d.getDate() + i)
-                    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-                    return allowedDates.includes(iso) ? '' : iso
-                  }).filter(Boolean)
-
-                  return (
-                    <div key={field.id} className="rounded-lg border border-border p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="secondary">
-                          {INSTALLMENT_KIND_LABELS[kind ?? ''] ?? kind}
-                        </Badge>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => remove(index)}
-                            >
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Remover parcela</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-
-                      <div className="grid gap-4 sm:grid-cols-12">
-                        <FormField
-                          control={form.control}
-                          name={`installment_schedules.${index}.quantity`}
-                          render={({ field: f }) => (
-                            <FormItem className="sm:col-span-2">
-                              <FormLabel>Quantidade *</FormLabel>
-                              <FormControl>
-                                <Input
-                                  ref={(el) => {
-                                    quantityInputRefs.current[index] = el
-                                  }}
-                                  type="number"
-                                  min="1"
-                                  value={f.value ?? ''}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    f.onChange(
-                                      e.target.value ? Number.parseInt(e.target.value, 10) : 1
-                                    )
-                                  }
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name={`installment_schedules.${index}.amount_cents`}
-                          render={({ field: f }) => (
-                            <FormItem className="sm:col-span-3">
-                              <FormLabel>Valor da Parcela *</FormLabel>
-                              <FormControl>
-                                <CurrencyInput value={f.value} onChange={f.onChange} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name={`installment_schedules.${index}.payment_method`}
-                          render={({ field: f }) => (
-                            <FormItem className="sm:col-span-3">
-                              <FormLabel>Pagamento *</FormLabel>
-                              <Select value={f.value} onValueChange={f.onChange}>
-                                <FormControl>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Selecione" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {Object.entries(PAYMENT_METHOD_LABELS).map(([v, label]) => (
-                                    <SelectItem key={v} value={v}>
-                                      {label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name={`installment_schedules.${index}.recurrence_day`}
-                          render={({ field: f }) => (
-                            <FormItem className="sm:col-span-2">
-                              <FormLabel>Dia Vcto. *</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max="31"
-                                  value={f.value ?? ''}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                    const val = e.target.value
-                                      ? Number.parseInt(e.target.value, 10)
-                                      : null
-                                    f.onChange(val)
-                                    // Update start_date with new default
-                                    if (kind && (kind === 'monthly' || kind === 'yearly')) {
-                                      const newStartDate = computeDefaultStartDate(
-                                        kind,
-                                        val,
-                                        recurrenceMonth
-                                      )
-                                      form.setValue(
-                                        `installment_schedules.${index}.start_date`,
-                                        newStartDate || null
-                                      )
-                                    }
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        {kind === 'yearly' && (
-                          <FormField
-                            control={form.control}
-                            name={`installment_schedules.${index}.recurrence_month`}
-                            render={({ field: f }) => (
-                              <FormItem className="sm:col-span-2">
-                                <FormLabel>Mês *</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    max="12"
-                                    value={f.value ?? ''}
-                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                      const val = e.target.value
-                                        ? Number.parseInt(e.target.value, 10)
-                                        : null
-                                      f.onChange(val)
-                                      // Update start_date with new default
-                                      if (kind === 'yearly') {
-                                        const newStartDate = computeDefaultStartDate(
-                                          kind,
-                                          recurrenceDay,
-                                          val
-                                        )
-                                        form.setValue(
-                                          `installment_schedules.${index}.start_date`,
-                                          newStartDate || null
-                                        )
-                                      }
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        )}
-                      </div>
-
-                      <div className="grid gap-4 sm:grid-cols-12">
-                        <FormField
-                          control={form.control}
-                          name={`installment_schedules.${index}.start_date`}
-                          render={({ field: f }) => (
-                            <FormItem className="sm:col-span-4">
-                              <FormLabel>Data de Início *</FormLabel>
-                              <FormControl>
-                                <DatePicker
-                                  value={f.value}
-                                  onChange={f.onChange}
-                                  disabled={isDateDisabled}
-                                  disabledDates={disabledDates}
-                                />
-                              </FormControl>
-                              {isDateDisabled && (
-                                <p className="text-xs text-muted-foreground">
-                                  Preencha o dia{kind === 'yearly' ? ' e mês' : ''} de vencimento
-                                  primeiro
-                                </p>
-                              )}
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3: Resumo Financeiro */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumo Financeiro</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Valor Financiado</p>
-                <p className="text-2xl font-bold tabular-nums">
-                  R$ {formatCentsToDisplay(totalFinanced) || '0,00'}
-                </p>
-              </div>
-
-              {selectedUnit && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Preço da Unidade</p>
-                  <p className="text-2xl font-bold tabular-nums">
-                    R$ {formatCentsToDisplay(unitPriceCents) || '0,00'}
-                  </p>
-                </div>
-              )}
-
-              {selectedUnit && totalFinanced > 0 && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Diferença</p>
-                  <div className="flex items-center gap-2">
-                    {diff === 0 ? (
-                      <>
-                        <Equal className="size-5 text-green-600 dark:text-green-400" />
-                        <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                          Igual ao preço
-                        </span>
-                      </>
-                    ) : diff > 0 ? (
-                      <>
-                        <ArrowUp className="size-5 text-amber-600 dark:text-amber-400" />
-                        <div>
-                          <p className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
-                            + R$ {formatCentsToDisplay(diff)}
-                          </p>
-                          <p className="text-xs tabular-nums text-muted-foreground">
-                            {diffPercent.toFixed(1)}% acima
-                          </p>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <ArrowDown className="size-5 text-amber-600 dark:text-amber-400" />
-                        <div>
-                          <p className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
-                            - R$ {formatCentsToDisplay(Math.abs(diff))}
-                          </p>
-                          <p className="text-xs tabular-nums text-muted-foreground">
-                            {Math.abs(diffPercent).toFixed(1)}% abaixo
-                          </p>
-                        </div>
-                      </>
+                        <FormMessage />
+                      </FormItem>
                     )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="customer_id"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-6">
+                        <FormLabel>Cliente *</FormLabel>
+                        <FormControl>
+                          <CustomerAutocomplete
+                            value={field.value}
+                            onChange={handleCustomerChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-12">
+                  <FormField
+                    control={form.control}
+                    name="index_type_code"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-4">
+                        <FormLabel>Índice de Correção *</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {indexTypes.map((indexType) => (
+                              <SelectItem key={indexType.code} value={indexType.code}>
+                                {indexType.code}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 2: Pagamento (Entrada + Parcelas) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pagamento</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Entrada section */}
+                <div>
+                  <p className="mb-3 text-sm font-medium">Entrada</p>
+                  <div className="grid gap-4 sm:grid-cols-12">
+                    <FormField
+                      control={form.control}
+                      name="installment_schedules.0.amount_cents"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-4">
+                          <FormLabel>Valor da Entrada *</FormLabel>
+                          <FormControl>
+                            <CurrencyInput value={field.value} onChange={field.onChange} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="installment_schedules.0.specific_date"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-4">
+                          <FormLabel>Data de Pagamento *</FormLabel>
+                          <FormControl>
+                            <DatePicker value={field.value} onChange={field.onChange} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="installment_schedules.0.payment_method"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-4">
+                          <FormLabel>Forma de Pagamento *</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </div>
-              )}
 
-              {contractEnd.endDate && (
+                <Separator />
+
+                {/* Parcelas section */}
                 <div>
-                  <p className="text-sm text-muted-foreground">Previsão de Término</p>
-                  <div className="flex items-center gap-2">
-                    <CalendarClock className="size-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-lg font-bold tabular-nums">
-                        {formatBRDate(contractEnd.endDate)}
-                      </p>
-                      {contractEnd.totalMonths > 0 && (
-                        <p className="text-xs tabular-nums text-muted-foreground">
-                          {contractEnd.totalMonths} meses
-                        </p>
-                      )}
+                  <div className="mb-4 flex items-center justify-between">
+                    <p className="text-sm font-medium">Parcelas</p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addMonthlySchedule}
+                      >
+                        <Plus className="mr-2 size-4" />
+                        Mensais
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={addYearlySchedule}>
+                        <Plus className="mr-2 size-4" />
+                        Anuais
+                      </Button>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
 
-            {watchedSchedules && watchedSchedules.length > 0 && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
-                  <div className="space-y-1">
-                    {watchedSchedules.map((schedule, index) => {
-                      const subtotal = (schedule.quantity ?? 0) * (schedule.amount_cents ?? 0)
-                      if (subtotal === 0) return null
+                  {fields.length <= 1 && (
+                    <p className="mb-3 text-sm text-muted-foreground">
+                      Clique em "Mensais" ou "Anuais" para adicionar parcelas.
+                    </p>
+                  )}
+
+                  <div className="space-y-4">
+                    {fields.map((field, index) => {
+                      if (index === 0) return null
+                      const schedule = watchedSchedules?.[index]
+                      const kind = schedule?.kind as 'monthly' | 'yearly' | undefined
+                      const recurrenceDay = schedule?.recurrence_day
+                      const recurrenceMonth = schedule?.recurrence_month
+
+                      const isDateDisabled =
+                        kind === 'yearly' ? !recurrenceDay || !recurrenceMonth : !recurrenceDay
+
+                      const allowedDates =
+                        kind && !isDateDisabled
+                          ? computeAllowedDates(kind, recurrenceDay, recurrenceMonth)
+                          : []
+
+                      const disabledDates = Array.from({ length: 10957 }, (_, i) => {
+                        const d = new Date()
+                        d.setDate(d.getDate() + i)
+                        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+                        return allowedDates.includes(iso) ? '' : iso
+                      }).filter(Boolean)
+
                       return (
                         <div
-                          key={fields[index]?.id ?? index}
-                          className="flex items-center justify-between text-sm"
+                          key={field.id}
+                          className="rounded-lg border border-border p-4 space-y-4"
                         >
-                          <span className="text-muted-foreground">
-                            {INSTALLMENT_KIND_LABELS[schedule.kind] ?? schedule.kind}
-                            {schedule.quantity > 1 && (
-                              <span className="ml-1 tabular-nums">
-                                ({schedule.quantity}x R${' '}
-                                {formatCentsToDisplay(schedule.amount_cents)})
-                              </span>
+                          <div className="flex items-center justify-between">
+                            <Badge variant="secondary">
+                              {INSTALLMENT_KIND_LABELS[kind ?? ''] ?? kind}
+                            </Badge>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => remove(index)}
+                                >
+                                  <Trash2 className="size-4 text-destructive" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Remover parcela</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-12">
+                            <FormField
+                              control={form.control}
+                              name={`installment_schedules.${index}.quantity`}
+                              render={({ field: f }) => (
+                                <FormItem className="sm:col-span-2">
+                                  <FormLabel>Quantidade *</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      ref={(el) => {
+                                        quantityInputRefs.current[index] = el
+                                      }}
+                                      type="number"
+                                      min="1"
+                                      value={f.value ?? ''}
+                                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                        f.onChange(
+                                          e.target.value ? Number.parseInt(e.target.value, 10) : 1
+                                        )
+                                      }
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`installment_schedules.${index}.amount_cents`}
+                              render={({ field: f }) => (
+                                <FormItem className="sm:col-span-3">
+                                  <FormLabel>Valor da Parcela *</FormLabel>
+                                  <FormControl>
+                                    <CurrencyInput value={f.value} onChange={f.onChange} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`installment_schedules.${index}.payment_method`}
+                              render={({ field: f }) => (
+                                <FormItem className="sm:col-span-3">
+                                  <FormLabel>Pagamento *</FormLabel>
+                                  <Select value={f.value} onValueChange={f.onChange}>
+                                    <FormControl>
+                                      <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Selecione" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {Object.entries(PAYMENT_METHOD_LABELS).map(([v, label]) => (
+                                        <SelectItem key={v} value={v}>
+                                          {label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={form.control}
+                              name={`installment_schedules.${index}.recurrence_day`}
+                              render={({ field: f }) => (
+                                <FormItem className="sm:col-span-2">
+                                  <FormLabel>Dia Vcto. *</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      max="31"
+                                      value={f.value ?? ''}
+                                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                        const val = e.target.value
+                                          ? Number.parseInt(e.target.value, 10)
+                                          : null
+                                        f.onChange(val)
+                                        // Update start_date with new default
+                                        if (kind && (kind === 'monthly' || kind === 'yearly')) {
+                                          const newStartDate = computeDefaultStartDate(
+                                            kind,
+                                            val,
+                                            recurrenceMonth
+                                          )
+                                          form.setValue(
+                                            `installment_schedules.${index}.start_date`,
+                                            newStartDate || null
+                                          )
+                                        }
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {kind === 'yearly' && (
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${index}.recurrence_month`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-2">
+                                    <FormLabel>Mês *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        max="12"
+                                        value={f.value ?? ''}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                          const val = e.target.value
+                                            ? Number.parseInt(e.target.value, 10)
+                                            : null
+                                          f.onChange(val)
+                                          // Update start_date with new default
+                                          if (kind === 'yearly') {
+                                            const newStartDate = computeDefaultStartDate(
+                                              kind,
+                                              recurrenceDay,
+                                              val
+                                            )
+                                            form.setValue(
+                                              `installment_schedules.${index}.start_date`,
+                                              newStartDate || null
+                                            )
+                                          }
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
                             )}
-                          </span>
-                          <span className={cn('font-medium tabular-nums')}>
-                            R$ {formatCentsToDisplay(subtotal)}
-                          </span>
+                          </div>
+
+                          <div className="grid gap-4 sm:grid-cols-12">
+                            <FormField
+                              control={form.control}
+                              name={`installment_schedules.${index}.start_date`}
+                              render={({ field: f }) => (
+                                <FormItem className="sm:col-span-4">
+                                  <FormLabel>Data de Início *</FormLabel>
+                                  <FormControl>
+                                    <DatePicker
+                                      value={f.value}
+                                      onChange={f.onChange}
+                                      disabled={isDateDisabled}
+                                      disabledDates={disabledDates}
+                                    />
+                                  </FormControl>
+                                  {isDateDisabled && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Preencha o dia{kind === 'yearly' ? ' e mês' : ''} de
+                                      vencimento primeiro
+                                    </p>
+                                  )}
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         </div>
                       )
                     })}
                   </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                Cadastrando...
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 size-4" />
-                Cadastrar Proposta
-              </>
-            )}
-          </Button>
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Cadastrando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 size-4" />
+                    Cadastrar Proposta
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Right column: Resumo Financeiro (sticky sidebar) */}
+          <div className="lg:sticky lg:top-24">
+            <Card>
+              <CardHeader>
+                <CardTitle>Resumo Financeiro</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valor Financiado</p>
+                    <p className="text-2xl font-bold tabular-nums">
+                      R$ {formatCentsToDisplay(totalFinanced) || '0,00'}
+                    </p>
+                  </div>
+
+                  {selectedUnit && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Preço da Unidade</p>
+                      <p className="text-2xl font-bold tabular-nums">
+                        R$ {formatCentsToDisplay(unitPriceCents) || '0,00'}
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedUnit && totalFinanced > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Diferença</p>
+                      <div className="flex items-center gap-2">
+                        {diff === 0 ? (
+                          <>
+                            <Equal className="size-5 text-green-600 dark:text-green-400" />
+                            <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                              Igual ao preço
+                            </span>
+                          </>
+                        ) : diff > 0 ? (
+                          <>
+                            <ArrowUp className="size-5 text-green-600 dark:text-green-400" />
+                            <div>
+                              <p className="text-lg font-bold tabular-nums text-green-600 dark:text-green-400">
+                                + R$ {formatCentsToDisplay(diff)}
+                              </p>
+                              <p className="text-xs tabular-nums text-muted-foreground">
+                                {diffPercent.toFixed(1)}% acima
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <ArrowDown className="size-5 text-amber-600 dark:text-amber-400" />
+                            <div>
+                              <p className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                                - R$ {formatCentsToDisplay(Math.abs(diff))}
+                              </p>
+                              <p className="text-xs tabular-nums text-muted-foreground">
+                                {Math.abs(diffPercent).toFixed(1)}% abaixo
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {contractEnd.endDate && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">Previsão de Término</p>
+                      <div className="flex items-center gap-2">
+                        <CalendarClock className="size-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-lg font-bold tabular-nums">
+                            {formatBRDate(contractEnd.endDate)}
+                          </p>
+                          {contractEnd.totalMonths > 0 && (
+                            <p className="text-xs tabular-nums text-muted-foreground">
+                              {contractEnd.totalMonths} meses
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {watchedSchedules && watchedSchedules.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
+                      <div className="space-y-1">
+                        {watchedSchedules.map((schedule, index) => {
+                          const subtotal = (schedule.quantity ?? 0) * (schedule.amount_cents ?? 0)
+                          if (subtotal === 0) return null
+                          return (
+                            <div
+                              key={fields[index]?.id ?? index}
+                              className="flex items-center justify-between text-sm"
+                            >
+                              <span className="text-muted-foreground">
+                                {INSTALLMENT_KIND_LABELS[schedule.kind] ?? schedule.kind}
+                                {schedule.quantity > 1 && (
+                                  <span className="ml-1 tabular-nums">
+                                    ({schedule.quantity}x R${' '}
+                                    {formatCentsToDisplay(schedule.amount_cents)})
+                                  </span>
+                                )}
+                              </span>
+                              <span className={cn('font-medium tabular-nums')}>
+                                R$ {formatCentsToDisplay(subtotal)}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </form>
     </Form>
