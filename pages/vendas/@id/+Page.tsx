@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ApproveSaleDialog } from '@/components/vendas/approve-sale-dialog'
 import { SaleStatusBadge } from '@/components/vendas/sale-status-badge'
 import { SignContractDialog } from '@/components/vendas/sign-contract-dialog'
 import { formatDocument } from '@/lib/text-formatters'
@@ -72,15 +73,17 @@ export default function SaleDetailPage() {
 
   const [signOpen, setSignOpen] = useState(false)
   const [payEntryOpen, setPayEntryOpen] = useState(false)
+  const [approveOpen, setApproveOpen] = useState(false)
 
   const { data: sale, isLoading, error } = useSale(saleId)
 
+  const canApprove = sale?.status === SaleStatus.proposal
+  const canEdit = sale?.status === SaleStatus.proposal
   const canSign = sale?.status === SaleStatus.pending_signature && !!sale.contract
   const canPayEntry =
     (sale?.status === SaleStatus.pending_signature ||
       sale?.status === SaleStatus.pending_payment) &&
     !!sale.contract
-  const canEdit = sale?.status === SaleStatus.pending_signature
 
   if (isLoading) {
     return (
@@ -166,6 +169,12 @@ export default function SaleDetailPage() {
               >
                 <Pencil className="size-4" />
                 Editar
+              </Button>
+            )}
+            {canApprove && (
+              <Button className="gap-2" onClick={() => setApproveOpen(true)}>
+                <FileText className="size-4" />
+                Aprovar Proposta
               </Button>
             )}
             {canSign && (
@@ -288,6 +297,12 @@ export default function SaleDetailPage() {
                   <span className="tabular-nums text-sm">
                     {formatCurrency(metrics.price_per_sqm_cents / 100)}
                   </span>
+                </div>
+              )}
+              {sale.index_type_code && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Índice de correção</span>
+                  <span className="text-sm">{sale.index_type_code}</span>
                 </div>
               )}
               {summary && (
@@ -459,6 +474,8 @@ export default function SaleDetailPage() {
           </Card>
         )}
       </div>
+
+      <ApproveSaleDialog open={approveOpen} onOpenChange={setApproveOpen} saleId={saleId} />
 
       <SignContractDialog open={signOpen} onOpenChange={setSignOpen} saleId={saleId} />
 

@@ -1,5 +1,6 @@
 import {
   type components,
+  SaleStatus,
   translateSaleStatus,
   useApiClient,
 } from '@cacenot/construct-pro-api-client'
@@ -69,7 +70,7 @@ interface SaleEditFormProps {
 
 export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: SaleEditFormProps) {
   const { client } = useApiClient()
-  const isEditable = sale.status === 'pending_signature'
+  const isEditable = sale.status === SaleStatus.proposal
 
   const indexTypesQuery = useQuery({
     queryKey: ['index-types'],

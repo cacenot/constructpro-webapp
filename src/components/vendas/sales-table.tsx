@@ -13,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { SaleSummaryResponse } from '@/hooks/use-sales-summary'
+import { ApproveSaleDialog } from './approve-sale-dialog'
 import { createSalesColumns } from './sales-columns'
 import { SignContractDialog } from './sign-contract-dialog'
 
@@ -28,10 +29,12 @@ const SKELETON_ROWS = 10
 export function SalesTable({ data, isLoading, hasActiveFilters, onClearFilters }: SalesTableProps) {
   const [signSaleId, setSignSaleId] = useState<number | null>(null)
   const [payEntrySaleId, setPayEntrySaleId] = useState<number | null>(null)
+  const [approveSaleId, setApproveSaleId] = useState<number | null>(null)
 
   const columns = createSalesColumns({
     onSignContract: (sale) => setSignSaleId(sale.id),
     onPayEntry: (sale) => setPayEntrySaleId(sale.id),
+    onApproveSale: (sale) => setApproveSaleId(sale.id),
   })
 
   const table = useReactTable({
@@ -138,6 +141,14 @@ export function SalesTable({ data, isLoading, hasActiveFilters, onClearFilters }
           open={true}
           onOpenChange={(open: boolean) => !open && setPayEntrySaleId(null)}
           saleId={payEntrySaleId}
+        />
+      )}
+
+      {approveSaleId !== null && (
+        <ApproveSaleDialog
+          open={true}
+          onOpenChange={(open) => !open && setApproveSaleId(null)}
+          saleId={approveSaleId}
         />
       )}
     </>

@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 const statusStyles: Record<(typeof SaleStatus)[keyof typeof SaleStatus], string> = {
+  proposal:
+    'rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-300',
   pending_signature:
     'rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-300',
   pending_payment:

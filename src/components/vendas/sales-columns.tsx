@@ -1,3 +1,4 @@
+import { SaleStatus } from '@cacenot/construct-pro-api-client'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -22,11 +23,13 @@ import { SaleStatusBadge } from './sale-status-badge'
 interface SalesColumnsCallbacks {
   onSignContract: (sale: SaleSummaryResponse) => void
   onPayEntry: (sale: SaleSummaryResponse) => void
+  onApproveSale: (sale: SaleSummaryResponse) => void
 }
 
 export function createSalesColumns({
   onSignContract,
   onPayEntry,
+  onApproveSale,
 }: SalesColumnsCallbacks): ColumnDef<SaleSummaryResponse>[] {
   return [
     {
@@ -106,6 +109,7 @@ export function createSalesColumns({
       header: '',
       cell: ({ row }) => {
         const sale = row.original
+        const isProposal = sale.status === SaleStatus.proposal
         const canSign = sale.status === 'pending_signature'
         const canPayEntry = sale.status === 'pending_signature' || sale.status === 'pending_payment'
 
@@ -128,9 +132,15 @@ export function createSalesColumns({
               <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}`)}>
                 Ver detalhes
               </DropdownMenuItem>
-              {sale.status === 'pending_signature' && (
+              {isProposal && (
                 <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}/editar`)}>
                   Editar
+                </DropdownMenuItem>
+              )}
+              {isProposal && <DropdownMenuSeparator />}
+              {isProposal && (
+                <DropdownMenuItem onClick={() => onApproveSale(sale)}>
+                  Aprovar proposta
                 </DropdownMenuItem>
               )}
               {(canSign || canPayEntry) && <DropdownMenuSeparator />}
