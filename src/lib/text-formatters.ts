@@ -102,6 +102,29 @@ export function formatISOToBirthDate(isoDate: string | null | undefined): string
 }
 
 /**
+ * Format Brazilian phone number (10 or 11 digits, with or without country code 55)
+ */
+export function formatPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  const local = digits.startsWith('55') ? digits.slice(2) : digits
+  if (local.length === 11) {
+    return `(${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`
+  }
+  if (local.length === 10) {
+    return `(${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`
+  }
+  return phone
+}
+
+/**
+ * Returns a wa.me WhatsApp link for a phone number
+ */
+export function whatsappLink(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  return `https://wa.me/${digits}`
+}
+
+/**
  * Format CPF or CNPJ document number
  * - CPF (11 digits): XXX.XXX.XXX-XX
  * - CNPJ (14 digits): XX.XXX.XXX/XXXX-XX
