@@ -1,4 +1,3 @@
-import { useProjects } from '@cacenot/construct-pro-api-client'
 import { Building2, Plus, Search } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { navigate } from 'vike/client/router'
@@ -7,6 +6,7 @@ import { ProjectCard } from '@/components/projects/project-card'
 import { ProjectCardSkeleton } from '@/components/projects/project-card-skeleton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useProjectsSummary } from '@/hooks/useProjects'
 
 export default function ProjectsPage() {
   const [search, setSearch] = useState('')
@@ -23,7 +23,7 @@ export default function ProjectsPage() {
 
   const pageSize = Number.parseInt(import.meta.env.VITE_PROJECTS_PAGE_SIZE ?? '', 10) || 20
 
-  const { data, isLoading, error } = useProjects({
+  const { data, isLoading, error } = useProjectsSummary({
     page,
     page_size: pageSize,
     search: debouncedSearch || undefined,
@@ -79,8 +79,8 @@ export default function ProjectsPage() {
           </div>
         ) : isLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <ProjectCardSkeleton key={i} />
+            {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => (
+              <ProjectCardSkeleton key={n} />
             ))}
           </div>
         ) : projects.length === 0 ? (

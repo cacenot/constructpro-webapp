@@ -1,12 +1,17 @@
+import type { paths } from '@cacenot/construct-pro-api-client'
 import { useApiClient } from '@cacenot/construct-pro-api-client'
-import type { paths } from '@cacenot/construct-pro-api-client/schema'
 import { type UseQueryOptions, useQuery } from '@tanstack/react-query'
 
 type ProjectDetailResponse =
   paths['/api/v1/projects/{project_id}/detail']['get']['responses']['200']['content']['application/json']
 
+type ProjectSummaryQuery = paths['/api/v1/projects/summary']['get']['parameters']['query']
+type ProjectSummaryResponse =
+  paths['/api/v1/projects/summary']['get']['responses']['200']['content']['application/json']
+
 export const projectKeys = {
   all: ['projects'] as const,
+  lists: () => ['projects', 'list'] as const,
   details: () => ['projects', 'detail'] as const,
   detail: (id: number) => ['projects', 'detail', id] as const,
 }
@@ -34,7 +39,7 @@ export function useProjectsList(options?: Omit<UseQueryOptions, 'queryKey' | 'qu
 /**
  * Hook para buscar um projeto específico por ID
  */
-export function useProject(projectId: string) {
+export function useProject(projectId: number) {
   const { client } = useApiClient()
 
   return useQuery({
@@ -71,4 +76,22 @@ export function useProjectDetail(projectId: number) {
   })
 }
 
-export type { ProjectDetailResponse }
+/**
+ * Hook para listar empreendimentos com payload leve (tela de listagem)
+ */
+export function useProjectsSummary(params?: ProjectSummaryQuery) {
+  const { client } = useApiClient()
+
+  return useQuery<ProjectSummaryResponse>({
+    queryKey: [...projectKeys.lists(), 'summary', params ?? {}] as const,
+    queryFn: async () => {
+      const { data, error } = await client.GET('/api/v1/projects/summary', {
+        params: { query: params },
+      })
+      if (error) throw new Error('Falha ao carregar empreendimentos')
+      return data as ProjectSummaryResponse
+    },
+  })
+}
+
+export type { ProjectDetailResponse, ProjectSummaryResponse }
