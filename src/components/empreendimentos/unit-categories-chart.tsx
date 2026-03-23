@@ -123,14 +123,9 @@ export function UnitCategoriesChart({ data }: UnitCategoriesChartProps) {
               dataKey="available"
               stackId="units"
               fill="var(--color-available)"
-              radius={[0, 0, 0, 0]}
+              radius={[4, 0, 0, 4]}
             />
-            <Bar
-              dataKey="reserved"
-              stackId="units"
-              fill="var(--color-reserved)"
-              radius={[0, 0, 0, 0]}
-            />
+            <Bar dataKey="reserved" stackId="units" fill="var(--color-reserved)" radius={0} />
             <Bar dataKey="sold" stackId="units" fill="var(--color-sold)" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ChartContainer>

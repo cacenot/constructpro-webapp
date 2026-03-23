@@ -1,7 +1,7 @@
 import type { components } from '@cacenot/construct-pro-api-client/schema'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Bar, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
+import { Area, Bar, CartesianGrid, ComposedChart, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
 import { formatCurrency } from '@/lib/utils'
@@ -78,11 +78,17 @@ export function SalesTimelineChart({ data }: SalesTimelineChartProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Evolução de Vendas</CardTitle>
+        <CardTitle className="text-base">Evolucao de Vendas</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-75 w-full">
           <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+            <defs>
+              <linearGradient id="salesAmountGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-amount)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="var(--color-amount)" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="monthLabel"
@@ -109,20 +115,21 @@ export function SalesTimelineChart({ data }: SalesTimelineChartProps) {
               allowDecimals={false}
             />
             <ChartTooltip content={<CustomTooltip />} />
-            <Bar
+            <Area
               yAxisId="left"
-              dataKey="amount"
-              fill="var(--color-amount)"
-              radius={[4, 4, 0, 0]}
-              opacity={0.8}
-            />
-            <Line
-              yAxisId="right"
               type="monotone"
+              dataKey="amount"
+              stroke="var(--color-amount)"
+              fill="url(#salesAmountGradient)"
+              strokeWidth={2.5}
+            />
+            <Bar
+              yAxisId="right"
               dataKey="count"
-              stroke="var(--color-count)"
-              strokeWidth={2}
-              dot={{ r: 3, fill: 'var(--color-count)' }}
+              fill="var(--color-count)"
+              radius={[6, 6, 0, 0]}
+              opacity={0.7}
+              barSize={24}
             />
           </ComposedChart>
         </ChartContainer>
@@ -134,7 +141,7 @@ export function SalesTimelineChart({ data }: SalesTimelineChartProps) {
           </div>
           <div className="flex items-center gap-1.5">
             <div className="size-2.5 rounded-full bg-amber-500" />
-            Nº de vendas
+            N. de vendas
           </div>
         </div>
       </CardContent>
