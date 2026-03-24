@@ -25,7 +25,6 @@ interface CustomerFilterProps {
   onChange: (customer: CustomerFilterValue | null) => void
   placeholder?: string
   disabled?: boolean
-  className?: string
 }
 
 function formatDocument(doc: string | null | undefined): string {
@@ -45,7 +44,6 @@ export function CustomerFilter({
   onChange,
   placeholder = 'Cliente',
   disabled = false,
-  className,
 }: CustomerFilterProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState('')
@@ -95,83 +93,83 @@ export function CustomerFilter({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            'justify-between text-left font-normal gap-2 min-w-44 max-w-56',
-            !value && 'text-muted-foreground',
-            className
-          )}
-        >
-          <User className="size-4 shrink-0 opacity-60" />
-          <span className="flex-1 truncate">{value ? value.full_name : placeholder}</span>
-          {value ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={handleClear}
-                  type="button"
-                  className="inline-flex items-center justify-center shrink-0"
-                >
-                  <X className="size-3.5 opacity-60 hover:opacity-100" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Limpar filtro</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <ChevronsUpDown className="size-3.5 opacity-50 shrink-0" />
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-0" align="start">
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder="Buscar por nome ou documento..."
-            value={search}
-            onValueChange={setSearch}
-          />
-          <CommandList>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="size-4 animate-spin text-muted-foreground" />
-              </div>
-            ) : customers.length === 0 ? (
-              <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-            ) : (
-              <CommandGroup>
-                {customers.map((customer) => (
-                  <CommandItem
-                    key={customer.id}
-                    value={String(customer.id)}
-                    onSelect={() => handleSelect(customer)}
-                  >
-                    <Check
-                      className={cn(
-                        'mr-2 size-4',
-                        value?.id === customer.id ? 'opacity-100' : 'opacity-0'
-                      )}
-                    />
-                    <div className="flex flex-col min-w-0">
-                      <span className="text-sm truncate">{customer.full_name}</span>
-                      {customer.cpf_cnpj && (
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                          {formatDocument(customer.cpf_cnpj)}
-                        </span>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+    <div className="flex items-center gap-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={disabled}
+            className={cn(
+              'justify-between text-left font-normal gap-2 min-w-44 max-w-56',
+              !value && 'text-muted-foreground'
             )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          >
+            <User className="size-4 shrink-0 opacity-60" />
+            <span className="flex-1 truncate">{value ? value.full_name : placeholder}</span>
+            {!value && <ChevronsUpDown className="size-3.5 opacity-50 shrink-0" />}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72 p-0" align="start">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Buscar por nome ou documento..."
+              value={search}
+              onValueChange={setSearch}
+            />
+            <CommandList>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : customers.length === 0 ? (
+                <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+              ) : (
+                <CommandGroup>
+                  {customers.map((customer) => (
+                    <CommandItem
+                      key={customer.id}
+                      value={String(customer.id)}
+                      onSelect={() => handleSelect(customer)}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 size-4',
+                          value?.id === customer.id ? 'opacity-100' : 'opacity-0'
+                        )}
+                      />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm truncate">{customer.full_name}</span>
+                        {customer.cpf_cnpj && (
+                          <span className="text-xs text-muted-foreground tabular-nums">
+                            {formatDocument(customer.cpf_cnpj)}
+                          </span>
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {value && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleClear}
+              type="button"
+              className="inline-flex items-center justify-center shrink-0"
+            >
+              <X className="size-3.5 opacity-60 hover:opacity-100" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Limpar filtro</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
   )
 }

@@ -34,10 +34,11 @@ function SortableHeader({
 }: {
   label: string
   field: string
-  currentSort: string
+  currentSort?: string
   onSort: (field: string) => void
 }) {
-  const [currentField, currentDir] = currentSort.split(':')
+  const parts = currentSort?.split(':') ?? ['', 'asc']
+  const [currentField, currentDir] = parts
   const isActive = currentField === field
 
   const handleClick = () => {
