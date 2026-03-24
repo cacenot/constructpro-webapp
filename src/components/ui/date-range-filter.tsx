@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 export interface DateRangeValue {
@@ -110,6 +111,13 @@ function formatLabel(value: DateRangeValue): string {
   return parts[0] ?? 'Personalizado'
 }
 
+/** Compute a DateRangeValue for a given preset id */
+export function computeDateRangePreset(presetId: string): DateRangeValue | null {
+  const preset = PRESETS.find((p) => p.id === presetId)
+  if (!preset?.compute) return null
+  return { preset: presetId, ...preset.compute() }
+}
+
 export function DateRangeFilter({
   value,
   onChange,
@@ -151,7 +159,9 @@ export function DateRangeFilter({
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation()
+    e.preventDefault()
     onChange(null)
+    setOpen(false)
   }
 
   return (
@@ -169,7 +179,20 @@ export function DateRangeFilter({
           <CalendarIcon className="size-4 shrink-0" />
           <span className="flex-1 truncate">{value ? formatLabel(value) : placeholder}</span>
           {value && (
-            <X className="size-3.5 opacity-60 hover:opacity-100 shrink-0" onClick={handleClear} />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleClear}
+                  type="button"
+                  className="inline-flex items-center justify-center shrink-0"
+                >
+                  <X className="size-3.5 opacity-60 hover:opacity-100" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Limpar filtro</p>
+              </TooltipContent>
+            </Tooltip>
           )}
         </Button>
       </PopoverTrigger>
@@ -189,7 +212,7 @@ export function DateRangeFilter({
                 !value && 'bg-accent text-accent-foreground font-medium'
               )}
             >
-              Tudo
+              Limpar filtro
             </button>
             <Separator className="my-1" />
             {PRESETS.map((preset, i) => {

@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
-import type { DateRangeValue } from '@/components/ui/date-range-filter'
+import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs'
+import { useMemo } from 'react'
+import type { CustomerFilterValue } from '@/components/ui/customer-filter'
+import { computeDateRangePreset, type DateRangeValue } from '@/components/ui/date-range-filter'
 import {
   type InstallmentListSummary,
   type InstallmentResponse,
@@ -7,14 +9,18 @@ import {
 } from './use-installments'
 
 const PAGE_SIZE = 10
+const DEFAULT_SORT = 'due_date:asc'
+const DEFAULT_DUE_PRESET = 'thisMonth'
 
 export interface InstallmentsTableFilters {
-  statusFilter: string
-  kindFilter: string
+  statusFilter: string[]
+  kindFilter: string[]
   dueDateRange: DateRangeValue | null
-  setStatusFilter: (value: string) => void
-  setKindFilter: (value: string) => void
+  customerFilter: CustomerFilterValue | null
+  setStatusFilter: (value: string[]) => void
+  setKindFilter: (value: string[]) => void
   setDueDateRange: (value: DateRangeValue | null) => void
+  setCustomerFilter: (value: CustomerFilterValue | null) => void
 }
 
 export interface InstallmentsTablePagination {
@@ -26,6 +32,11 @@ export interface InstallmentsTablePagination {
   setPage: (page: number) => void
 }
 
+export interface InstallmentsTableSort {
+  sort: string
+  setSort: (value: string) => void
+}
+
 export interface UseInstallmentsTableReturn {
   data: InstallmentResponse[]
   isLoading: boolean
@@ -35,13 +46,57 @@ export interface UseInstallmentsTableReturn {
   handleClearFilters: () => void
   filters: InstallmentsTableFilters
   pagination: InstallmentsTablePagination
+  sort: InstallmentsTableSort
+  selectedInstallmentId: string
+  setSelectedInstallmentId: (id: string) => void
+}
+
+const installmentsQueryParsers = {
+  status: parseAsString.withDefault(''),
+  kind: parseAsString.withDefault(''),
+  duePreset: parseAsString.withDefault(DEFAULT_DUE_PRESET),
+  dueMin: parseAsString.withDefault(''),
+  dueMax: parseAsString.withDefault(''),
+  customer: parseAsInteger.withDefault(0),
+  customerName: parseAsString.withDefault(''),
+  sort: parseAsString.withDefault(DEFAULT_SORT),
+  page: parseAsInteger.withDefault(1),
+  parcela: parseAsString.withDefault(''),
+}
+
+function statusToArray(s: string): string[] {
+  return s ? s.split(',').filter(Boolean) : []
+}
+function arrayToStatus(arr: string[]): string {
+  return arr.join(',')
+}
+
+function buildDueDateRange(preset: string, min: string, max: string): DateRangeValue | null {
+  if (!preset) return null
+  if (preset === 'custom') {
+    return { preset: 'custom', min, max }
+  }
+  return computeDateRangePreset(preset)
 }
 
 export function useInstallmentsTable(): UseInstallmentsTableReturn {
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [kindFilter, setKindFilter] = useState('all')
-  const [dueDateRange, setDueDateRange] = useState<DateRangeValue | null>(null)
-  const [page, setPage] = useState(1)
+  const [queryState, setQueryState] = useQueryStates(installmentsQueryParsers, {
+    history: 'push',
+  })
+
+  const { status, kind, duePreset, dueMin, dueMax, customer, customerName, sort, page, parcela } =
+    queryState
+
+  const statusFilter = useMemo(() => statusToArray(status), [status])
+  const kindFilter = useMemo(() => statusToArray(kind), [kind])
+  const dueDateRange = useMemo(
+    () => buildDueDateRange(duePreset, dueMin, dueMax),
+    [duePreset, dueMin, dueMax]
+  )
+  const customerFilter: CustomerFilterValue | null = useMemo(
+    () => (customer > 0 && customerName ? { id: customer, full_name: customerName } : null),
+    [customer, customerName]
+  )
 
   const queryParams = useMemo(() => {
     const params: {
@@ -52,15 +107,19 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       'due_date[min]'?: string
       'due_date[max]'?: string
       sort_by?: string[]
-    } = { page, page_size: PAGE_SIZE, sort_by: ['due_date:asc'] }
+    } = { page, page_size: PAGE_SIZE }
 
-    if (statusFilter !== 'all') params.status = [statusFilter]
-    if (kindFilter !== 'all') params.kind = [kindFilter]
-    if (dueDateRange?.min) params['due_date[min]'] = dueDateRange.min
-    if (dueDateRange?.max) params['due_date[max]'] = dueDateRange.max
+    if (statusFilter.length > 0) params.status = statusFilter
+    if (kindFilter.length > 0) params.kind = kindFilter
+
+    // Compute due date from preset or custom values
+    const effectiveDueDate = dueDateRange
+    if (effectiveDueDate?.min) params['due_date[min]'] = effectiveDueDate.min
+    if (effectiveDueDate?.max) params['due_date[max]'] = effectiveDueDate.max
+    if (sort) params.sort_by = [sort]
 
     return params
-  }, [page, statusFilter, kindFilter, dueDateRange])
+  }, [page, statusFilter, kindFilter, dueDateRange, sort])
 
   const { data, isLoading } = useInstallmentsSummary(queryParams)
 
@@ -69,13 +128,25 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
   const summary = data?.summary ?? null
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  const hasActiveFilters = !!(statusFilter !== 'all' || kindFilter !== 'all' || dueDateRange)
+  const hasActiveFilters = !!(
+    statusFilter.length > 0 ||
+    kindFilter.length > 0 ||
+    (duePreset && duePreset !== DEFAULT_DUE_PRESET) ||
+    customer > 0
+  )
 
   const handleClearFilters = () => {
-    setStatusFilter('all')
-    setKindFilter('all')
-    setDueDateRange(null)
-    setPage(1)
+    setQueryState({
+      status: '',
+      kind: '',
+      duePreset: DEFAULT_DUE_PRESET,
+      dueMin: '',
+      dueMax: '',
+      customer: 0,
+      customerName: '',
+      sort: DEFAULT_SORT,
+      page: 1,
+    })
   }
 
   return {
@@ -89,17 +160,28 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       statusFilter,
       kindFilter,
       dueDateRange,
-      setStatusFilter: (value) => {
-        setStatusFilter(value)
-        setPage(1)
-      },
-      setKindFilter: (value) => {
-        setKindFilter(value)
-        setPage(1)
-      },
+      customerFilter,
+      setStatusFilter: (value) => setQueryState({ status: arrayToStatus(value), page: 1 }),
+      setKindFilter: (value) => setQueryState({ kind: arrayToStatus(value), page: 1 }),
       setDueDateRange: (value) => {
-        setDueDateRange(value)
-        setPage(1)
+        if (!value) {
+          setQueryState({ duePreset: '', dueMin: '', dueMax: '', page: 1 })
+        } else {
+          setQueryState({
+            duePreset: value.preset,
+            dueMin: value.preset === 'custom' ? value.min : '',
+            dueMax: value.preset === 'custom' ? value.max : '',
+            page: 1,
+          })
+        }
+      },
+      setCustomerFilter: (value) => {
+        // TODO: Wire customer_id to API when supported
+        if (!value) {
+          setQueryState({ customer: 0, customerName: '', page: 1 })
+        } else {
+          setQueryState({ customer: value.id, customerName: value.full_name, page: 1 })
+        }
       },
     },
     pagination: {
@@ -108,7 +190,13 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       total,
       pageSize: PAGE_SIZE,
       isLoading,
-      setPage,
+      setPage: (value) => setQueryState({ page: value }),
     },
+    sort: {
+      sort,
+      setSort: (value) => setQueryState({ sort: value, page: 1 }),
+    },
+    selectedInstallmentId: parcela,
+    setSelectedInstallmentId: (id: string) => setQueryState({ parcela: id }),
   }
 }

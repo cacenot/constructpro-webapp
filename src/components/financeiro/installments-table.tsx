@@ -20,6 +20,9 @@ interface InstallmentsTableProps {
   onClearFilters: () => void
   onPayInstallment: (installment: InstallmentResponse) => void
   onIssueBoleto: (installment: InstallmentResponse) => void
+  onViewDetails: (installment: InstallmentResponse) => void
+  sort: string
+  onSort: (value: string) => void
 }
 
 const SKELETON_ROWS = 10
@@ -31,13 +34,23 @@ export function InstallmentsTable({
   onClearFilters,
   onPayInstallment,
   onIssueBoleto,
+  onViewDetails,
+  sort,
+  onSort,
 }: InstallmentsTableProps) {
   const table = useReactTable({
     data,
     columns: installmentsColumns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
-    meta: { onPayInstallment, onIssueBoleto } satisfies InstallmentsTableMeta,
+    manualSorting: true,
+    meta: {
+      onPayInstallment,
+      onIssueBoleto,
+      onViewDetails,
+      sort,
+      onSort,
+    } satisfies InstallmentsTableMeta,
   })
 
   return (
@@ -61,7 +74,7 @@ export function InstallmentsTable({
             // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no meaningful key
             <TableRow key={i}>
               <TableCell className="px-6 py-3">
-                <Skeleton className="h-5 w-14" />
+                <Skeleton className="h-5 w-20" />
               </TableCell>
               <TableCell className="px-6 py-3">
                 <Skeleton className="h-5 w-16" />
@@ -69,16 +82,10 @@ export function InstallmentsTable({
               <TableCell className="px-6 py-3">
                 <div className="flex flex-col gap-1.5">
                   <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-32" />
                 </div>
               </TableCell>
               <TableCell className="px-6 py-3">
-                <div className="flex flex-col gap-1.5">
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-              </TableCell>
-              <TableCell className="hidden lg:table-cell px-6 py-3">
                 <div className="flex flex-col gap-1.5">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-3 w-20" />
@@ -112,7 +119,11 @@ export function InstallmentsTable({
           </TableRow>
         ) : (
           table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
+            <TableRow
+              key={row.id}
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => onViewDetails(row.original)}
+            >
               {row.getVisibleCells().map((cell) => (
                 <TableCell key={cell.id} className="px-6 py-3">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}

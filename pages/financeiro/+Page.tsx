@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
+import { InstallmentDetailDrawer } from '@/components/financeiro/installment-detail-drawer'
 import { InstallmentsFilters } from '@/components/financeiro/installments-filters'
 import { InstallmentsPagination } from '@/components/financeiro/installments-pagination'
 import { InstallmentsSummaryCards } from '@/components/financeiro/installments-summary-cards'
@@ -14,8 +15,18 @@ import { installmentKeys } from '@/hooks/use-installments'
 import { useInstallmentsTable } from '@/hooks/use-installments-table'
 
 export default function FinanceiroPage() {
-  const { data, isLoading, summary, hasActiveFilters, handleClearFilters, filters, pagination } =
-    useInstallmentsTable()
+  const {
+    data,
+    isLoading,
+    summary,
+    hasActiveFilters,
+    handleClearFilters,
+    filters,
+    pagination,
+    sort,
+    selectedInstallmentId,
+    setSelectedInstallmentId,
+  } = useInstallmentsTable()
 
   const { client } = useApiClient()
   const queryClient = useQueryClient()
@@ -56,6 +67,14 @@ export default function FinanceiroPage() {
     issueBoletoMutation.mutate(installment.id)
   }
 
+  const handleViewDetails = (installment: InstallmentResponse) => {
+    setSelectedInstallmentId(installment.id)
+  }
+
+  const handleCloseDrawer = () => {
+    setSelectedInstallmentId('')
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -79,11 +98,22 @@ export default function FinanceiroPage() {
               onClearFilters={handleClearFilters}
               onPayInstallment={handlePayInstallment}
               onIssueBoleto={handleIssueBoleto}
+              onViewDetails={handleViewDetails}
+              sort={sort.sort}
+              onSort={sort.setSort}
             />
           </CardContent>
           <InstallmentsPagination {...pagination} />
         </Card>
       </div>
+
+      <InstallmentDetailDrawer
+        installmentId={selectedInstallmentId}
+        open={!!selectedInstallmentId}
+        onClose={handleCloseDrawer}
+        onPayInstallment={handlePayInstallment}
+        onIssueBoleto={handleIssueBoleto}
+      />
 
       <PayInstallmentDialog
         installment={selectedInstallment}

@@ -2,7 +2,7 @@ import { translateInstallmentKind } from '@cacenot/construct-pro-api-client'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistanceToNow, isPast, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { MoreVertical } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, MoreVertical } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -21,15 +21,63 @@ import { InstallmentStatusBadge } from './installment-status-badge'
 export interface InstallmentsTableMeta {
   onPayInstallment: (installment: InstallmentResponse) => void
   onIssueBoleto: (installment: InstallmentResponse) => void
+  onViewDetails: (installment: InstallmentResponse) => void
+  sort: string
+  onSort: (field: string) => void
+}
+
+function SortableHeader({
+  label,
+  field,
+  currentSort,
+  onSort,
+}: {
+  label: string
+  field: string
+  currentSort: string
+  onSort: (field: string) => void
+}) {
+  const [currentField, currentDir] = currentSort.split(':')
+  const isActive = currentField === field
+
+  const handleClick = () => {
+    if (isActive && currentDir === 'asc') {
+      onSort(`${field}:desc`)
+    } else {
+      onSort(`${field}:asc`)
+    }
+  }
+
+  return (
+    <Button variant="ghost" size="sm" className="-ml-3 h-8 gap-1" onClick={handleClick}>
+      {label}
+      {isActive ? (
+        currentDir === 'asc' ? (
+          <ArrowUp className="size-3.5" />
+        ) : (
+          <ArrowDown className="size-3.5" />
+        )
+      ) : (
+        <ArrowUpDown className="size-3.5 opacity-40" />
+      )}
+    </Button>
+  )
 }
 
 export const installmentsColumns: ColumnDef<InstallmentResponse>[] = [
   {
-    id: 'contract',
-    header: 'Contrato',
+    id: 'installment_id',
+    header: ({ table }) => {
+      const meta = table.options.meta as InstallmentsTableMeta | undefined
+      if (!meta) return 'Parcela'
+      return (
+        <SortableHeader label="Parcela" field="id" currentSort={meta.sort} onSort={meta.onSort} />
+      )
+    },
     cell: ({ row }) => (
       <Badge variant="secondary" className="tabular-nums font-mono text-xs shrink-0">
         #{row.original.contract_id}
+        {row.original.installment_number != null && `-${row.original.installment_number}`}
       </Badge>
     ),
   },
@@ -44,44 +92,50 @@ export const installmentsColumns: ColumnDef<InstallmentResponse>[] = [
   },
   {
     id: 'amount',
-    header: 'Valor',
+    header: ({ table }) => {
+      const meta = table.options.meta as InstallmentsTableMeta | undefined
+      if (!meta) return 'Valor'
+      return (
+        <SortableHeader
+          label="Valor"
+          field="current_amount_cents"
+          currentSort={meta.sort}
+          onSort={meta.onSort}
+        />
+      )
+    },
     cell: ({ row }) => {
-      const { current_amount_cents, base_amount_cents } = row.original
-      const hasCorrectionDiff = current_amount_cents !== base_amount_cents
+      const { current_amount_cents, paid_amount, remaining_amount, status } = row.original
+      const isPaid = status === 'paid'
       return (
         <div className="flex flex-col gap-0.5">
           <span className="text-sm font-medium tabular-nums">
             {formatCurrency(current_amount_cents / 100)}
           </span>
-          {hasCorrectionDiff && (
-            <span className="text-xs text-muted-foreground tabular-nums">
-              Base {formatCurrency(base_amount_cents / 100)}
-            </span>
+          {!isPaid && (
+            <div className="flex items-center gap-2 text-xs tabular-nums">
+              <span className="text-emerald-700 dark:text-emerald-400">{paid_amount}</span>
+              <span className="text-muted-foreground">Rest: {remaining_amount}</span>
+            </div>
           )}
         </div>
       )
     },
   },
   {
-    id: 'paid_remaining',
-    header: 'Pago / Restante',
-    cell: ({ row }) => {
-      const { paid_amount, remaining_amount } = row.original
+    id: 'due_date',
+    header: ({ table }) => {
+      const meta = table.options.meta as InstallmentsTableMeta | undefined
+      if (!meta) return 'Vencimento'
       return (
-        <div className="hidden lg:flex flex-col gap-0.5 w-36">
-          <span className="text-sm tabular-nums text-emerald-700 dark:text-emerald-400">
-            {paid_amount}
-          </span>
-          <span className="text-xs tabular-nums text-muted-foreground">
-            Restante: {remaining_amount}
-          </span>
-        </div>
+        <SortableHeader
+          label="Vencimento"
+          field="due_date"
+          currentSort={meta.sort}
+          onSort={meta.onSort}
+        />
       )
     },
-  },
-  {
-    id: 'due_date',
-    header: 'Vencimento',
     cell: ({ row }) => {
       const dueDate = parseISO(row.original.due_date)
       const isOverdue =
@@ -138,7 +192,9 @@ export const installmentsColumns: ColumnDef<InstallmentResponse>[] = [
           </Tooltip>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => meta?.onViewDetails(installment)}>
+              Ver detalhes
+            </DropdownMenuItem>
             {canPay && (
               <>
                 <DropdownMenuSeparator />
