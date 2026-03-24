@@ -1,8 +1,12 @@
-import { translateInstallmentKind } from '@cacenot/construct-pro-api-client'
+import {
+  translateInstallmentKind,
+  translatePaymentMethod,
+  translatePaymentStatus,
+} from '@cacenot/construct-pro-api-client/enums'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistanceToNow, isPast, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowDown, ArrowUp, ArrowUpDown, MoreVertical } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, Info, MoreVertical } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,17 +17,69 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import type { InstallmentResponse } from '@/hooks/use-installments'
+import type { InstallmentSummaryItemResponse } from '@/hooks/use-installments'
 import { formatCurrency } from '@/lib/utils'
 import { InstallmentStatusBadge } from './installment-status-badge'
 
 export interface InstallmentsTableMeta {
-  onPayInstallment: (installment: InstallmentResponse) => void
-  onIssueBoleto: (installment: InstallmentResponse) => void
-  onViewDetails: (installment: InstallmentResponse) => void
+  onPayInstallment: (installment: InstallmentSummaryItemResponse) => void
+  onIssueBoleto: (installment: InstallmentSummaryItemResponse) => void
+  onViewDetails: (installment: InstallmentSummaryItemResponse) => void
   sort: string
   onSort: (field: string) => void
+}
+
+type Payment = NonNullable<InstallmentSummaryItemResponse['payments']>[number]
+
+function PaymentsHoverContent({
+  payments,
+  paid_amount,
+  remaining_amount,
+}: {
+  payments: Payment[]
+  paid_amount: string
+  remaining_amount: string
+}) {
+  return (
+    <HoverCardContent className="w-72 p-4" align="start">
+      <p className="mb-2 text-sm font-semibold">Pagamentos</p>
+      {payments.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Nenhum pagamento registrado</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {payments.map((p, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: payments have no stable key
+            <div key={i} className="flex flex-col gap-0.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{translatePaymentMethod(p.method, 'pt-BR')}</span>
+                <span className="tabular-nums">{formatCurrency(p.amount_cents / 100)}</span>
+              </div>
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>{translatePaymentStatus(p.status, 'pt-BR')}</span>
+                <span>
+                  {p.paid_at ? format(parseISO(p.paid_at), 'dd/MM/yyyy', { locale: ptBR }) : '—'}
+                </span>
+              </div>
+            </div>
+          ))}
+          <div className="mt-1 flex flex-col gap-1 border-t pt-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-emerald-700 dark:text-emerald-400">Total pago</span>
+              <span className="tabular-nums font-medium text-emerald-700 dark:text-emerald-400">
+                {formatCurrency(Number(paid_amount))}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>Restante</span>
+              <span className="tabular-nums">{formatCurrency(Number(remaining_amount))}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </HoverCardContent>
+  )
 }
 
 function SortableHeader({
@@ -65,31 +121,54 @@ function SortableHeader({
   )
 }
 
-export const installmentsColumns: ColumnDef<InstallmentResponse>[] = [
+export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = [
   {
-    id: 'installment_id',
-    header: ({ table }) => {
-      const meta = table.options.meta as InstallmentsTableMeta | undefined
-      if (!meta) return 'Parcela'
-      return (
-        <SortableHeader label="Parcela" field="id" currentSort={meta.sort} onSort={meta.onSort} />
-      )
-    },
+    id: 'contract_id',
+    header: 'Contrato',
     cell: ({ row }) => (
       <Badge variant="secondary" className="tabular-nums font-mono text-xs shrink-0">
         #{row.original.contract_id}
-        {row.original.installment_number != null && `-${row.original.installment_number}`}
       </Badge>
     ),
   },
   {
-    id: 'kind',
-    header: 'Tipo',
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-xs shrink-0">
-        {translateInstallmentKind(row.original.kind, 'pt-BR')}
-      </Badge>
-    ),
+    id: 'customer',
+    header: 'Cliente',
+    cell: ({ row }) => {
+      const { customer } = row.original
+      if (!customer) return <span className="text-muted-foreground">—</span>
+      return (
+        <a
+          href={`/clientes/${customer.id}`}
+          className="text-sm font-medium hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {customer.full_name}
+        </a>
+      )
+    },
+  },
+  {
+    id: 'unit',
+    header: 'Unidade',
+    cell: ({ row }) => {
+      const { unit, project } = row.original
+      if (!unit && !project) return <span className="text-muted-foreground">—</span>
+      return (
+        <div className="flex flex-col gap-0.5 min-w-0">
+          {unit && <span className="text-sm font-medium truncate">{unit.name}</span>}
+          {project && (
+            <a
+              href={`/empreendimentos/${project.id}`}
+              className="text-xs text-muted-foreground hover:underline truncate"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {project.name}
+            </a>
+          )}
+        </div>
+      )
+    },
   },
   {
     id: 'amount',
@@ -106,20 +185,29 @@ export const installmentsColumns: ColumnDef<InstallmentResponse>[] = [
       )
     },
     cell: ({ row }) => {
-      const { current_amount_cents, paid_amount, remaining_amount, status } = row.original
-      const isPaid = status === 'paid'
+      const { current_amount_cents, paid_amount, remaining_amount, kind } = row.original
+      const payments: Payment[] = row.original.payments ?? []
       return (
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium tabular-nums">
-            {formatCurrency(current_amount_cents / 100)}
-          </span>
-          {!isPaid && (
-            <div className="flex items-center gap-2 text-xs tabular-nums">
-              <span className="text-emerald-700 dark:text-emerald-400">{paid_amount}</span>
-              <span className="text-muted-foreground">Rest: {remaining_amount}</span>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <div className="flex flex-col gap-0.5 cursor-default">
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-medium tabular-nums">
+                  {formatCurrency(current_amount_cents / 100)}
+                </span>
+                <Info className="size-3 shrink-0 text-muted-foreground/50" />
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {translateInstallmentKind(kind, 'pt-BR')}
+              </span>
             </div>
-          )}
-        </div>
+          </HoverCardTrigger>
+          <PaymentsHoverContent
+            payments={payments}
+            paid_amount={paid_amount}
+            remaining_amount={remaining_amount}
+          />
+        </HoverCard>
       )
     },
   },
@@ -157,12 +245,22 @@ export const installmentsColumns: ColumnDef<InstallmentResponse>[] = [
     id: 'status',
     header: 'Status',
     cell: ({ row }) => {
-      const { status } = row.original
+      const { status, paid_amount, remaining_amount } = row.original
+      const payments: Payment[] = row.original.payments ?? []
       if (!status) return null
       return (
-        <div className="w-32 shrink-0">
-          <InstallmentStatusBadge status={status} />
-        </div>
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <div className="w-fit cursor-default">
+              <InstallmentStatusBadge status={status} />
+            </div>
+          </HoverCardTrigger>
+          <PaymentsHoverContent
+            payments={payments}
+            paid_amount={paid_amount}
+            remaining_amount={remaining_amount}
+          />
+        </HoverCard>
       )
     },
   },
@@ -193,19 +291,34 @@ export const installmentsColumns: ColumnDef<InstallmentResponse>[] = [
           </Tooltip>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Ações</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => meta?.onViewDetails(installment)}>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation()
+                meta?.onViewDetails(installment)
+              }}
+            >
               Ver detalhes
             </DropdownMenuItem>
             {canPay && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => meta?.onPayInstallment(installment)}>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    meta?.onPayInstallment(installment)
+                  }}
+                >
                   Registrar pagamento
                 </DropdownMenuItem>
               </>
             )}
             {canIssueBoleto && (
-              <DropdownMenuItem onClick={() => meta?.onIssueBoleto(installment)}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation()
+                  meta?.onIssueBoleto(installment)
+                }}
+              >
                 Emitir boleto
               </DropdownMenuItem>
             )}

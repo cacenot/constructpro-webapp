@@ -10,7 +10,7 @@ import { InstallmentsSummaryCards } from '@/components/financeiro/installments-s
 import { InstallmentsTable } from '@/components/financeiro/installments-table'
 import { PayInstallmentDialog } from '@/components/financeiro/pay-installment-dialog'
 import { Card, CardContent } from '@/components/ui/card'
-import type { InstallmentResponse } from '@/hooks/use-installments'
+import type { InstallmentSummaryItemResponse } from '@/hooks/use-installments'
 import { installmentKeys } from '@/hooks/use-installments'
 import { useInstallmentsTable } from '@/hooks/use-installments-table'
 
@@ -31,7 +31,8 @@ export default function FinanceiroPage() {
   const { client } = useApiClient()
   const queryClient = useQueryClient()
 
-  const [selectedInstallment, setSelectedInstallment] = useState<InstallmentResponse | null>(null)
+  const [selectedInstallment, setSelectedInstallment] =
+    useState<InstallmentSummaryItemResponse | null>(null)
   const [payDialogOpen, setPayDialogOpen] = useState(false)
 
   const issueBoletoMutation = useMutation({
@@ -58,16 +59,16 @@ export default function FinanceiroPage() {
     },
   })
 
-  const handlePayInstallment = (installment: InstallmentResponse) => {
+  const handlePayInstallment = (installment: InstallmentSummaryItemResponse) => {
     setSelectedInstallment(installment)
     setPayDialogOpen(true)
   }
 
-  const handleIssueBoleto = (installment: InstallmentResponse) => {
+  const handleIssueBoleto = (installment: InstallmentSummaryItemResponse) => {
     issueBoletoMutation.mutate(installment.id)
   }
 
-  const handleViewDetails = (installment: InstallmentResponse) => {
+  const handleViewDetails = (installment: InstallmentSummaryItemResponse) => {
     setSelectedInstallmentId(installment.id)
   }
 

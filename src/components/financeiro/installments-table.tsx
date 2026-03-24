@@ -10,17 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { InstallmentResponse } from '@/hooks/use-installments'
+import type { InstallmentSummaryItemResponse } from '@/hooks/use-installments'
 import { type InstallmentsTableMeta, installmentsColumns } from './installments-columns'
 
 interface InstallmentsTableProps {
-  data: InstallmentResponse[]
+  data: InstallmentSummaryItemResponse[]
   isLoading: boolean
   hasActiveFilters: boolean
   onClearFilters: () => void
-  onPayInstallment: (installment: InstallmentResponse) => void
-  onIssueBoleto: (installment: InstallmentResponse) => void
-  onViewDetails: (installment: InstallmentResponse) => void
+  onPayInstallment: (installment: InstallmentSummaryItemResponse) => void
+  onIssueBoleto: (installment: InstallmentSummaryItemResponse) => void
+  onViewDetails: (installment: InstallmentSummaryItemResponse) => void
   sort: string
   onSort: (value: string) => void
 }
@@ -74,15 +74,24 @@ export function InstallmentsTable({
             // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no meaningful key
             <TableRow key={i}>
               <TableCell className="px-6 py-3">
-                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-14 rounded-md" />
               </TableCell>
               <TableCell className="px-6 py-3">
-                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-4 w-28" />
               </TableCell>
               <TableCell className="px-6 py-3">
                 <div className="flex flex-col gap-1.5">
                   <Skeleton className="h-4 w-24" />
                   <Skeleton className="h-3 w-32" />
+                </div>
+              </TableCell>
+              <TableCell className="px-6 py-3">
+                <Skeleton className="h-4 w-20" />
+              </TableCell>
+              <TableCell className="px-6 py-3">
+                <div className="flex flex-col gap-1.5">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-3 w-28" />
                 </div>
               </TableCell>
               <TableCell className="px-6 py-3">

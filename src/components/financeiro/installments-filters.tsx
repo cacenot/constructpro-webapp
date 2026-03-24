@@ -62,8 +62,7 @@ export function InstallmentsFilters({
         className="w-40"
       />
 
-      {/* TODO: Wire customer_id to installments API when backend adds support */}
-      <CustomerFilter value={customerFilter} onChange={setCustomerFilter} disabled />
+      <CustomerFilter value={customerFilter} onChange={setCustomerFilter} />
     </div>
   )
 }

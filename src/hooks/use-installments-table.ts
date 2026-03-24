@@ -4,7 +4,7 @@ import type { CustomerFilterValue } from '@/components/ui/customer-filter'
 import { computeDateRangePreset, type DateRangeValue } from '@/components/ui/date-range-filter'
 import {
   type InstallmentListSummary,
-  type InstallmentResponse,
+  type InstallmentSummaryItemResponse,
   useInstallmentsSummary,
 } from './use-installments'
 
@@ -38,7 +38,7 @@ export interface InstallmentsTableSort {
 }
 
 export interface UseInstallmentsTableReturn {
-  data: InstallmentResponse[]
+  data: InstallmentSummaryItemResponse[]
   isLoading: boolean
   total: number
   summary: InstallmentListSummary | null
@@ -106,20 +106,21 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       kind?: string[]
       'due_date[min]'?: string
       'due_date[max]'?: string
+      customer_id?: number
       sort_by?: string[]
     } = { page, page_size: PAGE_SIZE }
 
     if (statusFilter.length > 0) params.status = statusFilter
     if (kindFilter.length > 0) params.kind = kindFilter
 
-    // Compute due date from preset or custom values
     const effectiveDueDate = dueDateRange
     if (effectiveDueDate?.min) params['due_date[min]'] = effectiveDueDate.min
     if (effectiveDueDate?.max) params['due_date[max]'] = effectiveDueDate.max
+    if (customer > 0) params.customer_id = customer
     if (sort) params.sort_by = [sort]
 
     return params
-  }, [page, statusFilter, kindFilter, dueDateRange, sort])
+  }, [page, statusFilter, kindFilter, dueDateRange, customer, sort])
 
   const { data, isLoading } = useInstallmentsSummary(queryParams)
 
@@ -176,7 +177,6 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
         }
       },
       setCustomerFilter: (value) => {
-        // TODO: Wire customer_id to API when supported
         if (!value) {
           setQueryState({ customer: 0, customerName: '', page: 1 })
         } else {
