@@ -7,6 +7,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistanceToNow, isPast, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { ArrowDown, ArrowUp, ArrowUpDown, Info, MoreVertical } from 'lucide-react'
+import { navigate } from 'vike/client/router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,6 +21,7 @@ import {
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { InstallmentSummaryItemResponse } from '@/hooks/use-installments'
+import { formatDocument } from '@/lib/text-formatters'
 import { formatCurrency } from '@/lib/utils'
 import { InstallmentStatusBadge } from './installment-status-badge'
 
@@ -54,8 +56,18 @@ function PaymentsHoverContent({
             <div key={i} className="flex flex-col gap-0.5 text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-medium">{translatePaymentMethod(p.method, 'pt-BR')}</span>
-                <span className="tabular-nums">{formatCurrency(p.amount_cents / 100)}</span>
+                <span className="tabular-nums">
+                  {formatCurrency(p.allocation_amount_cents / 100)}
+                </span>
               </div>
+              {p.allocation_amount_cents !== p.payment_amount_cents && (
+                <div className="flex items-center justify-between text-muted-foreground/70">
+                  <span className="text-[11px] italic">Pgto. total</span>
+                  <span className="tabular-nums text-[11px]">
+                    {formatCurrency(p.payment_amount_cents / 100)}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{translatePaymentStatus(p.status, 'pt-BR')}</span>
                 <span>
@@ -126,7 +138,14 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
     id: 'contract_id',
     header: 'Contrato',
     cell: ({ row }) => (
-      <Badge variant="secondary" className="tabular-nums font-mono text-xs shrink-0">
+      <Badge
+        variant="secondary"
+        className="tabular-nums font-mono text-xs shrink-0 cursor-pointer hover:bg-accent"
+        onClick={(e) => {
+          e.stopPropagation()
+          navigate(`/contratos/${row.original.contract_id}`)
+        }}
+      >
         #{row.original.contract_id}
       </Badge>
     ),
@@ -138,13 +157,23 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
       const { customer } = row.original
       if (!customer) return <span className="text-muted-foreground">—</span>
       return (
-        <a
-          href={`/clientes/${customer.id}`}
-          className="text-sm font-medium hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {customer.full_name}
-        </a>
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <button
+            type="button"
+            className="text-sm font-medium hover:underline truncate cursor-pointer text-left"
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(`/clientes/${customer.id}`)
+            }}
+          >
+            {customer.full_name}
+          </button>
+          {customer.cpf_cnpj && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {formatDocument(customer.cpf_cnpj)}
+            </span>
+          )}
+        </div>
       )
     },
   },
@@ -158,13 +187,16 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
         <div className="flex flex-col gap-0.5 min-w-0">
           {unit && <span className="text-sm font-medium truncate">{unit.name}</span>}
           {project && (
-            <a
-              href={`/empreendimentos/${project.id}`}
-              className="text-xs text-muted-foreground hover:underline truncate"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:underline truncate cursor-pointer text-left"
+              onClick={(e) => {
+                e.stopPropagation()
+                navigate(`/empreendimentos/${project.id}`)
+              }}
             >
               {project.name}
-            </a>
+            </button>
           )}
         </div>
       )

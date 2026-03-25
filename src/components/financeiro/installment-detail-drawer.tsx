@@ -1,7 +1,21 @@
-import { translateInstallmentKind } from '@cacenot/construct-pro-api-client'
+import {
+  translateInstallmentKind,
+  translateLedgerEntryKind,
+  translatePaymentMethod,
+  translatePaymentStatus,
+} from '@cacenot/construct-pro-api-client/enums'
 import { format, formatDistanceToNow, isPast, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Banknote, Calendar, CreditCard, FileText, Hash, Receipt, X } from 'lucide-react'
+import {
+  Banknote,
+  Calendar,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  Hash,
+  Receipt,
+  X,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,18 +27,27 @@ import {
 } from '@/components/ui/drawer'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { InstallmentResponse } from '@/hooks/use-installments'
+import type { InstallmentDetailResponse } from '@/hooks/use-installments'
 import { useInstallment } from '@/hooks/use-installments'
-import { formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { PAYMENT_METHOD_LABELS } from '@/schemas/sale.schema'
 import { InstallmentStatusBadge } from './installment-status-badge'
+
+const BOLETO_STATUS_LABELS: Record<string, string> = {
+  saved: 'Salvo',
+  registered: 'Registrado',
+  settled: 'Liquidado',
+  written_off: 'Baixado',
+  rejected: 'Rejeitado',
+  protested: 'Protestado',
+}
 
 interface InstallmentDetailDrawerProps {
   installmentId: string
   open: boolean
   onClose: () => void
-  onPayInstallment: (installment: InstallmentResponse) => void
-  onIssueBoleto: (installment: InstallmentResponse) => void
+  onPayInstallment: (installment: InstallmentDetailResponse) => void
+  onIssueBoleto: (installment: InstallmentDetailResponse) => void
 }
 
 function DetailItem({
@@ -77,9 +100,9 @@ function InstallmentDetailContent({
   onPayInstallment,
   onIssueBoleto,
 }: {
-  installment: InstallmentResponse
-  onPayInstallment: (installment: InstallmentResponse) => void
-  onIssueBoleto: (installment: InstallmentResponse) => void
+  installment: InstallmentDetailResponse
+  onPayInstallment: (installment: InstallmentDetailResponse) => void
+  onIssueBoleto: (installment: InstallmentDetailResponse) => void
 }) {
   const dueDate = parseISO(installment.due_date)
   const isOverdue =
@@ -89,6 +112,11 @@ function InstallmentDetailContent({
   const canIssueBoleto =
     (installment.status === 'scheduled' || installment.status === 'invoiced') &&
     installment.payment_method === 'boleto'
+
+  const payments = installment.payments ?? []
+  const ledgerEntries = (installment.ledger_entries ?? []).sort(
+    (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
+  )
 
   return (
     <div className="flex flex-col gap-0 overflow-y-auto flex-1">
@@ -140,12 +168,14 @@ function InstallmentDetailContent({
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Pago</span>
             <span className="text-sm font-medium tabular-nums text-emerald-700 dark:text-emerald-400">
-              {installment.paid_amount}
+              {formatCurrency(Number(installment.paid_amount))}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Restante</span>
-            <span className="text-sm font-medium tabular-nums">{installment.remaining_amount}</span>
+            <span className="text-sm font-medium tabular-nums">
+              {formatCurrency(Number(installment.remaining_amount))}
+            </span>
           </div>
         </div>
       </div>
@@ -186,6 +216,191 @@ function InstallmentDetailContent({
           )}
         </div>
       </div>
+
+      {/* Pagamentos */}
+      {payments.length > 0 && (
+        <>
+          <Separator />
+          <div className="px-4 py-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Pagamentos
+            </p>
+            <div className="flex flex-col gap-3">
+              {payments.map((payment) => {
+                const allocations = payment.installment_allocations ?? []
+                const isSplitPayment = allocations.length > 1
+
+                return (
+                  <div key={payment.id} className="rounded-lg border p-3 flex flex-col gap-2">
+                    {/* Header: método + status + data */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {translatePaymentMethod(payment.method, 'pt-BR')}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-xs',
+                            payment.status === 'confirmed' &&
+                              'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+                            payment.status === 'pending' &&
+                              'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+                            payment.status === 'canceled' &&
+                              'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300',
+                            payment.status === 'refunded' &&
+                              'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                          )}
+                        >
+                          {translatePaymentStatus(payment.status ?? 'confirmed', 'pt-BR')}
+                        </Badge>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(parseISO(payment.paid_at), 'dd/MM/yyyy', { locale: ptBR })}
+                      </span>
+                    </div>
+
+                    {/* Valor total */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Valor total</span>
+                      <span className="text-sm font-medium tabular-nums">
+                        {formatCurrency(payment.amount_cents / 100)}
+                      </span>
+                    </div>
+
+                    {/* Alocações (se pagamento dividido) */}
+                    {isSplitPayment && (
+                      <div className="flex flex-col gap-1.5 border-t pt-2">
+                        <span className="text-xs text-muted-foreground font-medium">Alocações</span>
+                        {allocations.map((alloc) => {
+                          const isCurrentInstallment = alloc.installment_id === installment.id
+                          return (
+                            <div
+                              key={`${alloc.payment_id}-${alloc.installment_id}`}
+                              className={cn(
+                                'flex items-center justify-between text-xs',
+                                isCurrentInstallment && 'font-medium'
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'text-muted-foreground',
+                                  isCurrentInstallment && 'text-foreground'
+                                )}
+                              >
+                                {isCurrentInstallment
+                                  ? 'Esta parcela'
+                                  : `Parcela ${alloc.installment_id.slice(0, 8)}…`}
+                              </span>
+                              <span className="tabular-nums">
+                                {formatCurrency(alloc.amount_cents / 100)}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Boleto */}
+                    {payment.boleto && (
+                      <div className="flex flex-col gap-1.5 border-t pt-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Boleto</span>
+                          <span>
+                            {BOLETO_STATUS_LABELS[payment.boleto.status ?? ''] ??
+                              payment.boleto.status}
+                          </span>
+                        </div>
+                        {payment.boleto.boleto_url && (
+                          <a
+                            href={payment.boleto.boleto_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-xs text-primary hover:underline w-fit"
+                          >
+                            <ExternalLink className="size-3" />
+                            Ver boleto
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Movimentações (Ledger) */}
+      {ledgerEntries.length > 0 && (
+        <>
+          <Separator />
+          <div className="px-4 py-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              Movimentações
+            </p>
+            <div className="flex flex-col gap-2">
+              {ledgerEntries.map((entry) => {
+                const isPositive = entry.amount_cents > 0
+                return (
+                  <div key={entry.id} className="rounded-lg border p-3 flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">
+                        {translateLedgerEntryKind(entry.kind, 'pt-BR')}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-sm font-medium tabular-nums',
+                          isPositive
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
+                        )}
+                      >
+                        {isPositive ? '+' : ''}
+                        {formatCurrency(entry.amount_cents / 100)}
+                      </span>
+                    </div>
+
+                    <span className="text-xs text-muted-foreground">
+                      {format(parseISO(entry.occurred_at), "dd/MM/yyyy 'às' HH:mm", {
+                        locale: ptBR,
+                      })}
+                    </span>
+
+                    {/* Detalhes de correção */}
+                    {entry.kind === 'correction' && (
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {entry.index_type_code && (
+                          <span>
+                            Índice: <strong>{entry.index_type_code}</strong>
+                          </span>
+                        )}
+                        {entry.reference_month && (
+                          <span>Ref.: {format(parseISO(entry.reference_month), 'MM/yyyy')}</span>
+                        )}
+                        {entry.variation_ppm != null && (
+                          <span>
+                            Variação:{' '}
+                            <strong className="tabular-nums">
+                              {(entry.variation_ppm / 10000).toFixed(2).replace('.', ',')}%
+                            </strong>
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Nota */}
+                    {entry.note && (
+                      <p className="text-xs text-muted-foreground italic">{entry.note}</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       <Separator />
 
@@ -242,12 +457,13 @@ export function InstallmentDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={(value) => !value && onClose()} direction="right">
-      <DrawerContent className="sm:max-w-md flex flex-col">
+      <DrawerContent className="sm:max-w-md flex flex-col" aria-describedby={undefined}>
         <DrawerHeader className="border-b pb-4">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-1.5 min-w-0">
               {isLoading ? (
                 <>
+                  <DrawerTitle className="sr-only">Detalhes da parcela</DrawerTitle>
                   <Skeleton className="h-6 w-36" />
                   <Skeleton className="h-5 w-20 rounded-full" />
                 </>
@@ -265,7 +481,9 @@ export function InstallmentDetailDrawer({
                   </DrawerTitle>
                   {installment.status && <InstallmentStatusBadge status={installment.status} />}
                 </>
-              ) : null}
+              ) : (
+                <DrawerTitle className="sr-only">Detalhes da parcela</DrawerTitle>
+              )}
             </div>
             <DrawerClose asChild>
               <Button variant="ghost" size="icon-sm" className="shrink-0 mt-0.5">

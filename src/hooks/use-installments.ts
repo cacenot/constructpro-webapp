@@ -2,6 +2,7 @@ import { type components, useApiClient } from '@cacenot/construct-pro-api-client
 import { useQuery } from '@tanstack/react-query'
 
 type InstallmentResponse = components['schemas']['InstallmentResponse']
+type InstallmentDetailResponse = components['schemas']['InstallmentDetailResponse']
 type InstallmentSummaryItemResponse = components['schemas']['InstallmentSummaryItemResponse']
 type PaginatedInstallmentsResponse = components['schemas']['PaginatedResponse_InstallmentResponse_']
 type InstallmentListSummary = components['schemas']['InstallmentListSummary']
@@ -90,6 +91,7 @@ export function useInstallmentsSummary(params?: InstallmentsQuery) {
 export type {
   InstallmentsQuery,
   InstallmentResponse,
+  InstallmentDetailResponse,
   InstallmentSummaryItemResponse,
   PaginatedInstallmentsResponse,
   InstallmentListSummary,
