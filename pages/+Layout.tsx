@@ -41,7 +41,7 @@ export default function Layout({ children }: LayoutProps) {
               <AuthGuard>
                 <TenantLoader>{children}</TenantLoader>
               </AuthGuard>
-              <Toaster richColors position="top-right" />
+              <Toaster richColors position="bottom-center" />
             </AuthProvider>
             <ReactQueryDevtools initialIsOpen={false} />
           </ApiClientProvider>

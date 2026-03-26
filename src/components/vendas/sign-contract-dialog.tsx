@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import { storage } from '@/lib/firebase'
 import { cn, formatId } from '@/lib/utils'
 
@@ -100,10 +101,7 @@ export function SignContractDialog({ open, onOpenChange, saleId }: SignContractD
         body: { document_url: documentUrl },
       })
 
-      if (error) {
-        const detail = (error as { detail?: string }).detail
-        throw new Error(detail || 'Falha ao assinar contrato')
-      }
+      if (error) throwApiError(error, 'Falha ao assinar contrato')
 
       return response
     },
@@ -116,9 +114,7 @@ export function SignContractDialog({ open, onOpenChange, saleId }: SignContractD
       setUploadProgress(0)
       onOpenChange(false)
     },
-    onError: (error) => {
-      toast.error(error.message || 'Erro ao assinar contrato')
-    },
+    onError: (error) => handleApiError(error, 'Erro ao assinar contrato'),
   })
 
   const onSubmit = handleSubmit((data) => mutation.mutate(data))

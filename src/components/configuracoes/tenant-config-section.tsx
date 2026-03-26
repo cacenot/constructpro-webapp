@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTenantConfig } from '@/hooks/use-tenant-config'
+import { handleApiError } from '@/lib/api-error'
 import type { TenantConfigFormData } from '@/schemas/tenant-config.schema'
 import { TenantConfigForm } from './tenant-config-form'
 
@@ -72,9 +73,7 @@ export function TenantConfigSection() {
       toast.success('Configurações da organização salvas com sucesso')
       queryClient.invalidateQueries({ queryKey: ['tenant-config'] })
     },
-    onError: (err: Error) => {
-      toast.error(err.message || 'Erro ao salvar configurações da organização')
-    },
+    onError: (err: Error) => handleApiError(err, 'Erro ao salvar configurações da organização'),
   })
 
   if (isLoading) {

@@ -33,7 +33,55 @@ Add shadcn components: `pnpm dlx shadcn@latest add <component>`
 
 **Forms:** react-hook-form + Zod. Schemas in `src/schemas/`. Always infer types from schemas: `type T = z.infer<typeof schema>`.
 
-**UI:** shadcn/ui (New York style) in `src/components/ui/`. Use `cn()` for dynamic class composition. Icons from lucide-react. Toasts via sonner.
+**UI:** shadcn/ui (New York style) in `src/components/ui/`. Use `cn()` for dynamic class composition. Icons from lucide-react. Toasts via sonner (position: `bottom-center`, `richColors`).
+
+## API Error Handling
+
+All form/mutation error handling uses the centralized utilities in `src/lib/api-error.ts`. **Never use raw `toast.error(error.message)` in mutations.**
+
+Backend error structure:
+```json
+{
+  "error_code": 6012,
+  "error_category": "business_logic",
+  "message": "Pagamento parcial não permitido para esta parcela",
+  "details": { "installment_kind": "monthly", "rule": "partial_payments_not_allowed" },
+  "path": "/api/v1/installments/.../pay"
+}
+```
+
+Three utilities:
+- `extractApiErrorMessage(error, fallback)` — extracts message from backend error body, `Error`, or returns fallback
+- `throwApiError(error, fallback)` — use in `mutationFn` when API returns `{ error }`: `if (error) throwApiError(error, 'Fallback')`
+- `handleApiError(error, fallback)` — shows `toast.error` + returns message. Use in `onError` callbacks and `catch` blocks.
+
+Two patterns:
+
+**Pattern A** — `onError` callback (preferred for simple mutations):
+```ts
+const mutation = useMutation({
+  mutationFn: async (data) => {
+    const { data: response, error } = await client.POST(...)
+    if (error) throwApiError(error, 'Fallback message')
+    return response
+  },
+  onSuccess: () => { toast.success('...'); navigate('...') },
+  onError: (error) => handleApiError(error, 'Fallback message'),
+})
+```
+
+**Pattern B** — try/catch around `mutateAsync` (when success logic lives in the handler):
+```ts
+const handleSubmit = async (data) => {
+  try {
+    await mutation.mutateAsync(data)
+    toast.success('...')
+    navigate('...')
+  } catch (error) {
+    handleApiError(error, 'Fallback message')
+  }
+}
+```
 
 ## Key Conventions
 

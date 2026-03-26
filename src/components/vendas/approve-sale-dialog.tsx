@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import { formatId } from '@/lib/utils'
 
 interface ApproveSaleDialogProps {
@@ -29,9 +30,7 @@ export function ApproveSaleDialog({ saleId, open, onOpenChange }: ApproveSaleDia
         params: { path: { sale_id: saleId } },
       })
 
-      if (error) {
-        throw new Error((error as { detail?: string }).detail || 'Erro ao aprovar proposta')
-      }
+      if (error) throwApiError(error, 'Erro ao aprovar proposta')
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] })
@@ -39,9 +38,7 @@ export function ApproveSaleDialog({ saleId, open, onOpenChange }: ApproveSaleDia
       toast.success('Proposta aprovada! Contrato e parcelas gerados com sucesso.')
       onOpenChange(false)
     },
-    onError: (err) => {
-      toast.error(err.message || 'Erro ao aprovar proposta')
-    },
+    onError: (err) => handleApiError(err, 'Erro ao aprovar proposta'),
   })
 
   return (

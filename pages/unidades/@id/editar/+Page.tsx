@@ -7,6 +7,7 @@ import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
 import { UnitForm } from '@/components/unidades/unit-form'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import type { UnitFormData } from '@/schemas/unit.schema'
 
 type ApiClient = ReturnType<typeof useApiClient>['client']
@@ -91,9 +92,7 @@ export default function UnitEditPage() {
         },
       })
 
-      if (error) {
-        throw new Error('Falha ao atualizar unidade')
-      }
+      if (error) throwApiError(error, 'Falha ao atualizar unidade')
 
       return result
     },
@@ -114,9 +113,7 @@ export default function UnitEditPage() {
       toast.success('Unidade atualizada com sucesso!')
       navigate('/unidades')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao atualizar unidade'
-      toast.error(message)
-      throw error
+      handleApiError(error, 'Erro ao atualizar unidade')
     }
   }
 

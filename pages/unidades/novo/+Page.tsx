@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { UnitForm } from '@/components/unidades/unit-form'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import type { UnitFormData } from '@/schemas/unit.schema'
 
 export default function UnitNewPage() {
@@ -29,9 +30,7 @@ export default function UnitNewPage() {
         },
       })
 
-      if (error) {
-        throw new Error('Falha ao cadastrar unidade')
-      }
+      if (error) throwApiError(error, 'Falha ao cadastrar unidade')
 
       return result
     },
@@ -51,9 +50,7 @@ export default function UnitNewPage() {
       toast.success('Unidade cadastrada com sucesso!')
       navigate('/unidades')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao cadastrar unidade'
-      toast.error(message)
-      throw error
+      handleApiError(error, 'Erro ao cadastrar unidade')
     }
   }
 

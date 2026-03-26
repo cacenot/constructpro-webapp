@@ -16,6 +16,7 @@ import type {
 } from '@/hooks/use-installments'
 import { installmentKeys } from '@/hooks/use-installments'
 import { useInstallmentsTable } from '@/hooks/use-installments-table'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 
 export default function FinanceiroPage() {
   const {
@@ -48,9 +49,7 @@ export default function FinanceiroPage() {
         }
       )
 
-      if (error) {
-        throw new Error('Falha ao emitir boleto')
-      }
+      if (error) throwApiError(error, 'Falha ao emitir boleto')
 
       return response
     },
@@ -58,9 +57,7 @@ export default function FinanceiroPage() {
       toast.success('Boleto emitido com sucesso')
       queryClient.invalidateQueries({ queryKey: installmentKeys.lists() })
     },
-    onError: (error) => {
-      toast.error(error.message || 'Erro ao emitir boleto')
-    },
+    onError: (error) => handleApiError(error, 'Erro ao emitir boleto'),
   })
 
   const handlePayInstallment = (installment: Installment) => {

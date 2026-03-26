@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { ProjectForm } from '@/components/projects/project-form'
+import { handleApiError } from '@/lib/api-error'
 import type { ProjectCreateFormData } from '@/schemas/project.schema'
 
 export default function ProjectNewPage() {
@@ -18,9 +19,7 @@ export default function ProjectNewPage() {
       toast.success('Empreendimento cadastrado com sucesso!')
       navigate('/empreendimentos')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao cadastrar empreendimento'
-      toast.error(message)
-      throw error
+      handleApiError(error, 'Erro ao cadastrar empreendimento')
     }
   }
 

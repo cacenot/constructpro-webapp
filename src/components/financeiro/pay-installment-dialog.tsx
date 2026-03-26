@@ -30,6 +30,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import type { InstallmentResponse } from '@/hooks/use-installments'
 import { installmentKeys, useInstallments } from '@/hooks/use-installments'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import { formatCurrency, formatId } from '@/lib/utils'
 import {
   type InstallmentPaymentFormData,
@@ -141,10 +142,7 @@ export function PayInstallmentDialog({
         }
       )
 
-      if (error) {
-        const detail = (error as { detail?: string }).detail
-        throw new Error(detail || 'Falha ao registrar pagamento')
-      }
+      if (error) throwApiError(error, 'Falha ao registrar pagamento')
 
       return response
     },
@@ -163,9 +161,7 @@ export function PayInstallmentDialog({
       setPaidDate(new Date())
       onOpenChange(false)
     },
-    onError: (error) => {
-      toast.error(error.message || 'Erro ao registrar pagamento')
-    },
+    onError: (error) => handleApiError(error, 'Erro ao registrar pagamento'),
   })
 
   const onSubmit = handleSubmit((data) => mutation.mutate(data))

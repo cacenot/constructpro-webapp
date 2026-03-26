@@ -7,6 +7,7 @@ import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
 import { SaleEditForm } from '@/components/vendas/sale-edit-form'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import type { SaleEditFormData } from '@/schemas/sale.schema'
 
 export default function SaleEditPage() {
@@ -38,9 +39,7 @@ export default function SaleEditPage() {
         },
       })
 
-      if (apiError) {
-        throw new Error((apiError as { detail?: string }).detail || 'Erro ao atualizar proposta')
-      }
+      if (apiError) throwApiError(apiError, 'Erro ao atualizar proposta')
 
       return response
     },
@@ -49,9 +48,7 @@ export default function SaleEditPage() {
       toast.success('Proposta atualizada com sucesso!')
       navigate('/vendas')
     },
-    onError: (err) => {
-      toast.error(err.message || 'Erro ao atualizar proposta')
-    },
+    onError: (err) => handleApiError(err, 'Erro ao atualizar proposta'),
   })
 
   const handleSubmit = async (data: SaleEditFormData) => {

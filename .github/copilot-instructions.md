@@ -38,13 +38,61 @@ A React 19 SPA (Single Page Application) for construction management built with 
 - Define schemas in `src/schemas/` (e.g., `auth.schema.ts` exports `loginSchema`, `registerSchema`)
 - Always infer types from schemas: `type LoginForm = z.infer<typeof loginSchema>`
 - Form components use `<FormField>` from shadcn for accessibility and error display
+- **API error handling** uses centralized utilities in `src/lib/api-error.ts` — see section below
 
 ### 5. **UI Components**
 - **shadcn/ui** components in `src/components/ui/`
 - Built on **Tailwind CSS v4** (uses `@tailwindcss/vite` plugin, no PostCSS needed)
-- **lucide-react** for icons, **sonner** for toasts (auto-initialized in +Layout)
+- **lucide-react** for icons, **sonner** for toasts (position: `bottom-center`, `richColors`, auto-initialized in +Layout)
 - Add new shadcn components: `npx shadcn@latest add <component>`
 - Use `cn()` utility (clsx + tailwind-merge) for dynamic class composition
+
+### 6. **API Error Handling**
+All form/mutation error handling uses the centralized utilities in `src/lib/api-error.ts`. **Never use raw `toast.error(error.message)` in mutations.**
+
+Backend error structure:
+```json
+{
+  "error_code": 6012,
+  "error_category": "business_logic",
+  "message": "Pagamento parcial não permitido para esta parcela",
+  "details": { "installment_kind": "monthly", "rule": "partial_payments_not_allowed" },
+  "path": "/api/v1/installments/.../pay"
+}
+```
+
+Three utilities:
+- `extractApiErrorMessage(error, fallback)` — extracts message from backend error body, `Error`, or returns fallback
+- `throwApiError(error, fallback)` — use in `mutationFn` when API returns `{ error }`: `if (error) throwApiError(error, 'Fallback')`
+- `handleApiError(error, fallback)` — shows `toast.error` + returns message. Use in `onError` callbacks and `catch` blocks
+
+Two usage patterns:
+
+**Pattern A** — `onError` callback (preferred for simple mutations):
+```ts
+const mutation = useMutation({
+  mutationFn: async (data) => {
+    const { data: response, error } = await client.POST(...)
+    if (error) throwApiError(error, 'Fallback message')
+    return response
+  },
+  onSuccess: () => { toast.success('...'); navigate('...') },
+  onError: (error) => handleApiError(error, 'Fallback message'),
+})
+```
+
+**Pattern B** — try/catch around `mutateAsync` (when success logic lives in the handler):
+```ts
+const handleSubmit = async (data) => {
+  try {
+    await mutation.mutateAsync(data)
+    toast.success('...')
+    navigate('...')
+  } catch (error) {
+    handleApiError(error, 'Fallback message')
+  }
+}
+```
 
 ## Conventions & Patterns
 

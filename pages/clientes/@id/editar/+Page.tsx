@@ -7,6 +7,7 @@ import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
 import { CustomerPFForm, CustomerPJForm } from '@/components/customers'
 import { Button } from '@/components/ui/button'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import type { CustomerPFCreateFormData, CustomerPJCreateFormData } from '@/schemas/customer.schema'
 
 export default function CustomerEditPage() {
@@ -48,9 +49,7 @@ export default function CustomerEditPage() {
         body: updateData,
       })
 
-      if (error) {
-        throw new Error((error as { detail?: string }).detail || 'Erro ao atualizar cliente')
-      }
+      if (error) throwApiError(error, 'Erro ao atualizar cliente')
 
       return response
     },
@@ -60,9 +59,7 @@ export default function CustomerEditPage() {
       toast.success('Cliente atualizado com sucesso!')
       navigate('/clientes')
     },
-    onError: (error) => {
-      toast.error(error.message || 'Erro ao atualizar cliente')
-    },
+    onError: (error) => handleApiError(error, 'Erro ao atualizar cliente'),
   })
 
   const handleBack = () => {

@@ -13,6 +13,7 @@ import {
 } from '@/components/customers'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import type { CustomerPFCreateFormData, CustomerPJCreateFormData } from '@/schemas/customer.schema'
 
 export default function CustomerNewPage() {
@@ -32,9 +33,7 @@ export default function CustomerNewPage() {
         },
       })
 
-      if (error) {
-        throw new Error((error as { detail?: string }).detail || 'Erro ao cadastrar cliente')
-      }
+      if (error) throwApiError(error, 'Erro ao cadastrar cliente')
 
       return response
     },
@@ -43,9 +42,7 @@ export default function CustomerNewPage() {
       toast.success('Cliente cadastrado com sucesso!')
       navigate('/clientes')
     },
-    onError: (error) => {
-      toast.error(error.message || 'Erro ao cadastrar cliente')
-    },
+    onError: (error) => handleApiError(error, 'Erro ao cadastrar cliente'),
   })
 
   const handleBack = () => {

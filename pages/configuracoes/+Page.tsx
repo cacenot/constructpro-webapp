@@ -8,6 +8,7 @@ import { ProfileForm } from '@/components/configuracoes/profile-form'
 import { TenantConfigSection } from '@/components/configuracoes/tenant-config-section'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { handleApiError } from '@/lib/api-error'
 import type { ProfileUpdateFormData } from '@/schemas/settings.schema'
 import { useTenantStore } from '@/stores/tenant-store'
 
@@ -54,10 +55,7 @@ export default function SettingsPage() {
       toast.success('Perfil atualizado com sucesso')
       queryClient.invalidateQueries({ queryKey: ['users', 'me'] })
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao atualizar perfil')
-      console.error('Profile update error:', error)
-    },
+    onError: (error: Error) => handleApiError(error, 'Erro ao atualizar perfil'),
   })
 
   const isAdmin =

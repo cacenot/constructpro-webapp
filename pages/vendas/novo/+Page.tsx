@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { SaleForm } from '@/components/vendas/sale-form'
+import { handleApiError, throwApiError } from '@/lib/api-error'
 import type { SaleFormData } from '@/schemas/sale.schema'
 
 export default function SaleNewPage() {
@@ -31,9 +32,7 @@ export default function SaleNewPage() {
         },
       })
 
-      if (error) {
-        throw new Error('Falha ao cadastrar venda')
-      }
+      if (error) throwApiError(error, 'Falha ao cadastrar venda')
 
       return result
     },
@@ -52,9 +51,7 @@ export default function SaleNewPage() {
       toast.success('Venda cadastrada com sucesso!')
       navigate('/vendas')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao cadastrar venda'
-      toast.error(message)
-      throw error
+      handleApiError(error, 'Erro ao cadastrar venda')
     }
   }
 

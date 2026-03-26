@@ -6,6 +6,7 @@ import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
 import { ProjectForm } from '@/components/projects/project-form'
 import { Button } from '@/components/ui/button'
+import { handleApiError } from '@/lib/api-error'
 import type { ProjectCreateFormData } from '@/schemas/project.schema'
 
 export default function ProjectEditPage() {
@@ -25,9 +26,7 @@ export default function ProjectEditPage() {
       toast.success('Empreendimento atualizado com sucesso!')
       navigate('/empreendimentos')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro ao atualizar empreendimento'
-      toast.error(message)
-      throw error
+      handleApiError(error, 'Erro ao atualizar empreendimento')
     }
   }
 
