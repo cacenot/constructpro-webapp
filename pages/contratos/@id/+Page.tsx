@@ -5,7 +5,7 @@ import {
 } from '@cacenot/construct-pro-api-client'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowLeft, Building2, Download, ExternalLink, TrendingUp, User } from 'lucide-react'
+import { ArrowLeft, Download, ExternalLink } from 'lucide-react'
 import { navigate } from 'vike/client/router'
 import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
@@ -14,7 +14,7 @@ import { ContractStatusBadge } from '@/components/contratos/contract-status-badg
 import { CorrectionChart } from '@/components/contratos/correction-chart'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useContract } from '@/hooks/useContracts'
 import { formatDocument } from '@/lib/text-formatters'
 import { cn, formatCurrency, formatId } from '@/lib/utils'
@@ -44,7 +45,6 @@ function formatDate(dateStr: string | null | undefined): string {
 function formatMonthYear(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
   try {
-    // Handle both "YYYY-MM" (reference months) and "YYYY-MM-DD" (due dates)
     const normalized = dateStr.length === 7 ? `${dateStr}-01` : dateStr
     return format(new Date(normalized), 'MMM/yy', { locale: ptBR })
   } catch {
@@ -65,20 +65,9 @@ export default function ContractDetailPage() {
       <AppLayout>
         <div className="space-y-6">
           <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-12 w-80" />
-          <div className="grid grid-cols-3 gap-4">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-          </div>
-          <div className="grid grid-cols-4 gap-4">
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-            <Skeleton className="h-24" />
-          </div>
-          <Skeleton className="h-14" />
-          <Skeleton className="h-48" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-36" />
+          <Skeleton className="h-80" />
         </div>
       </AppLayout>
     )
@@ -114,6 +103,9 @@ export default function ContractDetailPage() {
     ? formatCurrency(installmentSummary.total_amount_cents / 100)
     : '—'
 
+  const hasCorrectionData = correctionSummary && correctionSummary.correction_count > 0
+  const hasPaymentData = paymentSummary && paymentSummary.payment_count > 0
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -128,140 +120,113 @@ export default function ContractDetailPage() {
           Voltar para Contratos
         </Button>
 
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">
-                Contrato {formatId(contract.id)}
-              </h1>
-              {contract.status && <ContractStatusBadge status={contract.status} />}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Criado em {formatDate(contract.created_at)}
-              {contract.signed_at && ` · Assinado em ${formatDate(contract.signed_at)}`}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => navigate(`/vendas/${contract.sale_id}`)}
-            >
-              <ExternalLink className="size-4" />
-              Ver Proposta
-            </Button>
-            {contract.document_url && (
-              <Button variant="outline" className="gap-2" asChild>
-                <a href={contract.document_url} target="_blank" rel="noreferrer">
-                  <Download className="size-4" />
-                  Baixar Contrato
-                </a>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Cards de contexto */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Building2 className="size-4" />
-                Unidade
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <p className="font-semibold">{sale?.unit?.name ?? '—'}</p>
-              <p className="text-sm text-muted-foreground">{sale?.unit?.project?.name ?? '—'}</p>
-              {sale?.unit?.area && (
-                <p className="text-xs text-muted-foreground">{sale.unit.area} m²</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <User className="size-4" />
-                Cliente
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <p className="font-semibold">{sale?.customer?.full_name ?? '—'}</p>
-              {sale?.customer?.cpf_cnpj && (
-                <p className="text-sm text-muted-foreground">
-                  {formatDocument(sale.customer.cpf_cnpj)}
-                </p>
-              )}
-              {sale?.customer?.email && (
-                <p className="text-xs text-muted-foreground">{sale.customer.email}</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <TrendingUp className="size-4" />
-                Financiamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1">
-              <p className="tabular-nums font-semibold">
-                {formatCurrency(contract.principal_amount_cents / 100)}
+        {/* === ZONA 1: Header Compacto === */}
+        <div className="space-y-3">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1.5">
+              <p className="text-lg font-semibold">{sale?.customer?.full_name ?? '—'}</p>
+              <div className="flex items-center gap-3">
+                <h1 className="text-sm font-medium text-muted-foreground">
+                  Contrato {formatId(contract.id)}
+                </h1>
+                {contract.status && <ContractStatusBadge status={contract.status} />}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Criado em {formatDate(contract.created_at)}
+                {contract.signed_at && ` · Assinado em ${formatDate(contract.signed_at)}`}
               </p>
-              <p className="text-sm text-muted-foreground">Índice: {contract.index_type_code}</p>
-              {contract.signed_at && (
-                <p className="text-xs text-muted-foreground">
-                  Assinado em {formatDate(contract.signed_at)}
-                </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => navigate(`/vendas/${contract.sale_id}`)}
+              >
+                <ExternalLink className="size-4" />
+                Ver Proposta
+              </Button>
+              {contract.document_url && (
+                <Button variant="outline" className="gap-2" asChild>
+                  <a href={contract.document_url} target="_blank" rel="noreferrer">
+                    <Download className="size-4" />
+                    Baixar Contrato
+                  </a>
+                </Button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
+          {/* Contexto inline: Cliente | Unidade | Financiamento */}
+          <div className="flex flex-col gap-2 text-sm lg:flex-row lg:items-center lg:gap-0">
+            {sale?.customer?.cpf_cnpj && (
+              <>
+                <span className="text-muted-foreground">
+                  {formatDocument(sale.customer.cpf_cnpj)}
+                  {sale.customer.email && ` · ${sale.customer.email}`}
+                </span>
+                <Separator orientation="vertical" className="mx-4 hidden h-4 lg:block" />
+              </>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{sale?.unit?.name ?? '—'}</span>
+              {sale?.unit?.project?.name && (
+                <span className="text-muted-foreground">· {sale.unit.project.name}</span>
+              )}
+              {sale?.unit?.area && (
+                <span className="text-muted-foreground">· {sale.unit.area} m²</span>
+              )}
+            </div>
+            <Separator orientation="vertical" className="mx-4 hidden h-4 lg:block" />
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Índice:</span>
+              <span className="font-medium">{contract.index_type_code}</span>
+              <span className="text-muted-foreground">·</span>
+              <span className="tabular-nums font-medium">
+                {formatCurrency(contract.principal_amount_cents / 100)}
+              </span>
+            </div>
+          </div>
         </div>
 
-        {/* KPI financeiros */}
+        {/* === ZONA 2: Resumo Financeiro === */}
         {financial && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">Principal contratado</p>
-                <p className="tabular-nums mt-1 text-2xl font-bold">
-                  {formatCurrency(financial.principal_amount_cents / 100)}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">Saldo devedor</p>
-                <p className={cn('tabular-nums mt-1 text-2xl font-bold', outstandingBalanceColor)}>
-                  {formatCurrency(financial.outstanding_balance_cents / 100)}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground">Total pago</p>
-                <p className="tabular-nums mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(financial.total_paid_cents / 100)}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="space-y-2 pt-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Progresso</p>
-                  <span className="tabular-nums text-sm font-semibold">
-                    {Number(financial.payment_progress_percentage).toFixed(1)}%
-                  </span>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Principal contratado</p>
+                  <p className="tabular-nums mt-1 text-2xl font-bold">
+                    {formatCurrency(financial.principal_amount_cents / 100)}
+                  </p>
                 </div>
-                <Progress value={Number(financial.payment_progress_percentage)} />
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div>
+                  <p className="text-sm text-muted-foreground">Saldo devedor</p>
+                  <p
+                    className={cn('tabular-nums mt-1 text-2xl font-bold', outstandingBalanceColor)}
+                  >
+                    {formatCurrency(financial.outstanding_balance_cents / 100)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total pago</p>
+                  <p className="tabular-nums mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {formatCurrency(financial.total_paid_cents / 100)}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Progresso</p>
+                    <span className="tabular-nums text-sm font-semibold">
+                      {Number(financial.payment_progress_percentage).toFixed(1)}%
+                    </span>
+                  </div>
+                  <Progress value={Number(financial.payment_progress_percentage)} />
+                </div>
+              </div>
+
+              {(financial.total_correction_cents > 0 || financial.total_adjustment_cents !== 0) && (
+                <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
                   {financial.total_correction_cents > 0 && (
                     <span>Correção: +{formatCurrency(financial.total_correction_cents / 100)}</span>
                   )}
@@ -269,59 +234,66 @@ export default function ContractDetailPage() {
                     <span>Ajustes: {formatCurrency(financial.total_adjustment_cents / 100)}</span>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+
+            {/* Próximo vencimento */}
+            {installmentSummary && (
+              <>
+                <Separator />
+                <CardContent className="py-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm text-muted-foreground">Próximo vencimento:</span>
+                      {installmentSummary.next_due_date ? (
+                        <>
+                          <span className="text-lg font-bold">
+                            {formatDate(installmentSummary.next_due_date)}
+                          </span>
+                          {installmentSummary.next_due_amount_cents != null && (
+                            <span className="tabular-nums text-sm text-muted-foreground">
+                              {formatCurrency(installmentSummary.next_due_amount_cents / 100)}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          Sem parcelas pendentes
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {(installmentSummary.paid_count ?? 0) > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:text-emerald-300"
+                        >
+                          {installmentSummary.paid_count} pagas
+                        </Badge>
+                      )}
+                      {(installmentSummary.overdue_count ?? 0) > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="border-red-500/30 bg-red-500/10 text-red-700 dark:border-red-400/30 dark:text-red-300"
+                        >
+                          {installmentSummary.overdue_count} em atraso
+                        </Badge>
+                      )}
+                      <Badge variant="outline">{installmentSummary.total_count} total</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </>
+            )}
+          </Card>
         )}
 
-        {/* Próximo vencimento + contadores */}
-        {installmentSummary && (
-          <div className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Próximo vencimento</p>
-              {installmentSummary.next_due_date ? (
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-bold">
-                    {formatDate(installmentSummary.next_due_date)}
-                  </span>
-                  {installmentSummary.next_due_amount_cents != null && (
-                    <span className="tabular-nums text-sm text-muted-foreground">
-                      {formatCurrency(installmentSummary.next_due_amount_cents / 100)}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Sem parcelas pendentes</p>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {(installmentSummary.paid_count ?? 0) > 0 && (
-                <Badge
-                  variant="outline"
-                  className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:text-emerald-300"
-                >
-                  {installmentSummary.paid_count} pagas
-                </Badge>
-              )}
-              {(installmentSummary.overdue_count ?? 0) > 0 && (
-                <Badge
-                  variant="outline"
-                  className="border-red-500/30 bg-red-500/10 text-red-700 dark:border-red-400/30 dark:text-red-300"
-                >
-                  {installmentSummary.overdue_count} em atraso
-                </Badge>
-              )}
-              <Badge variant="outline">{installmentSummary.total_count} total</Badge>
-            </div>
-          </div>
-        )}
-
-        {/* Plano de parcelas */}
+        {/* === Plano de Parcelas === */}
         {installmentSummary?.schedules && installmentSummary.schedules.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Plano de Parcelas</CardTitle>
+              <h3 className="text-base font-semibold">Plano de Parcelas</h3>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -387,149 +359,156 @@ export default function ContractDetailPage() {
           </Card>
         )}
 
-        {/* Histórico de correção monetária */}
-        {correctionSummary && correctionSummary.correction_count > 0 && (
+        {/* === Correção Monetária & Pagamentos (Tabs) === */}
+        {(hasCorrectionData || hasPaymentData) && (
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Histórico de Correção Monetária</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {correctionSummary.correction_count}{' '}
-                {correctionSummary.correction_count === 1 ? 'mês corrigido' : 'meses corrigidos'} ·
-                Total:{' '}
-                <span className="tabular-nums font-medium">
-                  {formatCurrency(correctionSummary.total_correction_cents / 100)}
-                </span>
-              </p>
-            </CardHeader>
-            {correctionSummary.entries && correctionSummary.entries.length > 0 && (
-              <CardContent>
-                <CorrectionChart
-                  entries={correctionSummary.entries}
-                  totalCorrectionCents={correctionSummary.total_correction_cents}
-                  principalAmountCents={contract.principal_amount_cents}
-                />
-              </CardContent>
-            )}
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="px-6">Mês de Referência</TableHead>
-                    <TableHead className="px-6">Índice</TableHead>
-                    <TableHead className="px-6 text-right">Variação</TableHead>
-                    <TableHead className="px-6 text-right">Valor Corrigido</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {correctionSummary.entries?.map((entry) => (
-                    <TableRow key={entry.reference_month}>
-                      <TableCell className="px-6">
-                        {formatMonthYear(entry.reference_month)}
-                      </TableCell>
-                      <TableCell className="px-6 font-mono text-sm">
-                        {entry.index_type_code}
-                      </TableCell>
-                      <TableCell className="px-6 text-right tabular-nums">
-                        <span
-                          className={cn(
-                            entry.variation_ppm >= 0
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-red-600 dark:text-red-400'
-                          )}
-                        >
-                          {entry.variation_ppm >= 0 ? '+' : ''}
-                          {(entry.variation_ppm / 10000).toFixed(2)}%
+            <Tabs defaultValue={hasCorrectionData ? 'correcao' : 'pagamentos'}>
+              <CardHeader className="pb-0">
+                <TabsList>
+                  {hasCorrectionData && (
+                    <TabsTrigger value="correcao">Correção Monetária</TabsTrigger>
+                  )}
+                  {hasPaymentData && <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>}
+                </TabsList>
+              </CardHeader>
+
+              {/* Tab: Correção Monetária */}
+              {hasCorrectionData && (
+                <TabsContent value="correcao">
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      {correctionSummary.correction_count}{' '}
+                      {correctionSummary.correction_count === 1
+                        ? 'mês corrigido'
+                        : 'meses corrigidos'}{' '}
+                      · Total:{' '}
+                      <span className="tabular-nums font-medium">
+                        {formatCurrency(correctionSummary.total_correction_cents / 100)}
+                      </span>
+                    </p>
+                    {correctionSummary.entries && correctionSummary.entries.length > 0 && (
+                      <CorrectionChart
+                        entries={correctionSummary.entries}
+                        totalCorrectionCents={correctionSummary.total_correction_cents}
+                        principalAmountCents={contract.principal_amount_cents}
+                      />
+                    )}
+                  </CardContent>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="px-6">Mês de Referência</TableHead>
+                          <TableHead className="px-6">Índice</TableHead>
+                          <TableHead className="px-6 text-right">Variação</TableHead>
+                          <TableHead className="px-6 text-right">Valor Corrigido</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {correctionSummary.entries?.map((entry) => (
+                          <TableRow key={entry.reference_month}>
+                            <TableCell className="px-6">
+                              {formatMonthYear(entry.reference_month)}
+                            </TableCell>
+                            <TableCell className="px-6 font-mono text-sm">
+                              {entry.index_type_code}
+                            </TableCell>
+                            <TableCell className="px-6 text-right tabular-nums">
+                              <span
+                                className={cn(
+                                  entry.variation_ppm >= 0
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-red-600 dark:text-red-400'
+                                )}
+                              >
+                                {entry.variation_ppm >= 0 ? '+' : ''}
+                                {(entry.variation_ppm / 10000).toFixed(2)}%
+                              </span>
+                            </TableCell>
+                            <TableCell className="px-6 text-right tabular-nums">
+                              {formatCurrency(entry.amount_cents / 100)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell className="px-6 font-semibold" colSpan={3}>
+                            Total
+                          </TableCell>
+                          <TableCell className="px-6 text-right tabular-nums font-semibold">
+                            {formatCurrency(correctionSummary.total_correction_cents / 100)}
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  </CardContent>
+                </TabsContent>
+              )}
+
+              {/* Tab: Pagamentos */}
+              {hasPaymentData && (
+                <TabsContent value="pagamentos">
+                  <CardContent className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Total recebido: </span>
+                        <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(paymentSummary.total_paid_cents / 100)}
                         </span>
-                      </TableCell>
-                      <TableCell className="px-6 text-right tabular-nums">
-                        {formatCurrency(entry.amount_cents / 100)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter>
-                  <TableRow>
-                    <TableCell className="px-6 font-semibold" colSpan={3}>
-                      Total
-                    </TableCell>
-                    <TableCell className="px-6 text-right tabular-nums font-semibold">
-                      {formatCurrency(correctionSummary.total_correction_cents / 100)}
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </CardContent>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Nº de pagamentos: </span>
+                        <span className="font-medium">{paymentSummary.payment_count}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Último pagamento: </span>
+                        <span className="font-medium">
+                          {formatDate(paymentSummary.last_payment_date)}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                  {paymentSummary.by_method && paymentSummary.by_method.length > 0 && (
+                    <CardContent className="p-0">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="px-6">Método</TableHead>
+                            <TableHead className="px-6 text-right">Qtd</TableHead>
+                            <TableHead className="px-6 text-right">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paymentSummary.by_method.map((item) => (
+                            <TableRow key={item.method}>
+                              <TableCell className="px-6">
+                                {PAYMENT_METHOD_LABELS[item.method] ??
+                                  translatePaymentMethod(item.method, 'pt-BR')}
+                              </TableCell>
+                              <TableCell className="px-6 text-right tabular-nums">
+                                {item.count}
+                              </TableCell>
+                              <TableCell className="px-6 text-right tabular-nums">
+                                {formatCurrency(item.total_cents / 100)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  )}
+                </TabsContent>
+              )}
+            </Tabs>
           </Card>
         )}
 
-        {/* Pagamentos */}
-        {paymentSummary && paymentSummary.payment_count > 0 && (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Resumo de Pagamentos</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total recebido</span>
-                  <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(paymentSummary.total_paid_cents / 100)}
-                  </span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Nº de pagamentos</span>
-                  <span className="text-sm">{paymentSummary.payment_count}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Último pagamento</span>
-                  <span className="text-sm">{formatDate(paymentSummary.last_payment_date)}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {paymentSummary.by_method && paymentSummary.by_method.length > 0 && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Por Forma de Pagamento</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="px-6">Método</TableHead>
-                        <TableHead className="px-6 text-right">Qtd</TableHead>
-                        <TableHead className="px-6 text-right">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paymentSummary.by_method.map((item) => (
-                        <TableRow key={item.method}>
-                          <TableCell className="px-6">
-                            {PAYMENT_METHOD_LABELS[item.method] ??
-                              translatePaymentMethod(item.method, 'pt-BR')}
-                          </TableCell>
-                          <TableCell className="px-6 text-right tabular-nums">
-                            {item.count}
-                          </TableCell>
-                          <TableCell className="px-6 text-right tabular-nums">
-                            {formatCurrency(item.total_cents / 100)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {/* Evolução do saldo */}
+        {/* === Evolução do Saldo === */}
         {balanceTimeline?.entries && balanceTimeline.entries.length > 0 && (
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Evolução do Saldo</CardTitle>
+              <h3 className="text-base font-semibold">Evolução do Saldo</h3>
             </CardHeader>
             <CardContent>
               <BalanceTimelineChart
