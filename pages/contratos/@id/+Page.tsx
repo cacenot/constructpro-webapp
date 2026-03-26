@@ -121,23 +121,23 @@ export default function ContractDetailPage() {
         </Button>
 
         {/* === ZONA 1: Header Compacto === */}
-        <div className="space-y-3">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-1.5">
-              <p className="text-lg font-semibold">{sale?.customer?.full_name ?? '—'}</p>
-              <div className="flex items-center gap-3">
-                <h1 className="text-sm font-medium text-muted-foreground">
+        <div className="space-y-4 rounded-lg border bg-card/50 p-6">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3 flex-1">
+              <h1 className="text-3xl font-bold">{sale?.customer?.full_name ?? '—'}</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">
                   Contrato {formatId(contract.id)}
-                </h1>
+                </span>
                 {contract.status && <ContractStatusBadge status={contract.status} />}
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Criado em {formatDate(contract.created_at)}
                 {contract.signed_at && ` · Assinado em ${formatDate(contract.signed_at)}`}
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 variant="outline"
                 className="gap-2"
@@ -157,34 +157,38 @@ export default function ContractDetailPage() {
             </div>
           </div>
 
-          {/* Contexto inline: Cliente | Unidade | Financiamento */}
-          <div className="flex flex-col gap-2 text-sm lg:flex-row lg:items-center lg:gap-0">
+          <Separator />
+
+          {/* Contexto: CPF | Unidade | Índice | Principal */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {sale?.customer?.cpf_cnpj && (
-              <>
-                <span className="text-muted-foreground">
-                  {formatDocument(sale.customer.cpf_cnpj)}
-                  {sale.customer.email && ` · ${sale.customer.email}`}
-                </span>
-                <Separator orientation="vertical" className="mx-4 hidden h-4 lg:block" />
-              </>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground">CPF/CNPJ</p>
+                <p className="text-sm font-medium">{formatDocument(sale.customer.cpf_cnpj)}</p>
+                {sale.customer.email && (
+                  <p className="text-xs text-muted-foreground">{sale.customer.email}</p>
+                )}
+              </div>
             )}
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{sale?.unit?.name ?? '—'}</span>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Unidade</p>
+              <p className="text-sm font-medium">{sale?.unit?.name ?? '—'}</p>
               {sale?.unit?.project?.name && (
-                <span className="text-muted-foreground">· {sale.unit.project.name}</span>
+                <p className="text-xs text-muted-foreground">{sale.unit.project.name}</p>
               )}
               {sale?.unit?.area && (
-                <span className="text-muted-foreground">· {sale.unit.area} m²</span>
+                <p className="text-xs text-muted-foreground">{sale.unit.area} m²</p>
               )}
             </div>
-            <Separator orientation="vertical" className="mx-4 hidden h-4 lg:block" />
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Índice:</span>
-              <span className="font-medium">{contract.index_type_code}</span>
-              <span className="text-muted-foreground">·</span>
-              <span className="tabular-nums font-medium">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Índice</p>
+              <p className="text-sm font-medium">{contract.index_type_code}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Principal</p>
+              <p className="tabular-nums text-sm font-medium">
                 {formatCurrency(contract.principal_amount_cents / 100)}
-              </span>
+              </p>
             </div>
           </div>
         </div>
