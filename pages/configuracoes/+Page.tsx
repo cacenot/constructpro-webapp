@@ -1,16 +1,19 @@
 import { type components, useApiClient } from '@cacenot/construct-pro-api-client'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
+import { MembersSection } from '@/components/configuracoes/members/members-section'
 import { PasswordForm } from '@/components/configuracoes/password-form'
 import { ProfileForm } from '@/components/configuracoes/profile-form'
 import { TenantConfigSection } from '@/components/configuracoes/tenant-config-section'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useIsAdmin } from '@/hooks/use-is-admin'
 import { handleApiError } from '@/lib/api-error'
+import { cn } from '@/lib/utils'
 import type { ProfileUpdateFormData } from '@/schemas/settings.schema'
-import { useTenantStore } from '@/stores/tenant-store'
 
 /**
  * Página de configurações — Minha Conta e Organização (admin/superadmin apenas)
@@ -18,7 +21,7 @@ import { useTenantStore } from '@/stores/tenant-store'
 export default function SettingsPage() {
   const { client } = useApiClient()
   const queryClient = useQueryClient()
-  const tenantId = useTenantStore((s) => s.tenantId)
+  const [activeTab, setActiveTab] = useState('conta')
 
   const {
     data: profile,
@@ -58,12 +61,7 @@ export default function SettingsPage() {
     onError: (error: Error) => handleApiError(error, 'Erro ao atualizar perfil'),
   })
 
-  const isAdmin =
-    profile?.is_superuser ||
-    (profile?.tenants
-      ?.find((t) => t.id === tenantId)
-      ?.roles?.some((r) => r.name === 'admin' || r.name === 'superadmin') ??
-      false)
+  const isAdmin = useIsAdmin(profile)
 
   if (isLoading) {
     return (
@@ -95,7 +93,7 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-3xl pb-12">
+      <div className={cn('mx-auto pb-12', activeTab === 'membros' ? 'max-w-5xl' : 'max-w-3xl')}>
         {/* Header */}
         <div className="space-y-1 mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
@@ -104,9 +102,10 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="conta">
+        <Tabs defaultValue="conta" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="conta">Minha Conta</TabsTrigger>
+            {isAdmin && <TabsTrigger value="membros">Membros</TabsTrigger>}
             {isAdmin && <TabsTrigger value="organizacao">Organização</TabsTrigger>}
           </TabsList>
 
@@ -140,6 +139,13 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ── Membros ─────────────────────────────────────────────── */}
+          {isAdmin && (
+            <TabsContent value="membros">
+              <MembersSection />
+            </TabsContent>
+          )}
 
           {/* ── Organização ─────────────────────────────────────────── */}
           {isAdmin && (

@@ -335,6 +335,11 @@ packages:
     peerDependencies:
       '@tanstack/react-query': '>=5.0.0'
       react: '>=18.0.0'
+    peerDependenciesMeta:
+      '@tanstack/react-query':
+        optional: true
+      react:
+        optional: true
 
   '@date-fns/tz@1.4.1':
     resolution: {integrity: sha512-P5LUNhtbj6YfI3iJjw5EL9eUAG6OitD0W3fWQcpQjDRc/QIsL0tRNuO1PcDvPccWL1fSTXXdE1ds+l95DV/OFA==}
@@ -3058,8 +3063,9 @@ snapshots:
 
   '@cacenot/construct-pro-api-client@0.18.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@tanstack/react-query': 5.90.20(react@19.2.4)
       openapi-fetch: 0.9.8
+    optionalDependencies:
+      '@tanstack/react-query': 5.90.20(react@19.2.4)
       react: 19.2.4
 
   '@date-fns/tz@1.4.1': {}
