@@ -30,6 +30,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import type { InstallmentResponse } from '@/hooks/use-installments'
 import { installmentKeys, useInstallments } from '@/hooks/use-installments'
+import { useTenantConfig } from '@/hooks/use-tenant-config'
 import { handleApiError, throwApiError } from '@/lib/api-error'
 import { formatCurrency, formatId } from '@/lib/utils'
 import {
@@ -63,6 +64,7 @@ export function PayInstallmentDialog({
   const { client } = useApiClient()
   const queryClient = useQueryClient()
 
+  const { data: tenantConfig } = useTenantConfig()
   const [paidDate, setPaidDate] = useState<Date>(new Date())
   const [calendarOpen, setCalendarOpen] = useState(false)
 
@@ -81,6 +83,12 @@ export function PayInstallmentDialog({
   const entryInstallment = installmentsData?.items?.[0]
   const resolvedInstallment = installment ?? entryInstallment
   const isLoading = isEntryMode && (loadingSale || loadingInstallment)
+
+  const isEntryInstallment = resolvedInstallment?.kind === 'entry'
+  const allowPartialPayments = isEntryInstallment
+    ? (tenantConfig?.allow_partial_payments_for_entry ?? true)
+    : (tenantConfig?.allow_partial_payments ?? false)
+  const maxAmountCents = resolvedInstallment?.current_amount_cents ?? 0
 
   const {
     control,
@@ -227,15 +235,23 @@ export function PayInstallmentDialog({
                 control={control}
                 name="amount_cents"
                 render={({ field }) => (
-                  <CurrencyInput id="amount_cents" value={field.value} onChange={field.onChange} />
+                  <CurrencyInput
+                    id="amount_cents"
+                    value={field.value}
+                    onChange={(cents) => {
+                      const clamped = maxAmountCents > 0 ? Math.min(cents, maxAmountCents) : cents
+                      field.onChange(clamped)
+                    }}
+                    readOnly={!allowPartialPayments}
+                  />
                 )}
               />
               {errors.amount_cents && (
                 <p className="text-sm text-red-600">{errors.amount_cents.message}</p>
               )}
-              {isEntryMode && (
+              {!allowPartialPayments && (
                 <p className="text-xs text-muted-foreground">
-                  Pagamentos parciais serão alocados na parcela de entrada.
+                  Pagamento parcial não está habilitado para este tipo de parcela.
                 </p>
               )}
             </div>
