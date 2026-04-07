@@ -47,6 +47,7 @@
       "**/src/**/*.tsx",
       "**/pages/**/*.ts",
       "**/pages/**/*.tsx",
+      "!**/src/components/ui",
       "!**/node_modules",
       "!**/dist",
       "!**/.git",
