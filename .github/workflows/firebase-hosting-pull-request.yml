@@ -22,7 +22,11 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: '@cacenot'
       - run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pnpm build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
