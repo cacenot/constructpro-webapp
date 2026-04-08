@@ -1,4 +1,4 @@
-import type { components } from '@cacenot/construct-pro-api-client/schema'
+import type { components } from '@cacenot/construct-pro-api-client'
 import { ArrowRight } from 'lucide-react'
 import { navigate } from 'vike/client/router'
 import { SalesPipelineSection } from '@/components/empreendimentos/sales-pipeline-section'

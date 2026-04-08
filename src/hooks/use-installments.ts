@@ -16,7 +16,7 @@ interface InstallmentsQuery {
   payment_method?: string[] | null
   'due_date[min]'?: string | null
   'due_date[max]'?: string | null
-  customer_id?: number | null
+  customer_id?: string | null
   sort_by?: string[] | null
 }
 

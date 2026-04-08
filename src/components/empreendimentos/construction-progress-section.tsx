@@ -1,4 +1,4 @@
-import type { components } from '@cacenot/construct-pro-api-client/schema'
+import type { components } from '@cacenot/construct-pro-api-client'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { HardHat } from 'lucide-react'
@@ -31,7 +31,7 @@ export function ConstructionProgressSection({ updates }: ConstructionProgressSec
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )
 
-  const latestPercentage = sorted.length > 0 ? sorted[0].percentage : 0
+  const latestPercentage = sorted.length > 0 ? (sorted[0]?.percentage ?? 0) : 0
   const visibleEntries = expanded ? sorted : sorted.slice(0, INITIAL_VISIBLE)
   const hasMore = sorted.length > INITIAL_VISIBLE
 

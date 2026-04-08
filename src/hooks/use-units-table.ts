@@ -1,4 +1,8 @@
-import { type UnitSummaryResponse, useApiClient } from '@cacenot/construct-pro-api-client'
+import type { components } from '@cacenot/construct-pro-api-client'
+import { useApiClient } from '@cacenot/construct-pro-api-client'
+
+type UnitSummaryResponse = components['schemas']['UnitSummaryResponse']
+
 import { useQuery } from '@tanstack/react-query'
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs'
 import { useEffect, useMemo, useState } from 'react'

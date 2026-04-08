@@ -1,4 +1,4 @@
-import type { components } from '@cacenot/construct-pro-api-client/schema'
+import type { components } from '@cacenot/construct-pro-api-client'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from 'recharts'
@@ -42,7 +42,8 @@ function CustomTooltip({
   payload?: Array<{ payload: BalanceTimelineEntry }>
 }) {
   if (!active || !payload?.length) return null
-  const data = payload[0].payload
+  const data = payload[0]?.payload
+  if (!data) return null
 
   return (
     <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">

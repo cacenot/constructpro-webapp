@@ -1,4 +1,4 @@
-import type { components } from '@cacenot/construct-pro-api-client/schema'
+import type { components } from '@cacenot/construct-pro-api-client'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts'
@@ -43,7 +43,8 @@ function CustomTooltip({
   payload?: Array<{ payload: CorrectionMonthEntry & { month_label: string; amount: number } }>
 }) {
   if (!active || !payload?.length) return null
-  const data = payload[0].payload
+  const data = payload[0]?.payload
+  if (!data) return null
 
   const variationPct = (data.variation_ppm / 10000).toFixed(2)
   const isPositive = data.variation_ppm >= 0

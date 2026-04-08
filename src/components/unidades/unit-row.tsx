@@ -1,4 +1,8 @@
-import { translateUnitCategory, type UnitResponse } from '@cacenot/construct-pro-api-client'
+import type { components } from '@cacenot/construct-pro-api-client'
+import { translateUnitCategory } from '@cacenot/construct-pro-api-client'
+
+type UnitResponse = components['schemas']['UnitResponse']
+
 import { MoreVertical } from 'lucide-react'
 import { navigate } from 'vike/client/router'
 import { Badge } from '@/components/ui/badge'

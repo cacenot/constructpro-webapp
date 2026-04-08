@@ -1,4 +1,4 @@
-import type { components } from '@cacenot/construct-pro-api-client/schema'
+import type { components } from '@cacenot/construct-pro-api-client'
 import { Calendar } from 'lucide-react'
 import { CustomerOverdueAlert } from '@/components/clientes/detail/customer-overdue-alert'
 import { CustomerPaymentMethodChart } from '@/components/clientes/detail/customer-payment-method-chart'

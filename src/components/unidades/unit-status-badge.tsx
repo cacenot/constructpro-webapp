@@ -1,4 +1,8 @@
-import { translateUnitStatus, type UnitResponse } from '@cacenot/construct-pro-api-client'
+import type { components } from '@cacenot/construct-pro-api-client'
+import { translateUnitStatus } from '@cacenot/construct-pro-api-client'
+
+type UnitResponse = components['schemas']['UnitResponse']
+
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 

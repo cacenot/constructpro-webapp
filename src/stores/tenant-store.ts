@@ -2,7 +2,7 @@ import type { components } from '@cacenot/construct-pro-api-client'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
-type TenantWithRoles = components['schemas']['UserProfileResponse']['tenants'][number]
+type TenantWithRoles = NonNullable<components['schemas']['UserProfileResponse']['tenants']>[number]
 
 interface TenantState {
   tenantId: string | null

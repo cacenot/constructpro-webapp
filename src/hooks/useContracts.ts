@@ -1,5 +1,5 @@
+import type { paths } from '@cacenot/construct-pro-api-client'
 import { useApiClient } from '@cacenot/construct-pro-api-client'
-import type { paths } from '@cacenot/construct-pro-api-client/schema'
 import { useQuery } from '@tanstack/react-query'
 
 type ContractsQuery = paths['/api/v1/contracts/']['get']['parameters']['query']

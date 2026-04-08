@@ -13,9 +13,9 @@ import type { UnitFormData } from '@/schemas/unit.schema'
 type ApiClient = ReturnType<typeof useApiClient>['client']
 
 async function fetchUnit(client: ApiClient, id: number) {
-  const { data, error } = await client.GET('/api/v1/units/{id}', {
+  const { data, error } = await client.GET('/api/v1/units/{unit_id}', {
     params: {
-      path: { id },
+      path: { unit_id: id },
     },
   })
 
@@ -27,9 +27,9 @@ async function fetchUnit(client: ApiClient, id: number) {
 }
 
 async function fetchProject(client: ApiClient, id: number) {
-  const { data, error } = await client.GET('/api/v1/projects/{id}', {
+  const { data, error } = await client.GET('/api/v1/projects/{project_id}', {
     params: {
-      path: { id },
+      path: { project_id: id },
     },
   })
 
@@ -73,9 +73,9 @@ export default function UnitEditPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: UnitFormData) => {
-      const { data: result, error } = await client.PATCH('/api/v1/units/{id}', {
+      const { data: result, error } = await client.PATCH('/api/v1/units/{unit_id}', {
         params: {
-          path: { id: unitId },
+          path: { unit_id: unitId },
         },
         body: {
           name: data.name,

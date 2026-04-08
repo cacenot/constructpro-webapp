@@ -1,4 +1,4 @@
-import type { components } from '@cacenot/construct-pro-api-client/schema'
+import type { components } from '@cacenot/construct-pro-api-client'
 import { AlertTriangle, Calendar } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 

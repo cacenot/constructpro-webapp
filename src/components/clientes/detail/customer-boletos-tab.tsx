@@ -1,4 +1,4 @@
-import type { components } from '@cacenot/construct-pro-api-client/schema'
+import type { components } from '@cacenot/construct-pro-api-client'
 import { Check, Copy, ExternalLink, ScanBarcode } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'

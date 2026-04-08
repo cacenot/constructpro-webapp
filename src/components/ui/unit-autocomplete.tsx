@@ -35,7 +35,7 @@ async function searchUnits(client: ApiClient, search: string) {
     params: {
       query: {
         search: search || undefined,
-        status: 'available',
+        status: ['available'],
         page: 1,
         page_size: 20,
       },

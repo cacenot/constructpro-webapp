@@ -1,4 +1,7 @@
-import type { SaleResponse } from '@cacenot/construct-pro-api-client'
+import type { components } from '@cacenot/construct-pro-api-client'
+
+type SaleResponse = components['schemas']['SaleResponse']
+
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { MoreVertical } from 'lucide-react'

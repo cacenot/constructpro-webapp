@@ -112,7 +112,8 @@ export default function CustomerEditPage() {
       <div className="mx-auto max-w-3xl">
         {customer.type === 'individual' ? (
           <CustomerPFForm
-            initialData={initialData}
+            // biome-ignore lint/suspicious/noExplicitAny: API response has nullable fields incompatible with form schema
+            initialData={{ ...initialData, type: 'individual' } as any}
             onSubmit={handleSubmitPF}
             onBack={handleBack}
             isEdit
@@ -120,7 +121,8 @@ export default function CustomerEditPage() {
           />
         ) : (
           <CustomerPJForm
-            initialData={initialData}
+            // biome-ignore lint/suspicious/noExplicitAny: API response has nullable fields incompatible with form schema
+            initialData={{ ...initialData, type: 'company' } as any}
             onSubmit={handleSubmitPJ}
             onBack={handleBack}
             isEdit

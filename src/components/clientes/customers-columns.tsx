@@ -1,4 +1,8 @@
-import { type CustomerResponse, getCustomerTypeOptions } from '@cacenot/construct-pro-api-client'
+import type { components } from '@cacenot/construct-pro-api-client'
+import { getCustomerTypeOptions } from '@cacenot/construct-pro-api-client'
+
+type CustomerResponse = components['schemas']['CustomerResponse']
+
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreVertical } from 'lucide-react'
 import { navigate } from 'vike/client/router'

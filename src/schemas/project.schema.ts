@@ -77,7 +77,7 @@ export const projectCreateSchema = z.object({
 
   delivery_date: z.string().optional().nullable(),
 
-  features: z.array(z.string().max(PROJECT_TEXT_LIMITS.FEATURE)).optional().nullable(),
+  features: z.array(z.string().max(PROJECT_TEXT_LIMITS.FEATURE)).optional(),
 })
 
 /**

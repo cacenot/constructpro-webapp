@@ -33,7 +33,7 @@ async function searchCustomers(client: ApiClient, search: string) {
     params: {
       query: {
         search: search || undefined,
-        is_draft: false,
+        is_draft: 'false',
         page: 1,
         page_size: 20,
       },

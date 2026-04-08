@@ -56,9 +56,9 @@ async function searchProjects(client: ApiClient, search: string) {
 }
 
 async function getProjectById(client: ApiClient, id: number) {
-  const { data, error } = await client.GET('/api/v1/projects/{id}', {
+  const { data, error } = await client.GET('/api/v1/projects/{project_id}', {
     params: {
-      path: { id },
+      path: { project_id: id },
     },
   })
 

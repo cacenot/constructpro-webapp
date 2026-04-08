@@ -106,7 +106,7 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       kind?: string[]
       'due_date[min]'?: string
       'due_date[max]'?: string
-      customer_id?: number
+      customer_id?: string
       sort_by?: string[]
     } = { page, page_size: PAGE_SIZE }
 
@@ -116,7 +116,7 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     const effectiveDueDate = dueDateRange
     if (effectiveDueDate?.min) params['due_date[min]'] = effectiveDueDate.min
     if (effectiveDueDate?.max) params['due_date[max]'] = effectiveDueDate.max
-    if (customer > 0) params.customer_id = customer
+    if (customer > 0) params.customer_id = String(customer)
     if (sort) params.sort_by = [sort]
 
     return params

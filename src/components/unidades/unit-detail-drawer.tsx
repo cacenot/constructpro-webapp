@@ -1,8 +1,8 @@
-import {
-  translateUnitCategory,
-  type UnitResponse,
-  useApiClient,
-} from '@cacenot/construct-pro-api-client'
+import type { components } from '@cacenot/construct-pro-api-client'
+import { translateUnitCategory, useApiClient } from '@cacenot/construct-pro-api-client'
+
+type UnitResponse = components['schemas']['UnitResponse']
+
 import { useQuery } from '@tanstack/react-query'
 import {
   Bath,
@@ -178,7 +178,7 @@ function UnitDetailContent({ unit }: { unit: UnitResponse }) {
               Características
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {unit.features?.map((feature) => (
+              {unit.features?.map((feature: string) => (
                 <Badge key={feature} variant="secondary" className="text-xs font-normal">
                   {feature}
                 </Badge>

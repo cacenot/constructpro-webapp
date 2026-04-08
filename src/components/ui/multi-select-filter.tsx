@@ -23,6 +23,7 @@ interface MultiSelectFilterProps {
   value: string[]
   onChange: (value: string[]) => void
   placeholder?: string
+  className?: string
 }
 
 export function MultiSelectFilter({
@@ -30,6 +31,7 @@ export function MultiSelectFilter({
   value,
   onChange,
   placeholder = 'Selecionar...',
+  className,
 }: MultiSelectFilterProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -54,7 +56,7 @@ export function MultiSelectFilter({
   const hasSelection = value.length > 0
 
   return (
-    <div className="flex items-center gap-2">
+    <div className={cn('flex items-center gap-2', className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button

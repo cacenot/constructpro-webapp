@@ -1,4 +1,4 @@
-import { UnitCategory } from '@cacenot/construct-pro-api-client'
+import { UnitCategory, type UnitCategoryType } from '@cacenot/construct-pro-api-client'
 import { z } from 'zod'
 
 /**
@@ -55,7 +55,7 @@ export function getUnitFeaturesSuggestions(): string[] {
 /**
  * Unit category values from API client enum
  */
-const unitCategoryValues = Object.values(UnitCategory) as [string, ...string[]]
+const unitCategoryValues = Object.values(UnitCategory) as [UnitCategoryType, ...UnitCategoryType[]]
 
 /**
  * Schema for unit form (create and edit)
@@ -67,27 +67,15 @@ export const unitFormSchema = z.object({
     .min(1, 'Nome é obrigatório')
     .max(UNIT_TEXT_LIMITS.NAME, `Máximo ${UNIT_TEXT_LIMITS.NAME} caracteres`),
 
-  category: z.enum(unitCategoryValues, {
-    required_error: 'Categoria é obrigatória',
-  }),
+  category: z.enum(unitCategoryValues, 'Categoria é obrigatória'),
 
   project_id: z
-    .number({
-      required_error: 'Empreendimento é obrigatório',
-    })
+    .number({ error: 'Empreendimento é obrigatório' })
     .min(1, 'Empreendimento é obrigatório'),
 
-  area: z
-    .number({
-      required_error: 'Área é obrigatória',
-    })
-    .min(0.01, 'Área deve ser maior que zero'),
+  area: z.number({ error: 'Área é obrigatória' }).min(0.01, 'Área deve ser maior que zero'),
 
-  price_cents: z
-    .number({
-      required_error: 'Preço é obrigatório',
-    })
-    .min(1, 'Preço deve ser maior que zero'),
+  price_cents: z.number({ error: 'Preço é obrigatório' }).min(1, 'Preço deve ser maior que zero'),
 
   description: z
     .string()

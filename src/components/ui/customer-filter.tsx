@@ -64,7 +64,7 @@ export function CustomerFilter({
         params: {
           query: {
             search: debouncedSearch || undefined,
-            is_draft: false,
+            is_draft: 'false',
             page: 1,
             page_size: 20,
           },

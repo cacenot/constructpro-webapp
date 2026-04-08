@@ -1,5 +1,5 @@
+import type { components } from '@cacenot/construct-pro-api-client'
 import { translateUnitCategory } from '@cacenot/construct-pro-api-client'
-import type { components } from '@cacenot/construct-pro-api-client/schema'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
