@@ -1,6 +1,8 @@
 ## Plan: Testes Unitários + E2E (Playwright)
 
-Vitest para testes de funções/componentes isolados. Playwright com Firebase 100% offline via seed de IndexedDB + interceptação de rede. API mockada com `page.route()` por módulo.
+> **Status:** ✅ Totalmente concluído — 173 testes unitários + specs E2E em todos os módulos passando.
+
+Vitest para testes de funções/componentes isolados. Playwright com Firebase via `storageState` (global setup) + interceptação de rede. API mockada com `page.route()` por módulo.
 
 ---
 
@@ -68,7 +70,7 @@ playwright.config.ts
 
 ---
 
-### Fase 1 — Infraestrutura
+### Fase 1 — Infraestrutura ✅
 
 **Steps** (paralelos entre si):
 1. Instalar `vitest @vitest/coverage-v8 jsdom @testing-library/react @testing-library/user-event @testing-library/jest-dom`
@@ -80,7 +82,9 @@ playwright.config.ts
 
 ---
 
-### Fase 2 — Testes unitários: `lib/`
+### Fase 2 — Testes unitários: `lib/` ✅
+
+> 78 testes passando.
 
 7. **`utils.test.ts`** — `cn()`, `formatCurrency()`, `formatArea()`, `formatId()` em `src/lib/utils.ts`
 8. **`text-formatters.test.ts`** — `capitalizeNameBR`, `maskBirthDate`, `parseBirthDateToISO`, `formatISOToBirthDate`, `formatDocument` (CPF/CNPJ), `formatPhone` em `src/lib/text-formatters.ts`
@@ -89,13 +93,17 @@ playwright.config.ts
 
 ---
 
-### Fase 3 — Testes unitários: `schemas/`
+### Fase 3 — Testes unitários: `schemas/` ✅
+
+> 57 testes passando.
 
 11. Um arquivo por schema — válidos (devem passar) e inválidos (devem falhar) com `zod.safeParse()`. Schemas em `src/schemas/`
 
 ---
 
-### Fase 4 — Testes unitários: hooks + components
+### Fase 4 — Testes unitários: hooks + components ✅
+
+> 38 testes passando. Total unitários: 173.
 
 12. Criar `tests/unit/helpers/wrapper.tsx` — componente que envolve children com `QueryClientProvider` (client fresco), mock de `AuthContext`, mock de `ApiClientProvider`
 13. **Hooks**: `use-mobile` (mock `window.matchMedia`), `use-is-admin` (mock AuthContext), `use-theme` (mock `next-themes`)
@@ -103,9 +111,9 @@ playwright.config.ts
 
 ---
 
-### Fase 5 — E2E: Infraestrutura
+### Fase 5 — E2E: Infraestrutura ✅
 
-*Depende da Fase 1*
+> Global setup com Firebase `browserLocalPersistence` + `storageState`. Sem login por worker.
 
 15. **`tests/e2e/mocks/firebase-auth.ts`** — função `mockFirebaseAuth(page)` que:
     - usa `page.evaluate()` para fazer seed do IndexedDB (`firebaseLocalStorageDb`) com user mock antes de navegar
@@ -120,7 +128,9 @@ playwright.config.ts
 
 ---
 
-### Fase 6 — E2E: Módulo por módulo
+### Fase 6 — E2E: Módulo por módulo ✅
+
+> Todos os specs passando: login (9), clientes (17), empreendimentos (10), unidades (5), vendas (11), financeiro (4), contratos (4), configuracoes (5).
 
 *Depende da Fase 5. Steps dentro desta fase são paralelos entre si.*
 
