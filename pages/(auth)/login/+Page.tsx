@@ -109,7 +109,8 @@ export default function LoginPage() {
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
-                          type="email"
+                          type="text"
+                          inputMode="email"
                           placeholder="seu@email.com"
                           autoComplete="email"
                           {...field}
@@ -177,7 +178,8 @@ export default function LoginPage() {
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input
-                          type="email"
+                          type="text"
+                          inputMode="email"
                           placeholder="seu@email.com"
                           autoComplete="email"
                           {...field}
