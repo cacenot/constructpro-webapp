@@ -1,135 +1,38 @@
 import type { Page } from '@playwright/test'
 
 /**
- * Usuário fake para seed de auth nos testes E2E.
- * Simula um Firebase User autenticado sem tocar no Firebase real.
+ * Credenciais do usuário de teste real no Firebase.
+ * Lidas do .env via dotenv (carregado em playwright.config.ts).
  */
-export const MOCK_USER = {
-  uid: 'test-user-uid-001',
-  email: 'teste@constructpro.dev',
-  displayName: 'Usuário Teste',
-  tenantId: 'test-tenant-001',
-}
-
-export const MOCK_ID_TOKEN = 'fake-id-token-for-e2e-tests'
-export const MOCK_REFRESH_TOKEN = 'fake-refresh-token-for-e2e-tests'
+const TEST_EMAIL = process.env.E2E_TEST_EMAIL ?? ''
+const TEST_PASSWORD = process.env.E2E_TEST_PASSWORD ?? ''
 
 /**
- * Injeta um usuário autenticado no IndexedDB do Firebase antes de navegar,
- * e intercepta as requisições de token/lookup do Firebase Identity Toolkit
- * para manter a sessão válida sem rede real.
+ * Autentica via Firebase real (sem mocks de rede) e aguarda o redirect
+ * para o dashboard. As chamadas para a API do backend (/api/v1/...)
+ * continuam sendo interceptadas pelos handlers de cada módulo.
+ *
+ * Fluxo:
+ * 1. Navega para /login
+ * 2. Preenche credenciais reais e clica em Entrar
+ * 3. Firebase SDK autentica de verdade e persiste o estado
+ * 4. AuthGuard detecta user → redireciona para /dashboard
+ * 5. Fixture aguarda o redirect antes de ceder o controle ao teste
  */
 export async function mockFirebaseAuth(page: Page): Promise<void> {
-  // 1. Intercepta refresh de token (securetoken.googleapis.com)
-  await page.route('https://securetoken.googleapis.com/v1/token**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        access_token: MOCK_ID_TOKEN,
-        id_token: MOCK_ID_TOKEN,
-        refresh_token: MOCK_REFRESH_TOKEN,
-        token_type: 'Bearer',
-        expires_in: '3600',
-        user_id: MOCK_USER.uid,
-        project_id: 'test-project',
-      }),
-    })
-  })
+  if (!TEST_EMAIL || !TEST_PASSWORD) {
+    throw new Error(
+      'E2E_TEST_EMAIL e E2E_TEST_PASSWORD devem estar definidos no .env para os testes E2E.'
+    )
+  }
 
-  // 2. Intercepta lookup de usuário (identitytoolkit.googleapis.com)
-  await page.route(
-    'https://identitytoolkit.googleapis.com/v1/accounts:lookup**',
-    async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          kind: 'identitytoolkit#GetAccountInfoResponse',
-          users: [
-            {
-              localId: MOCK_USER.uid,
-              email: MOCK_USER.email,
-              displayName: MOCK_USER.displayName,
-              emailVerified: true,
-              providerUserInfo: [
-                {
-                  providerId: 'password',
-                  email: MOCK_USER.email,
-                  localId: MOCK_USER.uid,
-                },
-              ],
-              validSince: '1700000000',
-              lastLoginAt: String(Date.now()),
-              createdAt: '1700000000000',
-            },
-          ],
-        }),
-      })
-    }
-  )
+  await page.goto('/login', { waitUntil: 'load' })
 
-  // 3. Seed do IndexedDB do Firebase com a sessão fake
-  await page.addInitScript(
-    ({ uid, email, displayName, idToken, refreshToken }) => {
-      const DB_NAME = 'firebaseLocalStorageDb'
-      const STORE_NAME = 'firebaseLocalStorage'
+  // Campo email usa type="text" + inputMode="email" (corrigido no login page)
+  await page.locator('input[type="text"]').fill(TEST_EMAIL)
+  await page.locator('input[type="password"]').fill(TEST_PASSWORD)
+  await page.getByRole('button', { name: 'Entrar' }).click()
 
-      const request = indexedDB.open(DB_NAME, 1)
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'fbase_key' })
-        }
-      }
-
-      request.onsuccess = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result
-        const tx = db.transaction(STORE_NAME, 'readwrite')
-        const store = tx.objectStore(STORE_NAME)
-
-        // A chave do Firebase Auth no IndexedDB inclui o apiKey do projeto
-        // Usamos uma chave genérica que o SDK vai tentar primeiro
-        const authKey = `firebase:authUser:test-api-key:[DEFAULT]`
-
-        store.put({
-          fbase_key: authKey,
-          value: {
-            uid,
-            email,
-            displayName,
-            emailVerified: true,
-            isAnonymous: false,
-            providerData: [
-              {
-                providerId: 'password',
-                uid: email,
-                displayName,
-                email,
-                phoneNumber: null,
-                photoURL: null,
-              },
-            ],
-            stsTokenManager: {
-              refreshToken,
-              accessToken: idToken,
-              expirationTime: Date.now() + 3600 * 1000,
-            },
-            createdAt: '1700000000000',
-            lastLoginAt: String(Date.now()),
-            apiKey: 'test-api-key',
-            appName: '[DEFAULT]',
-          },
-        })
-      }
-    },
-    {
-      uid: MOCK_USER.uid,
-      email: MOCK_USER.email,
-      displayName: MOCK_USER.displayName,
-      idToken: MOCK_ID_TOKEN,
-      refreshToken: MOCK_REFRESH_TOKEN,
-    }
-  )
+  // Aguarda o redirect pós-login (AuthGuard navega para /dashboard)
+  await page.waitForURL('**/dashboard', { timeout: 15_000 })
 }

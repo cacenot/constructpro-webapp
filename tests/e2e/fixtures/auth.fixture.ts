@@ -1,5 +1,4 @@
 import { test as base, type Page } from '@playwright/test'
-import { mockFirebaseAuth } from '../mocks/firebase-auth'
 import { registerClientesHandlers } from '../mocks/handlers/clientes'
 import { registerConfiguracoesHandlers } from '../mocks/handlers/configuracoes'
 import { registerContratosHandlers } from '../mocks/handlers/contratos'
@@ -34,13 +33,10 @@ export async function registerAllApiHandlers(page: Page) {
 
 export const test = base.extend<AuthFixtures>({
   authenticatedPage: async ({ page }, use) => {
-    // 1. Seed do IndexedDB + interceptação de tokens Firebase
-    await mockFirebaseAuth(page)
-
-    // 2. Registra todos os handlers de API (antes de qualquer navegação)
+    // storageState é carregado automaticamente pelo projeto 'chromium' do playwright.config.ts
+    // (Firebase auth tokens em localStorage → SDK restaura o usuário sem novo login)
+    // Só precisamos registrar os handlers de API e entregar a page.
     await registerAllApiHandlers(page)
-
-    // 3. Fornece a page para o teste
     await use(page)
   },
 })
