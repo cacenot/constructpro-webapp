@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import * as factory from '../factory'
-import { MOCK_USER } from '../firebase-auth'
+import { MOCK_USER } from '../constants'
 
 /**
  * Registra handlers de rede para Configurações (membros, perfil, tenant).
