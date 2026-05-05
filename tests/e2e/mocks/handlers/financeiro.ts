@@ -5,8 +5,8 @@ import * as factory from '../factory'
  * Registra handlers de rede para o domínio Financeiro (Parcelas).
  */
 export async function registerFinanceiroHandlers(page: Page) {
-  // GET /api/v1/installments — listagem paginada
-  await page.route('**/api/v1/installments', async (route) => {
+  // GET /api/v1/installments — listagem paginada (regex cobre query params)
+  await page.route(/\/api\/v1\/installments(?:[?]|$)/, async (route) => {
     if (route.request().method() !== 'GET') return route.continue()
 
     const installments = [
