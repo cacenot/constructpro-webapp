@@ -1,5 +1,11 @@
 import { type FirebaseApp, getApps, initializeApp } from 'firebase/app'
-import { type Auth, getAuth } from 'firebase/auth'
+import {
+  type Auth,
+  browserLocalPersistence,
+  getAuth,
+  indexedDBLocalPersistence,
+  initializeAuth,
+} from 'firebase/auth'
 import { type FirebaseStorage, getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -16,19 +22,30 @@ let auth: Auth
 let storage: FirebaseStorage
 
 const existingApps = getApps()
+// Em testes E2E, usa localStorage para que o Playwright possa salvar/restaurar
+// o estado via storageState. Em produção/dev normal, usa IndexedDB (padrão).
+const persistence =
+  import.meta.env.VITE_FIREBASE_PERSISTENCE === 'local'
+    ? browserLocalPersistence
+    : indexedDBLocalPersistence
+
 if (existingApps.length === 0) {
   app = initializeApp(firebaseConfig)
-  auth = getAuth(app)
+  auth = initializeAuth(app, { persistence })
   storage = getStorage(app)
 } else {
   const existingApp = existingApps[0]
   if (existingApp) {
     app = existingApp
-    auth = getAuth(app)
+    try {
+      auth = getAuth(app)
+    } catch {
+      auth = initializeAuth(app, { persistence })
+    }
     storage = getStorage(app)
   } else {
     app = initializeApp(firebaseConfig)
-    auth = getAuth(app)
+    auth = initializeAuth(app, { persistence })
     storage = getStorage(app)
   }
 }
