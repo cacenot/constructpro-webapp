@@ -56,7 +56,7 @@ export function InstallmentsSummaryCards({ summary, isLoading }: InstallmentsSum
           <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="tabular-nums text-2xl font-bold tracking-tight text-emerald-600">
+          <div className="tabular-nums text-2xl font-bold tracking-tight text-success">
             {formatCurrency(receivedCents / 100)}
           </div>
         </CardContent>
@@ -68,7 +68,7 @@ export function InstallmentsSummaryCards({ summary, isLoading }: InstallmentsSum
           <AlertTriangle className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="tabular-nums text-2xl font-bold tracking-tight text-red-600">
+          <div className="tabular-nums text-2xl font-bold tracking-tight text-destructive">
             {formatCurrency(overdueCents / 100)}
           </div>
           {overdueCount > 0 && (

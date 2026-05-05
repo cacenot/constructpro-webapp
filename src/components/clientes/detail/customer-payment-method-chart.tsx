@@ -12,11 +12,11 @@ interface CustomerPaymentMethodChartProps {
 }
 
 const METHOD_CONFIG: Record<string, { label: string; color: string }> = {
-  pix: { label: 'PIX', color: 'var(--color-emerald-500, #10b981)' },
-  boleto: { label: 'Boleto', color: 'var(--color-blue-500, #3b82f6)' },
-  transfer: { label: 'Transferência', color: 'var(--color-amber-500, #f59e0b)' },
-  card: { label: 'Cartão', color: 'var(--color-purple-500, #a855f7)' },
-  cash: { label: 'Dinheiro', color: 'var(--color-gray-500, #6b7280)' },
+  pix: { label: 'PIX', color: 'var(--color-chart-4)' },
+  boleto: { label: 'Boleto', color: 'var(--color-chart-1)' },
+  transfer: { label: 'Transferência', color: 'var(--color-chart-2)' },
+  card: { label: 'Cartão', color: 'var(--color-chart-3)' },
+  cash: { label: 'Dinheiro', color: 'var(--color-chart-6)' },
 }
 
 const chartConfig = Object.fromEntries(
@@ -63,7 +63,7 @@ export function CustomerPaymentMethodChart({ data }: CustomerPaymentMethodChartP
     .map((m) => ({
       name: METHOD_CONFIG[m.method]?.label ?? m.method,
       value: m.count,
-      fill: METHOD_CONFIG[m.method]?.color ?? '#6b7280',
+      fill: METHOD_CONFIG[m.method]?.color ?? 'var(--color-chart-6)',
       total: totalCount,
       amount: formatCurrency(m.total_cents / 100),
     }))
@@ -140,7 +140,9 @@ export function CustomerPaymentMethodChart({ data }: CustomerPaymentMethodChartP
                     <div className="flex items-center gap-2">
                       <div
                         className="size-2.5 rounded-full"
-                        style={{ backgroundColor: METHOD_CONFIG[m.method]?.color ?? '#6b7280' }}
+                        style={{
+                          backgroundColor: METHOD_CONFIG[m.method]?.color ?? 'var(--color-chart-6)',
+                        }}
                       />
                       <span className="text-sm">{METHOD_CONFIG[m.method]?.label ?? m.method}</span>
                     </div>

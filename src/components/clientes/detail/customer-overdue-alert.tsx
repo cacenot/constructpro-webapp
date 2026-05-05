@@ -33,8 +33,8 @@ export function NextDueCard({ data }: { data: CustomerInstallmentOverview }) {
 
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-card p-4">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-500/10">
-        <Calendar className="size-5 text-blue-600 dark:text-blue-400" />
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-info/10">
+        <Calendar className="size-5 text-info" />
       </div>
       <div>
         <p className="text-sm text-muted-foreground">Próximo Vencimento</p>

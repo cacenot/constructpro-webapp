@@ -24,20 +24,20 @@ export function FinancialOverviewSection({ data }: FinancialOverviewSectionProps
         <div className="flex flex-wrap gap-2">
           <Badge
             variant="outline"
-            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:text-emerald-300"
+            className="bg-pipeline-fechado text-pipeline-fechado-fg border-pipeline-fechado-dot/30"
           >
             {data.active_contracts} ativos
           </Badge>
           <Badge
             variant="outline"
-            className="border-blue-500/30 bg-blue-500/10 text-blue-700 dark:border-blue-400/30 dark:text-blue-300"
+            className="bg-pipeline-reservado text-pipeline-reservado-fg border-pipeline-reservado-dot/30"
           >
             {data.settled_contracts} quitados
           </Badge>
           {data.defaulting_contracts > 0 && (
             <Badge
               variant="outline"
-              className="border-red-500/30 bg-red-500/10 text-red-700 dark:border-red-400/30 dark:text-red-300 font-semibold"
+              className="bg-pipeline-perdido text-pipeline-perdido-fg border-pipeline-perdido-dot/30 font-semibold"
             >
               <AlertTriangle className="mr-1 size-3" />
               {data.defaulting_contracts} inadimplentes
@@ -55,8 +55,8 @@ export function FinancialOverviewSection({ data }: FinancialOverviewSectionProps
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-emerald-600 dark:text-emerald-400">Total Recebido</p>
-            <p className="tabular-nums text-lg font-bold text-emerald-600 dark:text-emerald-400">
+            <p className="text-sm text-success">Total Recebido</p>
+            <p className="tabular-nums text-lg font-bold text-success">
               {formatCurrency(data.total_paid_cents / 100)}
             </p>
           </div>
@@ -70,9 +70,7 @@ export function FinancialOverviewSection({ data }: FinancialOverviewSectionProps
             <p
               className={cn(
                 'text-sm',
-                data.total_correction_cents > 0
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-muted-foreground'
+                data.total_correction_cents > 0 ? 'text-warning' : 'text-muted-foreground'
               )}
             >
               Correções
@@ -80,7 +78,7 @@ export function FinancialOverviewSection({ data }: FinancialOverviewSectionProps
             <p
               className={cn(
                 'tabular-nums text-lg font-bold',
-                data.total_correction_cents > 0 && 'text-amber-600 dark:text-amber-400'
+                data.total_correction_cents > 0 && 'text-warning'
               )}
             >
               {data.total_correction_cents > 0 ? '+' : ''}

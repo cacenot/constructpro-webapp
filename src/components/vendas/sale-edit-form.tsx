@@ -643,16 +643,14 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                   <div className="flex items-center gap-2">
                     {diff === 0 ? (
                       <>
-                        <Equal className="size-5 text-green-600 dark:text-green-400" />
-                        <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                          Igual ao preço
-                        </span>
+                        <Equal className="size-5 text-success" />
+                        <span className="text-sm font-medium text-success">Igual ao preço</span>
                       </>
                     ) : diff > 0 ? (
                       <>
-                        <ArrowUp className="size-5 text-amber-600 dark:text-amber-400" />
+                        <ArrowUp className="size-5 text-warning" />
                         <div>
-                          <p className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                          <p className="text-lg font-bold tabular-nums text-warning">
                             + R$ {formatCentsToDisplay(diff)}
                           </p>
                           <p className="text-xs tabular-nums text-muted-foreground">
@@ -662,9 +660,9 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                       </>
                     ) : (
                       <>
-                        <ArrowDown className="size-5 text-amber-600 dark:text-amber-400" />
+                        <ArrowDown className="size-5 text-warning" />
                         <div>
-                          <p className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                          <p className="text-lg font-bold tabular-nums text-warning">
                             - R$ {formatCentsToDisplay(Math.abs(diff))}
                           </p>
                           <p className="text-xs tabular-nums text-muted-foreground">

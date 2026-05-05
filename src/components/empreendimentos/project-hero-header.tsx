@@ -114,9 +114,7 @@ export function ProjectHeroHeader({ project }: ProjectHeroHeaderProps) {
                 </div>
                 <div className="space-y-0.5 text-right">
                   <p className="text-xs text-muted-foreground">Vendido</p>
-                  <p className="tabular-nums text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {soldPct}%
-                  </p>
+                  <p className="tabular-nums text-2xl font-bold text-success">{soldPct}%</p>
                 </div>
               </div>
               <div className="border-t pt-3">

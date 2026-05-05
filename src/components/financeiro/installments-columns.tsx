@@ -78,8 +78,8 @@ function PaymentsHoverContent({
           ))}
           <div className="mt-1 flex flex-col gap-1 border-t pt-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-emerald-700 dark:text-emerald-400">Total pago</span>
-              <span className="tabular-nums font-medium text-emerald-700 dark:text-emerald-400">
+              <span className="text-success">Total pago</span>
+              <span className="tabular-nums font-medium text-success">
                 {formatCurrency(Number(paid_amount))}
               </span>
             </div>
@@ -265,7 +265,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-sm tabular-nums">{format(dueDate, 'dd/MM/yyyy')}</span>
           <span
-            className={`text-xs ${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted-foreground'}`}
+            className={`text-xs ${isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'}`}
           >
             {formatDistanceToNow(dueDate, { addSuffix: true, locale: ptBR })}
           </span>

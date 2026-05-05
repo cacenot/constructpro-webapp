@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils'
 
 const statusStyles: Record<ProjectStatusType, string> = {
   construction:
-    'rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:border-blue-400/30 dark:bg-blue-400/10 dark:text-blue-300',
+    'rounded-full border bg-pipeline-reservado text-pipeline-reservado-fg border-pipeline-reservado-dot/30',
   finished:
-    'rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300',
+    'rounded-full border bg-pipeline-fechado   text-pipeline-fechado-fg   border-pipeline-fechado-dot/30',
 }
 
 interface ProjectStatusBadgeProps {

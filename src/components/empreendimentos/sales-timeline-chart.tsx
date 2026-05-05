@@ -19,7 +19,7 @@ const chartConfig = {
   },
   count: {
     label: 'Vendas',
-    color: 'var(--color-amber-500, #f59e0b)',
+    color: 'var(--color-chart-2)',
   },
 } satisfies ChartConfig
 
@@ -140,7 +140,7 @@ export function SalesTimelineChart({ data }: SalesTimelineChartProps) {
             Valor total
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="size-2.5 rounded-full bg-amber-500" />
+            <div className="size-2.5 rounded-full bg-pipeline-proposta-dot" />
             N. de vendas
           </div>
         </div>

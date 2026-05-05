@@ -66,7 +66,7 @@ export function ConstructionProgressSection({ updates }: ConstructionProgressSec
                       isLatest
                         ? 'border-primary bg-primary'
                         : isCompleted
-                          ? 'border-emerald-500 bg-emerald-500'
+                          ? 'border-success bg-success'
                           : 'border-border bg-background'
                     )}
                   />

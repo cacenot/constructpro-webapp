@@ -167,7 +167,7 @@ function InstallmentDetailContent({
           <Separator />
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Pago</span>
-            <span className="text-sm font-medium tabular-nums text-emerald-700 dark:text-emerald-400">
+            <span className="text-sm font-medium tabular-nums text-success">
               {formatCurrency(Number(installment.paid_amount))}
             </span>
           </div>
@@ -202,7 +202,7 @@ function InstallmentDetailContent({
             icon={Calendar}
             label="Vencimento"
             value={
-              <span className={isOverdue ? 'text-red-600 dark:text-red-400' : ''}>
+              <span className={isOverdue ? 'text-destructive' : ''}>
                 {format(dueDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 <br />
                 <span className="text-xs font-normal">
@@ -243,13 +243,12 @@ function InstallmentDetailContent({
                           className={cn(
                             'text-xs',
                             payment.status === 'confirmed' &&
-                              'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+                              'border-success/30 bg-success/10 text-success',
                             payment.status === 'pending' &&
-                              'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+                              'border-warning/30 bg-warning/10 text-warning',
                             payment.status === 'canceled' &&
-                              'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300',
-                            payment.status === 'refunded' &&
-                              'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                              'border-destructive/30 bg-destructive/10 text-destructive',
+                            payment.status === 'refunded' && 'border-info/30 bg-info/10 text-info'
                           )}
                         >
                           {translatePaymentStatus(payment.status ?? 'confirmed', 'pt-BR')}
@@ -352,9 +351,7 @@ function InstallmentDetailContent({
                       <span
                         className={cn(
                           'text-sm font-medium tabular-nums',
-                          isPositive
-                            ? 'text-red-600 dark:text-red-400'
-                            : 'text-emerald-600 dark:text-emerald-400'
+                          isPositive ? 'text-destructive' : 'text-success'
                         )}
                       >
                         {isPositive ? '+' : ''}

@@ -12,10 +12,10 @@ interface SalesPipelineSectionProps {
 }
 
 const COLORS = {
-  closed: 'var(--color-emerald-500, #10b981)',
-  pending_signature: 'var(--color-amber-500, #f59e0b)',
-  pending_payment: 'var(--color-blue-500, #3b82f6)',
-  lost: 'var(--color-red-500, #ef4444)',
+  closed: 'var(--color-pipeline-fechado-dot)',
+  pending_signature: 'var(--color-pipeline-proposta-dot)',
+  pending_payment: 'var(--color-pipeline-reservado-dot)',
+  lost: 'var(--color-pipeline-perdido-dot)',
 }
 
 const chartConfig = {
@@ -140,14 +140,14 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="size-2.5 rounded-full bg-emerald-500" />
+                  <div className="size-2.5 rounded-full bg-pipeline-fechado-dot" />
                   <span className="text-sm">Fechadas</span>
                 </div>
                 <span className="tabular-nums text-sm font-medium">{data.closed_count}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="size-2.5 rounded-full bg-amber-500" />
+                  <div className="size-2.5 rounded-full bg-pipeline-proposta-dot" />
                   <span className="text-sm">Aguard. Assinatura</span>
                 </div>
                 <span className="tabular-nums text-sm font-medium">
@@ -156,7 +156,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="size-2.5 rounded-full bg-blue-500" />
+                  <div className="size-2.5 rounded-full bg-pipeline-reservado-dot" />
                   <span className="text-sm">Aguard. Pagamento</span>
                 </div>
                 <span className="tabular-nums text-sm font-medium">
@@ -165,7 +165,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="size-2.5 rounded-full bg-red-500" />
+                  <div className="size-2.5 rounded-full bg-pipeline-perdido-dot" />
                   <span className="text-sm">Perdidas</span>
                 </div>
                 <span className="tabular-nums text-sm font-medium">{data.lost_count}</span>
@@ -177,7 +177,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total Vendido</span>
-                <span className="tabular-nums text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="tabular-nums text-sm font-semibold text-success">
                   {formatCurrency(data.total_sold_cents / 100)}
                 </span>
               </div>

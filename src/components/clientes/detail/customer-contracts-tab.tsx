@@ -18,23 +18,19 @@ interface CustomerContractsTabProps {
 const STATUS_CONFIG: Record<ContractStatus, { label: string; className: string }> = {
   active: {
     label: 'Ativo',
-    className:
-      'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:text-emerald-300',
+    className: 'border-success/30 bg-success/10 text-success',
   },
   settled: {
     label: 'Quitado',
-    className:
-      'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:border-blue-400/30 dark:text-blue-300',
+    className: 'border-info/30 bg-info/10 text-info',
   },
   in_default: {
     label: 'Inadimplente',
-    className:
-      'border-red-500/30 bg-red-500/10 text-red-700 dark:border-red-400/30 dark:text-red-300',
+    className: 'border-destructive/30 bg-destructive/10 text-destructive',
   },
   pending: {
     label: 'Pendente',
-    className:
-      'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:border-amber-400/30 dark:text-amber-300',
+    className: 'border-warning/30 bg-warning/10 text-warning',
   },
   canceled: {
     label: 'Cancelado',

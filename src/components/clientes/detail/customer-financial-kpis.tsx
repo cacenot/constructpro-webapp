@@ -21,8 +21,8 @@ export function CustomerFinancialKpis({ data }: CustomerFinancialKpisProps) {
       </Card>
       <Card>
         <CardContent className="pt-5 pb-4">
-          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Total Pago</p>
-          <p className="tabular-nums mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          <p className="text-xs font-medium text-success">Total Pago</p>
+          <p className="tabular-nums mt-1 text-2xl font-bold text-success">
             {formatCurrency(data.total_paid_cents / 100)}
           </p>
         </CardContent>
@@ -41,7 +41,7 @@ export function CustomerFinancialKpis({ data }: CustomerFinancialKpisProps) {
             className={cn(
               'text-xs font-medium',
               data.total_correction_cents + data.total_adjustment_cents > 0
-                ? 'text-amber-600 dark:text-amber-400'
+                ? 'text-warning'
                 : 'text-muted-foreground'
             )}
           >
@@ -50,8 +50,7 @@ export function CustomerFinancialKpis({ data }: CustomerFinancialKpisProps) {
           <p
             className={cn(
               'tabular-nums mt-1 text-2xl font-bold',
-              data.total_correction_cents + data.total_adjustment_cents > 0 &&
-                'text-amber-600 dark:text-amber-400'
+              data.total_correction_cents + data.total_adjustment_cents > 0 && 'text-warning'
             )}
           >
             {data.total_correction_cents + data.total_adjustment_cents > 0 ? '+' : ''}

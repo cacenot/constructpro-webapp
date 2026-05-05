@@ -247,7 +247,7 @@ export function PayInstallmentDialog({
                 )}
               />
               {errors.amount_cents && (
-                <p className="text-sm text-red-600">{errors.amount_cents.message}</p>
+                <p className="text-sm text-destructive">{errors.amount_cents.message}</p>
               )}
               {!allowPartialPayments && (
                 <p className="text-xs text-muted-foreground">
@@ -275,7 +275,7 @@ export function PayInstallmentDialog({
                 </SelectContent>
               </Select>
               {errors.payment_method && (
-                <p className="text-sm text-red-600">{errors.payment_method.message}</p>
+                <p className="text-sm text-destructive">{errors.payment_method.message}</p>
               )}
             </div>
 

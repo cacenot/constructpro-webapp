@@ -28,27 +28,23 @@ function SalesKpiCards({ data }: { data: ProjectSalesSummary }) {
       </Card>
       <Card>
         <CardContent className="pt-5 pb-4">
-          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Fechadas</p>
-          <p className="tabular-nums mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            {data.closed_count}
-          </p>
+          <p className="text-xs font-medium text-success">Fechadas</p>
+          <p className="tabular-nums mt-1 text-2xl font-bold text-success">{data.closed_count}</p>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-5 pb-4">
-          <p className="text-xs font-medium text-amber-600 dark:text-amber-400">Em Andamento</p>
-          <p className="tabular-nums mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">
-            {inProgress}
-          </p>
+          <p className="text-xs font-medium text-warning">Em Andamento</p>
+          <p className="tabular-nums mt-1 text-2xl font-bold text-warning">{inProgress}</p>
         </CardContent>
       </Card>
       <Card>
         <CardContent className="pt-5 pb-4">
-          <p className="text-xs font-medium text-red-600 dark:text-red-400">Perdidas</p>
+          <p className="text-xs font-medium text-destructive">Perdidas</p>
           <p
             className={cn(
               'tabular-nums mt-1 text-2xl font-bold',
-              data.lost_count > 0 ? 'text-red-600 dark:text-red-400' : ''
+              data.lost_count > 0 ? 'text-destructive' : ''
             )}
           >
             {data.lost_count}
@@ -65,7 +61,7 @@ function SalesMonetaryCard({ data }: { data: ProjectSalesSummary }) {
       <CardContent className="flex flex-1 flex-col justify-center space-y-3 pt-6">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Total Vendido</span>
-          <span className="tabular-nums text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          <span className="tabular-nums text-sm font-semibold text-success">
             {formatCurrency(data.total_sold_cents / 100)}
           </span>
         </div>
