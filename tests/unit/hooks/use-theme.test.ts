@@ -36,8 +36,8 @@ function setupMocks({
   })
 
   mockUseAppStore.mockImplementation(
-    (selector: (s: { theme: string; setTheme: typeof setZustandTheme }) => unknown) =>
-      selector({ theme: zustandTheme, setTheme: setZustandTheme })
+    (selector) =>
+      selector({ theme: zustandTheme as 'light' | 'dark' | 'system', setTheme: setZustandTheme, sidebarOpen: true, setSidebarOpen: vi.fn(), toggleSidebar: vi.fn() })
   )
 
   return { setNextTheme, setZustandTheme }

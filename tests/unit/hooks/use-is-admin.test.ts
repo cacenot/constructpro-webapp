@@ -12,8 +12,8 @@ import { useIsAdmin } from '@/hooks/use-is-admin'
 const mockUseTenantStore = vi.mocked(useTenantStore)
 
 function setTenantId(id: string | null) {
-  mockUseTenantStore.mockImplementation((selector: (s: { tenantId: string | null }) => unknown) =>
-    selector({ tenantId: id })
+  mockUseTenantStore.mockImplementation((selector) =>
+    selector({ tenantId: id, tenants: [], setTenantId: vi.fn(), setTenants: vi.fn() })
   )
 }
 
@@ -33,7 +33,7 @@ describe('useIsAdmin', () => {
 
   it('retorna true para superuser independente de tenant', () => {
     const { result } = renderHook(() =>
-      useIsAdmin({ is_superuser: true, tenants: [], id: 'u1', email: 'a@b.com' })
+      useIsAdmin({ is_superuser: true, tenants: [], id: 'u1', email: 'a@b.com' } as unknown as Parameters<typeof useIsAdmin>[0])
     )
     expect(result.current).toBe(true)
   })
@@ -110,7 +110,7 @@ describe('useIsAdmin', () => {
       email: 'a@b.com',
       tenants: [],
     }
-    const { result } = renderHook(() => useIsAdmin(profile as Parameters<typeof useIsAdmin>[0]))
+    const { result } = renderHook(() => useIsAdmin(profile as unknown as Parameters<typeof useIsAdmin>[0]))
     expect(result.current).toBe(false)
   })
 })
