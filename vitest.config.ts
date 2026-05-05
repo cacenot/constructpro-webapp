@@ -9,11 +9,14 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/unit/setup.ts'],
     include: ['tests/unit/**/*.test.{ts,tsx}'],
+    typecheck: {
+      tsconfig: './tsconfig.test.json',
+    },
     coverage: {
       provider: 'v8',
       include: ['src/lib/**', 'src/schemas/**', 'src/hooks/**', 'src/components/**'],
       exclude: ['src/components/ui/**'],
-      reporter: ['text', 'html'],
+      reporter: ['text'],
     },
   },
   resolve: {
