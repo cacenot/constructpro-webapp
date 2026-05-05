@@ -116,7 +116,7 @@ export function CreateMemberDialog({ open, onOpenChange }: CreateMemberDialogPro
           <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
             <code className="flex-1 font-mono text-sm select-all">{temporaryPassword}</code>
             <Button variant="ghost" size="icon" onClick={handleCopyPassword}>
-              {copied ? <Check className="size-4 text-green-600" /> : <Copy className="size-4" />}
+              {copied ? <Check className="size-4 text-success" /> : <Copy className="size-4" />}
             </Button>
           </div>
           <DialogFooter>

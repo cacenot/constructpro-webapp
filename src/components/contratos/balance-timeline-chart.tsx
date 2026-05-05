@@ -58,7 +58,7 @@ function CustomTooltip({
         {data.corrections_cents !== 0 && (
           <div className="flex justify-between gap-6">
             <span className="text-muted-foreground">Correções</span>
-            <span className="tabular-nums font-medium text-amber-600 dark:text-amber-400">
+            <span className="tabular-nums font-medium text-warning">
               +{formatCurrency(data.corrections_cents / 100)}
             </span>
           </div>
@@ -66,7 +66,7 @@ function CustomTooltip({
         {data.payments_cents !== 0 && (
           <div className="flex justify-between gap-6">
             <span className="text-muted-foreground">Pagamentos</span>
-            <span className="tabular-nums font-medium text-emerald-600 dark:text-emerald-400">
+            <span className="tabular-nums font-medium text-success">
               -{formatCurrency(data.payments_cents / 100)}
             </span>
           </div>

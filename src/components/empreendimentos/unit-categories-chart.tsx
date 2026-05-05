@@ -23,15 +23,15 @@ interface UnitCategoriesChartProps {
 const chartConfig = {
   available: {
     label: 'Disponível',
-    color: 'var(--color-emerald-500, #10b981)',
+    color: 'var(--color-chart-4)',
   },
   reserved: {
     label: 'Reservada',
-    color: 'var(--color-blue-500, #3b82f6)',
+    color: 'var(--color-chart-1)',
   },
   sold: {
     label: 'Vendida',
-    color: 'var(--color-emerald-600, #059669)',
+    color: 'var(--color-chart-3)',
   },
 } satisfies ChartConfig
 
@@ -58,15 +58,15 @@ function CustomTooltip({
           <span className="font-medium">{data.total}</span>
         </div>
         <div className="flex justify-between gap-6">
-          <span className="text-emerald-600 dark:text-emerald-400">Disponível</span>
+          <span className="text-success">Disponível</span>
           <span className="font-medium">{data.available}</span>
         </div>
         <div className="flex justify-between gap-6">
-          <span className="text-blue-600 dark:text-blue-400">Reservada</span>
+          <span className="text-info">Reservada</span>
           <span className="font-medium">{data.reserved}</span>
         </div>
         <div className="flex justify-between gap-6">
-          <span className="text-emerald-700 dark:text-emerald-500">Vendida</span>
+          <span className="text-chart-3">Vendida</span>
           <span className="font-medium">{data.sold}</span>
         </div>
       </div>
@@ -132,15 +132,15 @@ export function UnitCategoriesChart({ data }: UnitCategoriesChartProps) {
 
         <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
-            <div className="size-2.5 rounded-full bg-emerald-500" />
+            <div className="size-2.5 rounded-full bg-success" />
             Disponível
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="size-2.5 rounded-full bg-blue-500" />
+            <div className="size-2.5 rounded-full bg-info" />
             Reservada
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="size-2.5 rounded-full bg-emerald-600" />
+            <div className="size-2.5 rounded-full bg-chart-3" />
             Vendida
           </div>
         </div>

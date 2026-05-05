@@ -40,7 +40,7 @@ export function ProjectVitalsStrip({ unitSummary, financialSummary }: ProjectVit
         <CardContent className="flex items-start justify-between pt-5 pb-4">
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground">Vendidas</p>
-            <p className="tabular-nums text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            <p className="tabular-nums text-2xl font-bold text-success">
               {unitSummary?.sold_count ?? '—'}
             </p>
             {soldPct && (
@@ -72,9 +72,7 @@ export function ProjectVitalsStrip({ unitSummary, financialSummary }: ProjectVit
             <p
               className={cn(
                 'tabular-nums text-2xl font-bold',
-                financialSummary && financialSummary.total_paid_cents > 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : ''
+                financialSummary && financialSummary.total_paid_cents > 0 ? 'text-success' : ''
               )}
             >
               {financialSummary ? formatCurrency(financialSummary.total_paid_cents / 100) : '—'}

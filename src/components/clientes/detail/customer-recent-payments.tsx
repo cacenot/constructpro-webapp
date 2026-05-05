@@ -41,7 +41,7 @@ export function CustomerRecentPayments({ payments }: CustomerRecentPaymentsProps
               <div key={`${payment.contract_id}-${payment.paid_at}`} className="flex gap-3">
                 {/* Timeline connector */}
                 <div className="flex flex-col items-center">
-                  <div className="mt-1.5 size-2.5 shrink-0 rounded-full bg-emerald-500" />
+                  <div className="mt-1.5 size-2.5 shrink-0 rounded-full bg-success" />
                   {index < payments.length - 1 && <div className="w-px flex-1 bg-border" />}
                 </div>
 

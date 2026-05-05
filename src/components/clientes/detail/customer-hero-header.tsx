@@ -69,8 +69,8 @@ export function CustomerHeroHeader({ customer }: CustomerHeroHeaderProps) {
                 variant="outline"
                 className={cn(
                   isCompany
-                    ? 'border-purple-500/30 bg-purple-500/10 text-purple-700 dark:border-purple-400/30 dark:text-purple-300'
-                    : 'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:border-blue-400/30 dark:text-blue-300'
+                    ? 'border-secondary/30 bg-secondary/10 text-secondary-foreground'
+                    : 'border-info/30 bg-info/10 text-info'
                 )}
               >
                 {isCompany ? 'Pessoa Jurídica' : 'Pessoa Física'}
@@ -99,7 +99,7 @@ export function CustomerHeroHeader({ customer }: CustomerHeroHeaderProps) {
                     href={whatsappLink(customer.phone)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                    className="text-success hover:text-success/80"
                   >
                     <WhatsAppIcon className="size-4" />
                   </a>
@@ -166,7 +166,7 @@ export function CustomerHeroHeader({ customer }: CustomerHeroHeaderProps) {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Progresso de pagamento</span>
-                  <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="tabular-nums font-semibold text-success">
                     {progressValue.toFixed(1)}%
                   </span>
                 </div>

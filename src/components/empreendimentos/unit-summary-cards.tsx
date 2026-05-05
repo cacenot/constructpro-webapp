@@ -26,11 +26,11 @@ export function UnitSummaryCards({ data }: UnitSummaryCardsProps) {
 
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-2 text-sm text-success">
               <Building2 className="size-4" />
               Disponíveis
             </div>
-            <p className="tabular-nums mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+            <p className="tabular-nums mt-1 text-2xl font-bold text-success">
               {data.available_count}
             </p>
             <p className="tabular-nums text-xs text-muted-foreground">
@@ -41,25 +41,21 @@ export function UnitSummaryCards({ data }: UnitSummaryCardsProps) {
 
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-2 text-sm text-success">
               <ShoppingCart className="size-4" />
               Vendidas
             </div>
-            <p className="tabular-nums mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-              {data.sold_count}
-            </p>
+            <p className="tabular-nums mt-1 text-2xl font-bold text-success">{data.sold_count}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+            <div className="flex items-center gap-2 text-sm text-info">
               <Tag className="size-4" />
               Reservadas
             </div>
-            <p className="tabular-nums mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {data.reserved_count}
-            </p>
+            <p className="tabular-nums mt-1 text-2xl font-bold text-info">{data.reserved_count}</p>
           </CardContent>
         </Card>
       </div>
@@ -83,9 +79,7 @@ export function UnitSummaryCards({ data }: UnitSummaryCardsProps) {
             <div
               className={cn(
                 'flex items-center gap-2 text-sm',
-                data.sold_vgv_cents > 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-muted-foreground'
+                data.sold_vgv_cents > 0 ? 'text-success' : 'text-muted-foreground'
               )}
             >
               <TrendingUp className="size-4" />
@@ -94,7 +88,7 @@ export function UnitSummaryCards({ data }: UnitSummaryCardsProps) {
             <p
               className={cn(
                 'tabular-nums mt-1 text-2xl font-bold',
-                data.sold_vgv_cents > 0 && 'text-emerald-600 dark:text-emerald-400'
+                data.sold_vgv_cents > 0 && 'text-success'
               )}
             >
               {formatCurrency(data.sold_vgv_cents / 100)}

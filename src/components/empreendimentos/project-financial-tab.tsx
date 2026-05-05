@@ -17,22 +17,16 @@ interface ProjectFinancialTabProps {
 function ContractStatusBadges({ data }: { data: ProjectFinancialSummary }) {
   return (
     <div className="flex flex-wrap gap-2">
-      <Badge
-        variant="outline"
-        className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:text-emerald-300"
-      >
+      <Badge variant="outline" className="border-success/30 bg-success/10 text-success">
         {data.active_contracts} ativos
       </Badge>
-      <Badge
-        variant="outline"
-        className="border-blue-500/30 bg-blue-500/10 text-blue-700 dark:border-blue-400/30 dark:text-blue-300"
-      >
+      <Badge variant="outline" className="border-info/30 bg-info/10 text-info">
         {data.settled_contracts} quitados
       </Badge>
       {data.defaulting_contracts > 0 && (
         <Badge
           variant="outline"
-          className="border-red-500/30 bg-red-500/10 font-semibold text-red-700 dark:border-red-400/30 dark:text-red-300"
+          className="border-destructive/30 bg-destructive/10 font-semibold text-destructive"
         >
           <AlertTriangle className="mr-1 size-3" />
           {data.defaulting_contracts} inadimplentes
@@ -56,10 +50,8 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
       </Card>
       <Card>
         <CardContent className="pt-5 pb-4">
-          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
-            Total Recebido
-          </p>
-          <p className="tabular-nums mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+          <p className="text-xs font-medium text-success">Total Recebido</p>
+          <p className="tabular-nums mt-1 text-2xl font-bold text-success">
             {formatCurrency(data.total_paid_cents / 100)}
           </p>
         </CardContent>
@@ -77,9 +69,7 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
           <p
             className={cn(
               'text-xs font-medium',
-              data.total_correction_cents > 0
-                ? 'text-amber-600 dark:text-amber-400'
-                : 'text-muted-foreground'
+              data.total_correction_cents > 0 ? 'text-warning' : 'text-muted-foreground'
             )}
           >
             Correcoes
@@ -87,7 +77,7 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
           <p
             className={cn(
               'tabular-nums mt-1 text-2xl font-bold',
-              data.total_correction_cents > 0 && 'text-amber-600 dark:text-amber-400'
+              data.total_correction_cents > 0 && 'text-warning'
             )}
           >
             {data.total_correction_cents > 0 ? '+' : ''}

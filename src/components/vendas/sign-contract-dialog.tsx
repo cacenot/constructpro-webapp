@@ -141,7 +141,7 @@ export function SignContractDialog({ open, onOpenChange, saleId }: SignContractD
           </p>
         ) : (
           <>
-            <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-300">
+            <div className="flex items-start gap-2 rounded-lg border bg-pipeline-proposta text-pipeline-proposta-fg border-pipeline-proposta-dot/30 p-3 text-sm">
               <Info className="mt-0.5 size-4 shrink-0" />
               <p>
                 Após a assinatura, a venda será fechada ou movida para aguardando pagamento do
@@ -192,7 +192,7 @@ export function SignContractDialog({ open, onOpenChange, saleId }: SignContractD
                       {...register('document_url')}
                     />
                     {errors.document_url && (
-                      <p className="text-sm text-red-600">{errors.document_url.message}</p>
+                      <p className="text-sm text-destructive">{errors.document_url.message}</p>
                     )}
                     <p className="text-xs text-muted-foreground">
                       Link para plataforma de assinatura (D4Sign, DocuSign) ou PDF externo.

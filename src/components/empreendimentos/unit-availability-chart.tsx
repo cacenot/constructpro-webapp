@@ -52,22 +52,22 @@ export function UnitAvailabilityChart({ data }: UnitAvailabilityChartProps) {
           label="Disponivel"
           value={data.available_count}
           total={data.total_units}
-          colorClass="bg-emerald-500"
-          barClass="bg-emerald-500"
+          colorClass="bg-success"
+          barClass="bg-success"
         />
         <StatusBar
           label="Reservadas"
           value={data.reserved_count}
           total={data.total_units}
-          colorClass="bg-blue-500"
-          barClass="bg-blue-500"
+          colorClass="bg-info"
+          barClass="bg-info"
         />
         <StatusBar
           label="Vendidas"
           value={data.sold_count}
           total={data.total_units}
-          colorClass="bg-emerald-600"
-          barClass="bg-emerald-600"
+          colorClass="bg-chart-3"
+          barClass="bg-chart-3"
         />
         {data.unavailable_count > 0 && (
           <StatusBar

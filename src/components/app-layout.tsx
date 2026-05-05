@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
+import { AppSidebar } from '@/components/app-sidebar'
 import { TopNavbar } from '@/components/top-navbar'
-import { TooltipProvider } from '@/components/ui/tooltip'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -8,11 +9,12 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   return (
-    <TooltipProvider>
-      <div className="min-h-screen bg-background">
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
         <TopNavbar />
-        <main className="mx-auto max-w-350 px-6 py-6">{children}</main>
-      </div>
-    </TooltipProvider>
+        <main className="px-6 py-6">{children}</main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

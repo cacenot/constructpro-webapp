@@ -41,8 +41,8 @@ function FinancialOverviewCard({
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Total Pago</p>
-            <p className="tabular-nums mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-400">
+            <p className="text-xs font-medium text-success">Total Pago</p>
+            <p className="tabular-nums mt-1 text-xl font-bold text-success">
               {formatCurrency(financial.total_paid_cents / 100)}
             </p>
           </div>
@@ -56,7 +56,7 @@ function FinancialOverviewCard({
             <p
               className={cn(
                 'text-xs font-medium',
-                hasAdjustments ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+                hasAdjustments ? 'text-warning' : 'text-muted-foreground'
               )}
             >
               Correções e Ajustes
@@ -64,7 +64,7 @@ function FinancialOverviewCard({
             <p
               className={cn(
                 'tabular-nums mt-1 text-xl font-bold',
-                hasAdjustments && 'text-amber-600 dark:text-amber-400'
+                hasAdjustments && 'text-warning'
               )}
             >
               {hasAdjustments ? '+' : ''}
@@ -89,8 +89,8 @@ function FinancialOverviewCard({
         {/* Next Due Date */}
         {installment?.next_due_date && installment.next_due_amount_cents != null && (
           <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-500/10">
-              <Calendar className="size-4 text-blue-600 dark:text-blue-400" />
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-info/10">
+              <Calendar className="size-4 text-info" />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Próximo Vencimento</p>

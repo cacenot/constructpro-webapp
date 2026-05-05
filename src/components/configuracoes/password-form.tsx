@@ -45,8 +45,8 @@ function calculatePasswordStrength(password: string): number {
  */
 function getStrengthColor(strength: number): string {
   if (strength < 40) return 'bg-destructive'
-  if (strength < 70) return 'bg-yellow-500'
-  return 'bg-green-500'
+  if (strength < 70) return 'bg-warning'
+  return 'bg-success'
 }
 
 /**
@@ -237,21 +237,15 @@ export function PasswordForm() {
                   className="flex items-center gap-2.5 text-sm transition-colors"
                 >
                   {req.met ? (
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950">
-                      <Check className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-success-muted)]">
+                      <Check className="size-3.5 text-success" />
                     </div>
                   ) : (
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted">
                       <X className="size-3.5 text-muted-foreground" />
                     </div>
                   )}
-                  <span
-                    className={
-                      req.met
-                        ? 'font-medium text-emerald-700 dark:text-emerald-400'
-                        : 'text-muted-foreground'
-                    }
-                  >
+                  <span className={req.met ? 'font-medium text-success' : 'text-muted-foreground'}>
                     {req.label}
                   </span>
                 </div>

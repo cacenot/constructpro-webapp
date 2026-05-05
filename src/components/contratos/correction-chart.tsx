@@ -60,7 +60,7 @@ function CustomTooltip({
         <div className="flex justify-between gap-6">
           <span className="text-muted-foreground">Variação</span>
           <span
-            className={`tabular-nums font-medium ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
+            className={`tabular-nums font-medium ${isPositive ? 'text-success' : 'text-destructive'}`}
           >
             {isPositive ? '+' : ''}
             {variationPct}%
@@ -117,11 +117,7 @@ export function CorrectionChart({
             {chartData.map((entry) => (
               <Cell
                 key={entry.reference_month}
-                fill={
-                  entry.variation_ppm >= 0
-                    ? 'var(--color-emerald-500, #10b981)'
-                    : 'var(--color-red-500, #ef4444)'
-                }
+                fill={entry.variation_ppm >= 0 ? 'var(--color-chart-4)' : 'var(--color-chart-5)'}
               />
             ))}
           </Bar>
