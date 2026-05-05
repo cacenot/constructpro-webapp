@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test'
 
+// Reseta o storageState do projeto (login.spec.ts não usa auth pré-existente)
+test.use({ storageState: { cookies: [], origins: [] } })
+
 /**
  * Spec: Página de Login
  *
