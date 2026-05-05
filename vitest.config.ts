@@ -18,6 +18,11 @@ export default defineConfig({
       exclude: ['src/components/ui/**'],
       reporter: ['text'],
     },
+    server: {
+      deps: {
+        inline: ['@cacenot/construct-pro-api-client'],
+      },
+    },
   },
   resolve: {
     alias: {
