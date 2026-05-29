@@ -69,7 +69,7 @@ export function UnitSummaryCards({ data }: UnitSummaryCardsProps) {
               VGV Total
             </div>
             <p className="tabular-nums mt-1 text-2xl font-bold">
-              {formatCurrency(data.total_vgv_cents / 100)}
+              {formatCurrency(data.total_vgv.cents / 100)}
             </p>
           </CardContent>
         </Card>
@@ -79,7 +79,7 @@ export function UnitSummaryCards({ data }: UnitSummaryCardsProps) {
             <div
               className={cn(
                 'flex items-center gap-2 text-sm',
-                data.sold_vgv_cents > 0 ? 'text-success' : 'text-muted-foreground'
+                data.sold_vgv.cents > 0 ? 'text-success' : 'text-muted-foreground'
               )}
             >
               <TrendingUp className="size-4" />
@@ -88,10 +88,10 @@ export function UnitSummaryCards({ data }: UnitSummaryCardsProps) {
             <p
               className={cn(
                 'tabular-nums mt-1 text-2xl font-bold',
-                data.sold_vgv_cents > 0 && 'text-success'
+                data.sold_vgv.cents > 0 && 'text-success'
               )}
             >
-              {formatCurrency(data.sold_vgv_cents / 100)}
+              {formatCurrency(data.sold_vgv.cents / 100)}
             </p>
           </CardContent>
         </Card>
@@ -103,7 +103,7 @@ export function UnitSummaryCards({ data }: UnitSummaryCardsProps) {
               Preço Médio
             </div>
             <p className="tabular-nums mt-1 text-2xl font-bold">
-              {formatCurrency(data.avg_unit_price_cents / 100)}
+              {formatCurrency(data.avg_unit_price.cents / 100)}
             </p>
           </CardContent>
         </Card>

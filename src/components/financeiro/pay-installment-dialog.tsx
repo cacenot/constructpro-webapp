@@ -76,7 +76,7 @@ export function PayInstallmentDialog({
 
   const { data: installmentsData, isLoading: loadingInstallment } = useInstallments(
     isEntryMode && open && contractId
-      ? { contract_id: String(contractId), kind: ['entry'], page_size: 1 }
+      ? { contract_id: contractId, kind: ['entry'], page_size: 1 }
       : undefined
   )
 
@@ -88,7 +88,7 @@ export function PayInstallmentDialog({
   const allowPartialPayments = isEntryInstallment
     ? (tenantConfig?.allow_partial_payments_for_entry ?? true)
     : (tenantConfig?.allow_partial_payments ?? false)
-  const maxAmountCents = resolvedInstallment?.current_amount_cents ?? 0
+  const maxAmountCents = resolvedInstallment?.current_amount?.cents ?? 0
 
   const {
     control,
@@ -100,7 +100,7 @@ export function PayInstallmentDialog({
   } = useForm<InstallmentPaymentFormData>({
     resolver: zodResolver(installmentPaymentSchema),
     defaultValues: {
-      amount_cents: installment?.current_amount_cents ?? 0,
+      amount_cents: installment?.current_amount?.cents ?? 0,
       payment_method: undefined,
       paid_at: `${format(new Date(), 'yyyy-MM-dd')}T00:00:00Z`,
       note: '',
@@ -110,7 +110,7 @@ export function PayInstallmentDialog({
   // Pre-fill amount when entry installment loads asynchronously
   useEffect(() => {
     if (entryInstallment) {
-      setValue('amount_cents', entryInstallment.current_amount_cents)
+      setValue('amount_cents', entryInstallment.current_amount?.cents ?? 0)
     }
   }, [entryInstallment, setValue])
 
@@ -118,7 +118,7 @@ export function PayInstallmentDialog({
   useEffect(() => {
     if (open && resolvedInstallment) {
       reset({
-        amount_cents: resolvedInstallment.current_amount_cents,
+        amount_cents: resolvedInstallment.current_amount?.cents ?? 0,
         payment_method: undefined,
         paid_at: `${format(new Date(), 'yyyy-MM-dd')}T00:00:00Z`,
         note: '',
@@ -142,7 +142,7 @@ export function PayInstallmentDialog({
         {
           params: { path: { installment_id: resolvedInstallment.id } },
           body: {
-            amount_cents: data.amount_cents,
+            amount: data.amount_cents,
             payment_method: data.payment_method,
             paid_at: data.paid_at || undefined,
             note: data.note || undefined,
@@ -189,7 +189,7 @@ export function PayInstallmentDialog({
                   <>
                     {' — '}Vencimento: {resolvedInstallment.due_date} — Valor:{' '}
                     <span className="tabular-nums font-medium">
-                      {formatCurrency(resolvedInstallment.current_amount_cents / 100)}
+                      {formatCurrency((resolvedInstallment.current_amount?.cents ?? 0) / 100)}
                     </span>
                   </>
                 )}
@@ -202,7 +202,7 @@ export function PayInstallmentDialog({
                   <br />
                   Valor da parcela:{' '}
                   <span className="tabular-nums font-medium">
-                    {formatCurrency(resolvedInstallment.current_amount_cents / 100)}
+                    {formatCurrency((resolvedInstallment.current_amount?.cents ?? 0) / 100)}
                   </span>
                   {resolvedInstallment.remaining_amount && (
                     <>

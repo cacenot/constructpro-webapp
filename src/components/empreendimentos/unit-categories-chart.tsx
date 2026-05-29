@@ -82,7 +82,7 @@ export function UnitCategoriesChart({ data }: UnitCategoriesChartProps) {
     reserved: cat.reserved_count,
     sold: cat.sold_count,
     total: cat.total_count,
-    totalPrice: cat.total_price_cents,
+    totalPrice: cat.total_price.cents,
   }))
 
   const totals = data.reduce(
@@ -91,7 +91,7 @@ export function UnitCategoriesChart({ data }: UnitCategoriesChartProps) {
       available: acc.available + cat.available_count,
       sold: acc.sold + cat.sold_count,
       reserved: acc.reserved + cat.reserved_count,
-      price: acc.price + cat.total_price_cents,
+      price: acc.price + cat.total_price.cents,
     }),
     { total: 0, available: 0, sold: 0, reserved: 0, price: 0 }
   )

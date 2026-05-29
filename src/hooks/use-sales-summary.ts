@@ -8,7 +8,7 @@ interface SalesSummaryQuery {
   page?: number
   page_size?: number
   search?: string
-  status?: string[]
+  status?: ('closed' | 'pending_signature' | 'pending_payment' | 'lost' | 'proposal')[]
   user_id?: string
 }
 

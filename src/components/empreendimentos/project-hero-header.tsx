@@ -120,7 +120,7 @@ export function ProjectHeroHeader({ project }: ProjectHeroHeaderProps) {
               <div className="border-t pt-3">
                 <p className="text-xs text-muted-foreground">VGV Total</p>
                 <p className="tabular-nums mt-0.5 text-lg font-bold">
-                  {formatCurrency(unitSummary.total_vgv_cents / 100)}
+                  {formatCurrency(unitSummary.total_vgv.cents / 100)}
                 </p>
               </div>
             </CardContent>

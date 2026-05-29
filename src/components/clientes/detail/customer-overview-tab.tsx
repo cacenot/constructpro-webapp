@@ -23,7 +23,7 @@ function FinancialOverviewCard({
   installment?: CustomerInstallmentOverview | null
 }) {
   const progressValue = Number(financial.payment_progress_percentage)
-  const adjustmentTotal = financial.total_correction_cents + financial.total_adjustment_cents
+  const adjustmentTotal = financial.total_correction.cents + financial.total_adjustment.cents
   const hasAdjustments = adjustmentTotal > 0
 
   return (
@@ -37,19 +37,19 @@ function FinancialOverviewCard({
           <div>
             <p className="text-xs font-medium text-muted-foreground">Principal Contratado</p>
             <p className="tabular-nums mt-1 text-xl font-bold">
-              {formatCurrency(financial.total_principal_cents / 100)}
+              {formatCurrency(financial.total_principal.cents / 100)}
             </p>
           </div>
           <div>
             <p className="text-xs font-medium text-success">Total Pago</p>
             <p className="tabular-nums mt-1 text-xl font-bold text-success">
-              {formatCurrency(financial.total_paid_cents / 100)}
+              {formatCurrency(financial.total_paid.cents / 100)}
             </p>
           </div>
           <div>
             <p className="text-xs font-medium text-muted-foreground">Saldo Devedor</p>
             <p className="tabular-nums mt-1 text-xl font-bold">
-              {formatCurrency(financial.outstanding_balance_cents / 100)}
+              {formatCurrency(financial.outstanding_balance.cents / 100)}
             </p>
           </div>
           <div>
@@ -81,13 +81,13 @@ function FinancialOverviewCard({
           </div>
           <Progress value={progressValue} className="h-3" />
           <p className="text-xs text-muted-foreground">
-            {formatCurrency(financial.total_paid_cents / 100)} de{' '}
-            {formatCurrency(financial.total_principal_cents / 100)}
+            {formatCurrency(financial.total_paid.cents / 100)} de{' '}
+            {formatCurrency(financial.total_principal.cents / 100)}
           </p>
         </div>
 
         {/* Next Due Date */}
-        {installment?.next_due_date && installment.next_due_amount_cents != null && (
+        {installment?.next_due_date && installment.next_due_amount != null && (
           <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-info/10">
               <Calendar className="size-4 text-info" />
@@ -95,7 +95,7 @@ function FinancialOverviewCard({
             <div>
               <p className="text-xs text-muted-foreground">Próximo Vencimento</p>
               <p className="tabular-nums text-sm font-semibold">
-                {formatCurrency(installment.next_due_amount_cents / 100)}
+                {formatCurrency((installment.next_due_amount?.cents ?? 0) / 100)}
                 <span className="ml-2 font-normal text-muted-foreground">
                   em{' '}
                   {new Date(installment.next_due_date).toLocaleDateString('pt-BR', {

@@ -49,13 +49,8 @@ export function ContractRow({ contract, sale }: ContractRowProps) {
       {/* Valor Principal (hidden lg:block) */}
       <div className="hidden lg:block w-40 shrink-0">
         <span className="text-sm font-medium tabular-nums">
-          {formatCurrency(contract.principal_amount_cents / 100)}
+          {formatCurrency(contract.principal_amount.cents / 100)}
         </span>
-      </div>
-
-      {/* Índice de Correção (hidden lg:block) */}
-      <div className="hidden lg:block w-20 shrink-0">
-        <span className="text-sm text-muted-foreground uppercase">{contract.index_type_code}</span>
       </div>
 
       {/* Status */}

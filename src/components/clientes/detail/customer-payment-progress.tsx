@@ -21,8 +21,8 @@ export function CustomerPaymentProgress({ data }: CustomerPaymentProgressProps) 
         <div className="flex items-end justify-between">
           <span className="tabular-nums text-3xl font-bold">{progressValue.toFixed(1)}%</span>
           <span className="text-sm text-muted-foreground">
-            {formatCurrency(data.total_paid_cents / 100)} de{' '}
-            {formatCurrency(data.total_principal_cents / 100)}
+            {formatCurrency(data.total_paid.cents / 100)} de{' '}
+            {formatCurrency(data.total_principal.cents / 100)}
           </span>
         </div>
         <Progress value={progressValue} className="h-3" />

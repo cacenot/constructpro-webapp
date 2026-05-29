@@ -93,7 +93,7 @@ export function createSalesColumns({
         const { created_at, user } = row.original
         return (
           <div className="hidden md:flex flex-col gap-0.5 w-40">
-            <span className="text-sm font-medium">{user?.full_name || 'Não informado'}</span>
+            <span className="text-sm font-medium">{user?.display_name || 'Não informado'}</span>
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(created_at), {
                 addSuffix: true,

@@ -1,14 +1,39 @@
 import { z } from 'zod'
 
-export const installmentKindValues = ['entry', 'monthly', 'yearly', 'extra'] as const
+export const installmentKindValues = [
+  'entry',
+  'regular',
+  'balloon',
+  'key_delivery',
+  'extra',
+] as const
 export const paymentMethodValues = ['boleto', 'pix', 'cash', 'transfer', 'card'] as const
 export const recurrenceTypeValues = ['monthly', 'yearly'] as const
 
-export const INSTALLMENT_KIND_LABELS: Record<string, string> = {
+export type InstallmentKind = (typeof installmentKindValues)[number]
+export type InstallmentPeriodicity =
+  | 'one_shot'
+  | 'monthly'
+  | 'bimonthly'
+  | 'quarterly'
+  | 'semestral'
+  | 'yearly'
+
+export const INSTALLMENT_KIND_LABELS: Record<InstallmentKind, string> = {
   entry: 'Entrada',
-  monthly: 'Mensal',
-  yearly: 'Anual',
+  regular: 'Regular',
+  balloon: 'Balão',
+  key_delivery: 'Entrega das Chaves',
   extra: 'Extra',
+}
+
+export const INSTALLMENT_PERIODICITY_LABELS: Record<InstallmentPeriodicity, string> = {
+  one_shot: 'Parcela única',
+  monthly: 'Mensal',
+  bimonthly: 'Bimestral',
+  quarterly: 'Trimestral',
+  semestral: 'Semestral',
+  yearly: 'Anual',
 }
 
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -28,7 +53,7 @@ const installmentScheduleSchema = z
       message: 'Forma de pagamento é obrigatória',
     }),
     quantity: z.number().min(1, 'Quantidade deve ser pelo menos 1'),
-    amount_cents: z.number().min(1, 'Valor deve ser maior que zero'),
+    amount: z.number().min(1, 'Valor deve ser maior que zero'),
     specific_date: z.string().nullable().optional(),
     recurrence_type: z.enum(recurrenceTypeValues).nullable().optional(),
     recurrence_day: z.number().min(1).max(31).nullable().optional(),
@@ -46,7 +71,7 @@ const installmentScheduleSchema = z
       }
     }
 
-    if (data.kind === 'monthly' || data.kind === 'yearly') {
+    if (data.kind === 'regular' || data.kind === 'balloon') {
       if (!data.recurrence_day) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -63,7 +88,7 @@ const installmentScheduleSchema = z
       }
     }
 
-    if (data.kind === 'yearly' && !data.recurrence_month) {
+    if (data.recurrence_type === 'yearly' && !data.recurrence_month) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Mês de vencimento é obrigatório para parcelas anuais',

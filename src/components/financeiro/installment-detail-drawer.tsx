@@ -107,7 +107,7 @@ function InstallmentDetailContent({
   const dueDate = parseISO(installment.due_date)
   const isOverdue =
     isPast(dueDate) && installment.status !== 'paid' && installment.status !== 'canceled'
-  const hasCorrectionDiff = installment.current_amount_cents !== installment.base_amount_cents
+  const hasCorrectionDiff = installment.current_amount.cents !== installment.base_amount.cents
   const canPay = installment.status !== 'paid' && installment.status !== 'canceled'
   const canIssueBoleto =
     (installment.status === 'scheduled' || installment.status === 'invoiced') &&
@@ -153,14 +153,14 @@ function InstallmentDetailContent({
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Valor atual</span>
             <span className="text-lg font-bold tabular-nums">
-              {formatCurrency(installment.current_amount_cents / 100)}
+              {formatCurrency(installment.current_amount.cents / 100)}
             </span>
           </div>
           {hasCorrectionDiff && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Valor base</span>
               <span className="text-sm tabular-nums text-muted-foreground">
-                {formatCurrency(installment.base_amount_cents / 100)}
+                {formatCurrency(installment.base_amount.cents / 100)}
               </span>
             </div>
           )}
@@ -263,7 +263,7 @@ function InstallmentDetailContent({
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">Valor total</span>
                       <span className="text-sm font-medium tabular-nums">
-                        {formatCurrency(payment.amount_cents / 100)}
+                        {formatCurrency(payment.amount.cents / 100)}
                       </span>
                     </div>
 
@@ -292,7 +292,7 @@ function InstallmentDetailContent({
                                   : `Parcela ${alloc.installment_id.slice(0, 8)}…`}
                               </span>
                               <span className="tabular-nums">
-                                {formatCurrency(alloc.amount_cents / 100)}
+                                {formatCurrency(alloc.amount.cents / 100)}
                               </span>
                             </div>
                           )
@@ -341,7 +341,7 @@ function InstallmentDetailContent({
             </p>
             <div className="flex flex-col gap-2">
               {ledgerEntries.map((entry) => {
-                const isPositive = entry.amount_cents > 0
+                const isPositive = entry.amount.cents > 0
                 return (
                   <div key={entry.id} className="rounded-lg border p-3 flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
@@ -355,7 +355,7 @@ function InstallmentDetailContent({
                         )}
                       >
                         {isPositive ? '+' : ''}
-                        {formatCurrency(entry.amount_cents / 100)}
+                        {formatCurrency(entry.amount.cents / 100)}
                       </span>
                     </div>
 
@@ -376,11 +376,14 @@ function InstallmentDetailContent({
                         {entry.reference_month && (
                           <span>Ref.: {format(parseISO(entry.reference_month), 'MM/yyyy')}</span>
                         )}
-                        {entry.variation_ppm != null && (
+                        {entry.variation?.ppm != null && (
                           <span>
                             Variação:{' '}
                             <strong className="tabular-nums">
-                              {(entry.variation_ppm / 10000).toFixed(2).replace('.', ',')}%
+                              {((entry.variation?.ppm as number) / 10000)
+                                .toFixed(2)
+                                .replace('.', ',')}
+                              %
                             </strong>
                           </span>
                         )}

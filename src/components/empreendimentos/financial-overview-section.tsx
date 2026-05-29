@@ -51,26 +51,26 @@ export function FinancialOverviewSection({ data }: FinancialOverviewSectionProps
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Principal Contratado</p>
             <p className="tabular-nums text-lg font-bold">
-              {formatCurrency(data.total_principal_cents / 100)}
+              {formatCurrency(data.total_principal.cents / 100)}
             </p>
           </div>
           <div className="space-y-1">
             <p className="text-sm text-success">Total Recebido</p>
             <p className="tabular-nums text-lg font-bold text-success">
-              {formatCurrency(data.total_paid_cents / 100)}
+              {formatCurrency(data.total_paid.cents / 100)}
             </p>
           </div>
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Saldo Devedor</p>
             <p className="tabular-nums text-lg font-bold">
-              {formatCurrency(data.total_outstanding_cents / 100)}
+              {formatCurrency(data.total_outstanding.cents / 100)}
             </p>
           </div>
           <div className="space-y-1">
             <p
               className={cn(
                 'text-sm',
-                data.total_correction_cents > 0 ? 'text-warning' : 'text-muted-foreground'
+                data.total_correction.cents > 0 ? 'text-warning' : 'text-muted-foreground'
               )}
             >
               Correções
@@ -78,11 +78,11 @@ export function FinancialOverviewSection({ data }: FinancialOverviewSectionProps
             <p
               className={cn(
                 'tabular-nums text-lg font-bold',
-                data.total_correction_cents > 0 && 'text-warning'
+                data.total_correction.cents > 0 && 'text-warning'
               )}
             >
-              {data.total_correction_cents > 0 ? '+' : ''}
-              {formatCurrency(data.total_correction_cents / 100)}
+              {data.total_correction.cents > 0 ? '+' : ''}
+              {formatCurrency(data.total_correction.cents / 100)}
             </p>
           </div>
         </div>

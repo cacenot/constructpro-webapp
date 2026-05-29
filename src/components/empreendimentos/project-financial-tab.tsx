@@ -44,7 +44,7 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
         <CardContent className="pt-5 pb-4">
           <p className="text-xs font-medium text-muted-foreground">Principal Contratado</p>
           <p className="tabular-nums mt-1 text-2xl font-bold">
-            {formatCurrency(data.total_principal_cents / 100)}
+            {formatCurrency(data.total_principal.cents / 100)}
           </p>
         </CardContent>
       </Card>
@@ -52,7 +52,7 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
         <CardContent className="pt-5 pb-4">
           <p className="text-xs font-medium text-success">Total Recebido</p>
           <p className="tabular-nums mt-1 text-2xl font-bold text-success">
-            {formatCurrency(data.total_paid_cents / 100)}
+            {formatCurrency(data.total_paid.cents / 100)}
           </p>
         </CardContent>
       </Card>
@@ -60,7 +60,7 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
         <CardContent className="pt-5 pb-4">
           <p className="text-xs font-medium text-muted-foreground">Saldo Devedor</p>
           <p className="tabular-nums mt-1 text-2xl font-bold">
-            {formatCurrency(data.total_outstanding_cents / 100)}
+            {formatCurrency(data.total_outstanding.cents / 100)}
           </p>
         </CardContent>
       </Card>
@@ -69,7 +69,7 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
           <p
             className={cn(
               'text-xs font-medium',
-              data.total_correction_cents > 0 ? 'text-warning' : 'text-muted-foreground'
+              data.total_correction.cents > 0 ? 'text-warning' : 'text-muted-foreground'
             )}
           >
             Correcoes
@@ -77,11 +77,11 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
           <p
             className={cn(
               'tabular-nums mt-1 text-2xl font-bold',
-              data.total_correction_cents > 0 && 'text-warning'
+              data.total_correction.cents > 0 && 'text-warning'
             )}
           >
-            {data.total_correction_cents > 0 ? '+' : ''}
-            {formatCurrency(data.total_correction_cents / 100)}
+            {data.total_correction.cents > 0 ? '+' : ''}
+            {formatCurrency(data.total_correction.cents / 100)}
           </p>
         </CardContent>
       </Card>
@@ -101,8 +101,8 @@ function PaymentProgressCard({ data }: { data: ProjectFinancialSummary }) {
         <div className="flex items-end justify-between">
           <span className="tabular-nums text-3xl font-bold">{progressValue.toFixed(1)}%</span>
           <span className="text-sm text-muted-foreground">
-            {formatCurrency(data.total_paid_cents / 100)} de{' '}
-            {formatCurrency(data.total_principal_cents / 100)}
+            {formatCurrency(data.total_paid.cents / 100)} de{' '}
+            {formatCurrency(data.total_principal.cents / 100)}
           </span>
         </div>
         <Progress value={progressValue} className="h-3" />

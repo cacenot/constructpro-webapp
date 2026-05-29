@@ -74,12 +74,12 @@ export function useCustomersTable(): UseCustomersTableReturn {
       page: number
       page_size: number
       search?: string
-      type?: string[]
+      type?: ('individual' | 'company')[]
       sort_by?: string[]
     } = { page, page_size: PAGE_SIZE }
 
     if (debouncedSearch) params.search = debouncedSearch
-    if (typeFilter !== 'all') params.type = [typeFilter]
+    if (typeFilter !== 'all') params.type = [typeFilter] as ('individual' | 'company')[]
     if (sort) params.sort_by = [sort]
 
     return params

@@ -92,7 +92,7 @@ function BoletoCard({ boleto }: { boleto: CustomerBoletoEntry }) {
             </Badge>
           </div>
           <p className="tabular-nums text-lg font-bold">
-            {formatCurrency(boleto.amount_cents / 100)}
+            {formatCurrency(boleto.amount.cents / 100)}
           </p>
         </div>
 

@@ -19,7 +19,14 @@ export default function UnitNewPage() {
           category: data.category,
           project_id: data.project_id,
           area: data.area,
-          price_cents: data.price_cents,
+          price: {
+            cents: data.price_cents,
+            decimal: (data.price_cents / 100).toFixed(2),
+            brl: (data.price_cents / 100).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            }),
+          },
           description: data.description ?? undefined,
           apartment_type: data.apartment_type ?? undefined,
           bedrooms: data.bedrooms ?? undefined,

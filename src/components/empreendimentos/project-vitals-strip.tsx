@@ -57,7 +57,7 @@ export function ProjectVitalsStrip({ unitSummary, financialSummary }: ProjectVit
           <div className="space-y-1">
             <p className="text-xs font-medium text-muted-foreground">VGV Total</p>
             <p className="tabular-nums text-2xl font-bold">
-              {unitSummary ? formatCurrency(unitSummary.total_vgv_cents / 100) : '—'}
+              {unitSummary ? formatCurrency(unitSummary.total_vgv.cents / 100) : '—'}
             </p>
           </div>
           <DollarSign className="size-4 text-muted-foreground/50" />
@@ -72,10 +72,10 @@ export function ProjectVitalsStrip({ unitSummary, financialSummary }: ProjectVit
             <p
               className={cn(
                 'tabular-nums text-2xl font-bold',
-                financialSummary && financialSummary.total_paid_cents > 0 ? 'text-success' : ''
+                financialSummary && financialSummary.total_paid.cents > 0 ? 'text-success' : ''
               )}
             >
-              {financialSummary ? formatCurrency(financialSummary.total_paid_cents / 100) : '—'}
+              {financialSummary ? formatCurrency(financialSummary.total_paid.cents / 100) : '—'}
             </p>
           </div>
           <Receipt className="size-4 text-muted-foreground/50" />

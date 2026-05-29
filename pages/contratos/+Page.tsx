@@ -60,8 +60,8 @@ export default function ContratosPage() {
     const params: {
       page: number
       page_size: number
-      sale_id?: string
-      status?: string[]
+      sale_id?: number | null
+      status?: ('active' | 'settled' | 'pending' | 'in_default' | 'canceled' | 'terminated')[]
       index_type_code?: string
       'signed_at[min]'?: string
       'signed_at[max]'?: string
@@ -71,11 +71,14 @@ export default function ContratosPage() {
     }
 
     if (debouncedSearch) {
-      params.sale_id = debouncedSearch
+      const parsedSaleId = Number.parseInt(debouncedSearch, 10)
+      if (!Number.isNaN(parsedSaleId)) {
+        params.sale_id = parsedSaleId
+      }
     }
 
     if (statusFilter !== 'all') {
-      params.status = [statusFilter]
+      params.status = [statusFilter as NonNullable<typeof params.status>[number]]
     }
 
     if (onlyPendingContracts) {

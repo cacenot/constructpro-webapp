@@ -56,12 +56,15 @@ export function useSalesTable(): UseSalesTableReturn {
       page: number
       page_size: number
       search?: string
-      status?: string[]
+      status?: ('closed' | 'pending_signature' | 'pending_payment' | 'lost' | 'proposal')[]
       user_id?: string
     } = { page, page_size: PAGE_SIZE }
 
     if (debouncedSearch) params.search = debouncedSearch
-    if (statusFilter !== 'all') params.status = [statusFilter]
+    if (statusFilter !== 'all')
+      params.status = [
+        statusFilter as 'closed' | 'pending_signature' | 'pending_payment' | 'lost' | 'proposal',
+      ]
     if (onlyMySales && user) params.user_id = user.uid
 
     return params

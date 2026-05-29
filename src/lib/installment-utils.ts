@@ -5,7 +5,7 @@ import type { SaleFormData } from '@/schemas/sale.schema'
  * Returns the next occurrence of that day/month.
  */
 export function computeDefaultStartDate(
-  kind: 'monthly' | 'yearly',
+  recurrenceType: 'monthly' | 'yearly',
   recurrenceDay: number | null | undefined,
   recurrenceMonth: number | null | undefined
 ): string {
@@ -16,7 +16,7 @@ export function computeDefaultStartDate(
   const currentMonth = now.getMonth()
   const currentDay = now.getDate()
 
-  if (kind === 'monthly') {
+  if (recurrenceType === 'monthly') {
     const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
     const dayToUse = Math.min(recurrenceDay, daysInCurrentMonth)
 
@@ -34,7 +34,7 @@ export function computeDefaultStartDate(
     return formatDateISO(currentYear, nextMonth + 1, dayInNextMonth)
   }
 
-  if (kind === 'yearly' && recurrenceMonth) {
+  if (recurrenceType === 'yearly' && recurrenceMonth) {
     const month = recurrenceMonth - 1
     const daysInMonth = new Date(currentYear, month + 1, 0).getDate()
     const dayToUse = Math.min(recurrenceDay, daysInMonth)
@@ -117,7 +117,7 @@ export function computeContractEndDate(schedules: SaleFormData['installment_sche
       if (!latestDate || d > latestDate) latestDate = d
     }
 
-    if (schedule.kind === 'monthly' && schedule.start_date && schedule.recurrence_day) {
+    if (schedule.recurrence_type === 'monthly' && schedule.start_date && schedule.recurrence_day) {
       const start = new Date(schedule.start_date)
       const months = (schedule.quantity ?? 1) - 1
       const end = new Date(start)
@@ -126,7 +126,7 @@ export function computeContractEndDate(schedules: SaleFormData['installment_sche
       if (months + 1 > totalMonths) totalMonths = months + 1
     }
 
-    if (schedule.kind === 'yearly' && schedule.start_date && schedule.recurrence_day) {
+    if (schedule.recurrence_type === 'yearly' && schedule.start_date && schedule.recurrence_day) {
       const start = new Date(schedule.start_date)
       const years = (schedule.quantity ?? 1) - 1
       const end = new Date(start)

@@ -35,14 +35,16 @@ export interface InstallmentsTableMeta {
 
 type Payment = NonNullable<InstallmentSummaryItemResponse['payments']>[number]
 
+type MoneyObject = { cents: number; decimal: string; brl: string }
+
 function PaymentsHoverContent({
   payments,
   paid_amount,
   remaining_amount,
 }: {
   payments: Payment[]
-  paid_amount: string
-  remaining_amount: string
+  paid_amount: MoneyObject
+  remaining_amount: MoneyObject
 }) {
   return (
     <HoverCardContent className="w-72 p-4" align="start">
@@ -57,14 +59,14 @@ function PaymentsHoverContent({
               <div className="flex items-center justify-between">
                 <span className="font-medium">{translatePaymentMethod(p.method, 'pt-BR')}</span>
                 <span className="tabular-nums">
-                  {formatCurrency(p.allocation_amount_cents / 100)}
+                  {formatCurrency(p.allocation_amount.cents / 100)}
                 </span>
               </div>
-              {p.allocation_amount_cents !== p.payment_amount_cents && (
+              {p.allocation_amount.cents !== p.payment_amount.cents && (
                 <div className="flex items-center justify-between text-muted-foreground/70">
                   <span className="text-[11px] italic">Pgto. total</span>
                   <span className="tabular-nums text-[11px]">
-                    {formatCurrency(p.payment_amount_cents / 100)}
+                    {formatCurrency(p.payment_amount.cents / 100)}
                   </span>
                 </div>
               )}
@@ -80,12 +82,12 @@ function PaymentsHoverContent({
             <div className="flex items-center justify-between">
               <span className="text-success">Total pago</span>
               <span className="tabular-nums font-medium text-success">
-                {formatCurrency(Number(paid_amount))}
+                {formatCurrency(paid_amount.cents / 100)}
               </span>
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
               <span>Restante</span>
-              <span className="tabular-nums">{formatCurrency(Number(remaining_amount))}</span>
+              <span className="tabular-nums">{formatCurrency(remaining_amount.cents / 100)}</span>
             </div>
           </div>
         </div>
@@ -217,7 +219,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
       )
     },
     cell: ({ row }) => {
-      const { current_amount_cents, paid_amount, remaining_amount, kind } = row.original
+      const { current_amount, paid_amount, remaining_amount, kind } = row.original
       const payments: Payment[] = row.original.payments ?? []
       return (
         <HoverCard>
@@ -225,7 +227,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
             <div className="flex flex-col gap-0.5 cursor-default">
               <div className="flex items-center gap-1">
                 <span className="text-sm font-medium tabular-nums">
-                  {formatCurrency(current_amount_cents / 100)}
+                  {formatCurrency(current_amount.cents / 100)}
                 </span>
                 <Info className="size-3 shrink-0 text-muted-foreground/50" />
               </div>

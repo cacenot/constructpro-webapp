@@ -103,7 +103,9 @@ export function TenantConfigSection() {
     require_entry_payment_for_close: config.require_entry_payment_for_close ?? false,
     sale_lost_rule: config.sale_lost_rule ?? 'disabled',
     sale_lost_days_threshold: config.sale_lost_days_threshold ?? null,
-    correction_basis: config.correction_basis ?? 'outstanding_balance',
+    correction_basis:
+      (config as { correction_basis?: TenantConfigFormData['correction_basis'] })
+        .correction_basis ?? 'outstanding_balance',
     apply_index_on_overdue_installments: config.apply_index_on_overdue_installments ?? true,
   }
 

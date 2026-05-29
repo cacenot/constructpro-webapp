@@ -99,8 +99,8 @@ export default function ContractDetailPage() {
         ? 'text-red-600 dark:text-red-400'
         : ''
 
-  const totalScheduleAmount = installmentSummary?.total_amount_cents
-    ? formatCurrency(installmentSummary.total_amount_cents / 100)
+  const totalScheduleAmount = installmentSummary?.total_amount?.cents
+    ? formatCurrency(installmentSummary.total_amount.cents / 100)
     : '—'
 
   const hasCorrectionData = correctionSummary && correctionSummary.correction_count > 0
@@ -182,12 +182,12 @@ export default function ContractDetailPage() {
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Índice</p>
-              <p className="text-sm font-medium">{contract.index_type_code}</p>
+              <p className="text-sm font-medium">{sale?.index_type_code}</p>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Principal</p>
               <p className="tabular-nums text-sm font-medium">
-                {formatCurrency(contract.principal_amount_cents / 100)}
+                {formatCurrency(contract.principal_amount.cents / 100)}
               </p>
             </div>
           </div>
@@ -201,7 +201,7 @@ export default function ContractDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Principal contratado</p>
                   <p className="tabular-nums mt-1 text-2xl font-bold">
-                    {formatCurrency(financial.principal_amount_cents / 100)}
+                    {formatCurrency(financial.principal_amount.cents / 100)}
                   </p>
                 </div>
                 <div>
@@ -209,13 +209,13 @@ export default function ContractDetailPage() {
                   <p
                     className={cn('tabular-nums mt-1 text-2xl font-bold', outstandingBalanceColor)}
                   >
-                    {formatCurrency(financial.outstanding_balance_cents / 100)}
+                    {formatCurrency(financial.outstanding_balance.cents / 100)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total pago</p>
                   <p className="tabular-nums mt-1 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(financial.total_paid_cents / 100)}
+                    {formatCurrency(financial.total_paid.cents / 100)}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -229,13 +229,13 @@ export default function ContractDetailPage() {
                 </div>
               </div>
 
-              {(financial.total_correction_cents > 0 || financial.total_adjustment_cents !== 0) && (
+              {(financial.total_correction.cents > 0 || financial.total_adjustment.cents !== 0) && (
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {financial.total_correction_cents > 0 && (
-                    <span>Correção: +{formatCurrency(financial.total_correction_cents / 100)}</span>
+                  {financial.total_correction.cents > 0 && (
+                    <span>Correção: +{formatCurrency(financial.total_correction.cents / 100)}</span>
                   )}
-                  {financial.total_adjustment_cents !== 0 && (
-                    <span>Ajustes: {formatCurrency(financial.total_adjustment_cents / 100)}</span>
+                  {financial.total_adjustment.cents !== 0 && (
+                    <span>Ajustes: {formatCurrency(financial.total_adjustment.cents / 100)}</span>
                   )}
                 </div>
               )}
@@ -254,9 +254,9 @@ export default function ContractDetailPage() {
                           <span className="text-lg font-bold">
                             {formatDate(installmentSummary.next_due_date)}
                           </span>
-                          {installmentSummary.next_due_amount_cents != null && (
+                          {installmentSummary.next_due_amount?.cents != null && (
                             <span className="tabular-nums text-sm text-muted-foreground">
-                              {formatCurrency(installmentSummary.next_due_amount_cents / 100)}
+                              {formatCurrency(installmentSummary.next_due_amount.cents / 100)}
                             </span>
                           )}
                         </>
@@ -322,10 +322,10 @@ export default function ContractDetailPage() {
                         {schedule.count}
                       </TableCell>
                       <TableCell className="px-6 text-right tabular-nums">
-                        {formatCurrency(schedule.amount_cents / 100)}
+                        {formatCurrency(schedule.amount.cents / 100)}
                       </TableCell>
                       <TableCell className="px-6 text-right tabular-nums">
-                        {formatCurrency(schedule.total_amount_cents / 100)}
+                        {formatCurrency(schedule.total_amount.cents / 100)}
                       </TableCell>
                       <TableCell className="hidden px-6 md:table-cell">
                         {schedule.first_due_date === schedule.last_due_date ? (
@@ -387,14 +387,14 @@ export default function ContractDetailPage() {
                         : 'meses corrigidos'}{' '}
                       · Total:{' '}
                       <span className="tabular-nums font-medium">
-                        {formatCurrency(correctionSummary.total_correction_cents / 100)}
+                        {formatCurrency(correctionSummary.total_correction.cents / 100)}
                       </span>
                     </p>
                     {correctionSummary.entries && correctionSummary.entries.length > 0 && (
                       <CorrectionChart
                         entries={correctionSummary.entries}
-                        totalCorrectionCents={correctionSummary.total_correction_cents}
-                        principalAmountCents={contract.principal_amount_cents}
+                        totalCorrectionCents={correctionSummary.total_correction.cents}
+                        principalAmountCents={contract.principal_amount.cents}
                       />
                     )}
                   </CardContent>
@@ -420,17 +420,17 @@ export default function ContractDetailPage() {
                             <TableCell className="px-6 text-right tabular-nums">
                               <span
                                 className={cn(
-                                  entry.variation_ppm >= 0
+                                  entry.variation.ppm >= 0
                                     ? 'text-emerald-600 dark:text-emerald-400'
                                     : 'text-red-600 dark:text-red-400'
                                 )}
                               >
-                                {entry.variation_ppm >= 0 ? '+' : ''}
-                                {(entry.variation_ppm / 10000).toFixed(2)}%
+                                {entry.variation.ppm >= 0 ? '+' : ''}
+                                {(entry.variation.ppm / 10000).toFixed(2)}%
                               </span>
                             </TableCell>
                             <TableCell className="px-6 text-right tabular-nums">
-                              {formatCurrency(entry.amount_cents / 100)}
+                              {formatCurrency(entry.amount.cents / 100)}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -441,7 +441,7 @@ export default function ContractDetailPage() {
                             Total
                           </TableCell>
                           <TableCell className="px-6 text-right tabular-nums font-semibold">
-                            {formatCurrency(correctionSummary.total_correction_cents / 100)}
+                            {formatCurrency(correctionSummary.total_correction.cents / 100)}
                           </TableCell>
                         </TableRow>
                       </TableFooter>
@@ -458,7 +458,7 @@ export default function ContractDetailPage() {
                       <div>
                         <span className="text-muted-foreground">Total recebido: </span>
                         <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
-                          {formatCurrency(paymentSummary.total_paid_cents / 100)}
+                          {formatCurrency(paymentSummary.total_paid.cents / 100)}
                         </span>
                       </div>
                       <div>
@@ -494,7 +494,7 @@ export default function ContractDetailPage() {
                                 {item.count}
                               </TableCell>
                               <TableCell className="px-6 text-right tabular-nums">
-                                {formatCurrency(item.total_cents / 100)}
+                                {formatCurrency(item.total.cents / 100)}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -517,7 +517,7 @@ export default function ContractDetailPage() {
             <CardContent>
               <BalanceTimelineChart
                 entries={balanceTimeline.entries}
-                principalAmountCents={contract.principal_amount_cents}
+                principalAmountCents={contract.principal_amount.cents}
               />
             </CardContent>
             <CardContent className="p-0">
@@ -544,33 +544,33 @@ export default function ContractDetailPage() {
                       <TableRow key={entry.month}>
                         <TableCell className="px-6">{formatMonthYear(entry.month)}</TableCell>
                         <TableCell className="px-6 text-right tabular-nums">
-                          {formatCurrency(entry.opening_balance_cents / 100)}
+                          {formatCurrency(entry.opening_balance.cents / 100)}
                         </TableCell>
                         <TableCell className="hidden px-6 text-right tabular-nums md:table-cell">
-                          {entry.corrections_cents !== 0 ? (
+                          {entry.corrections.cents !== 0 ? (
                             <span className="text-amber-600 dark:text-amber-400">
-                              +{formatCurrency(entry.corrections_cents / 100)}
+                              +{formatCurrency(entry.corrections.cents / 100)}
                             </span>
                           ) : (
                             '—'
                           )}
                         </TableCell>
                         <TableCell className="hidden px-6 text-right tabular-nums md:table-cell">
-                          {entry.payments_cents !== 0 ? (
+                          {entry.payments.cents !== 0 ? (
                             <span className="text-emerald-600 dark:text-emerald-400">
-                              -{formatCurrency(entry.payments_cents / 100)}
+                              -{formatCurrency(entry.payments.cents / 100)}
                             </span>
                           ) : (
                             '—'
                           )}
                         </TableCell>
                         <TableCell className="hidden px-6 text-right tabular-nums lg:table-cell">
-                          {entry.adjustments_cents !== 0
-                            ? formatCurrency(entry.adjustments_cents / 100)
+                          {entry.adjustments.cents !== 0
+                            ? formatCurrency(entry.adjustments.cents / 100)
                             : '—'}
                         </TableCell>
                         <TableCell className="px-6 text-right tabular-nums font-medium">
-                          {formatCurrency(entry.closing_balance_cents / 100)}
+                          {formatCurrency(entry.closing_balance.cents / 100)}
                         </TableCell>
                       </TableRow>
                     ))}

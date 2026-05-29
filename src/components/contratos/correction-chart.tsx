@@ -46,8 +46,8 @@ function CustomTooltip({
   const data = payload[0]?.payload
   if (!data) return null
 
-  const variationPct = (data.variation_ppm / 10000).toFixed(2)
-  const isPositive = data.variation_ppm >= 0
+  const variationPct = (data.variation.ppm / 10000).toFixed(2)
+  const isPositive = data.variation.ppm >= 0
 
   return (
     <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
@@ -69,7 +69,7 @@ function CustomTooltip({
         <div className="flex justify-between gap-6">
           <span className="text-muted-foreground">Valor</span>
           <span className="tabular-nums font-medium">
-            {formatCurrency(data.amount_cents / 100)}
+            {formatCurrency(data.amount.cents / 100)}
           </span>
         </div>
       </div>
@@ -85,7 +85,7 @@ export function CorrectionChart({
   const chartData = entries.map((entry) => ({
     ...entry,
     month_label: formatMonth(entry.reference_month),
-    amount: entry.amount_cents / 100,
+    amount: entry.amount.cents / 100,
   }))
 
   const impactPct =
@@ -117,7 +117,7 @@ export function CorrectionChart({
             {chartData.map((entry) => (
               <Cell
                 key={entry.reference_month}
-                fill={entry.variation_ppm >= 0 ? 'var(--color-chart-4)' : 'var(--color-chart-5)'}
+                fill={entry.variation.ppm >= 0 ? 'var(--color-chart-4)' : 'var(--color-chart-5)'}
               />
             ))}
           </Bar>
