@@ -67,3 +67,7 @@ logs/
 # Other IDE integrations (not used - Claude Code only)
 .codex/
 .antigravity/
+.cursor/
+.gemini/
+.kimi/
+.github/agents/
