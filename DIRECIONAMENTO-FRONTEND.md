@@ -166,19 +166,21 @@ entrega das chaves, extras), com o resumo financeiro batendo com o que a API vai
 **Front:** revisar `sale-form.tsx` + `installment-utils.ts` (cálculo de datas) considerando os novos
 `kind` e as periodicidades. Vale extrair um componente "construtor de parcelas".
 
-### 2.5 Mais periodicidades das parcelas ⚠️
+### 2.5 Mais periodicidades das parcelas ✅
 
 **Estado atual:** só mensal e anual.
 
 **Objetivo:** bimestral, trimestral, semestral.
 
-**API:** ⚠️ **bloqueado.** A entidade já tem `InstallmentPeriodicity` (`one_shot · monthly · bimonthly ·
-quarterly · semestral · yearly`), mas o DTO de proposta `RecurrenceType` só aceita `monthly`/`yearly`,
-e o schedule service só mapeia esses dois. → **Follow-up:**
-[construct-pro-api#94](https://github.com/cacenot/construct-pro-api/issues/94).
+**API:** ✅ **entregue** ([construct-pro-api#94](https://github.com/cacenot/construct-pro-api/issues/94),
+PR #96). `RecurrenceType` agora aceita `monthly · bimonthly · quarterly · semestral · yearly`, e o
+schedule service materializa todas por uma fonte única de datas (`schedule_dates`) — o preview da
+proposta nunca diverge das parcelas geradas.
 
-**Front:** quando a API expor, basta adicionar as opções no seletor de recorrência e ajustar o cálculo
-de datas em `installment-utils.ts`.
+**Front:** adicionar `bimonthly`/`quarterly`/`semestral` ao seletor de recorrência e ajustar o cálculo
+de datas em `installment-utils.ts` — intervalos de 2/3/6 meses a partir de `start_date`, ancorado em
+`recurrence_day`, com clamp de fim de mês (dia 31 em fevereiro → 28/29). Espelha o `schedule_dates` do
+backend.
 
 ### 2.6 Índice (index type) por grupo de parcelas ⚠️
 
@@ -217,6 +219,28 @@ Regras de negócio (refletir no Zod):
 **Front:** seletores `<BrokerAutocomplete>` / `<AgencyAutocomplete>` (criar, consumindo `/api/v1/brokers`
 e `/api/v1/agencies`) + inputs de taxa em %. Precisa de um `<RateInput>` (% → PPM) análogo ao
 `CurrencyInput` — **não existe ainda** (confirmado: nenhum input de taxa/percentual em `src/components/ui/`), criar.
+
+### 2.8 Teto de parcelas por mês-calendário ✅
+
+**Estado atual:** sem limite — entrada + mensal + anual podem empilhar livremente num mesmo mês.
+
+**Objetivo:** guardrail configurável por tenant. No mercado-alvo a venda é entrada + mensais + anuais,
+então é normal 2 parcelas coincidirem num mês (a mensal e a anual). Um cap evita empilhamento acidental
+(ex.: 3+ no mesmo mês) ao montar a proposta.
+
+**API:** ✅ **entregue** ([construct-pro-api#97](https://github.com/cacenot/construct-pro-api/issues/97)).
+Nova config `TenantConfig.max_installments_per_month` (int **1–5, default 2**) exposta em
+`GET`/`PATCH /api/v1/tenant-config`. Ao montar a proposta, `POST`/`PATCH /api/v1/sales` rejeita com
+**422** (`error_code` `SALE_INSTALLMENTS_PER_MONTH_EXCEEDS_CAP`, com `details.month`/`count`/`cap`)
+quando algum mês-calendário excede o cap. Conta **todas** as parcelas do mês, **entrada inclusive**.
+Propostas já existentes não são revalidadas (grandfathering).
+
+**Front:**
+- **Montagem da proposta:** pré-validar localmente (somar as `due_date` por mês-calendário ≤ cap) para
+  feedback imediato e tratar o 422 do backend. O cap vem do `TenantConfig` — incluir no fetch do config
+  do tenant.
+- **Configuração do tenant:** nova **range bar** (1–5, default 2) para `max_installments_per_month`, ao
+  lado do `max_commission_rate`.
 
 ---
 
@@ -322,7 +346,8 @@ Os itens abaixo **dependem de mudança no backend** antes do trabalho de fronten
 | # | Issue | Destrava |
 |---|---|---|
 | ⚠️ | [#93 — index_type por grupo de parcelas](https://github.com/cacenot/construct-pro-api/issues/93) | §2.6 |
-| ⚠️ | [#94 — periodicidades além de mensal/anual](https://github.com/cacenot/construct-pro-api/issues/94) | §2.5 |
+| ✅ | [#94 — periodicidades além de mensal/anual](https://github.com/cacenot/construct-pro-api/issues/94) — entregue (PR #96) | §2.5 |
+| ✅ | [#97 — teto de parcelas por mês](https://github.com/cacenot/construct-pro-api/issues/97) — entregue (PR stack sobre #96) | §2.8 |
 | ⚠️ | [#95 — endpoint de relatório de comissões](https://github.com/cacenot/construct-pro-api/issues/95) | §6 |
 
 Tudo o que está marcado ✅ não depende dessas issues e pode tocar em paralelo.
@@ -343,4 +368,4 @@ não nessa doc — e vale sinalizar a atualização dela.
 1. **Bump do API client para 1.0.0** (§0) — destrava o resto e revela os pontos de quebra.
 2. **Empreendimento** (§3) e **CRUDs de corretor/imobiliária** (§4, §5) — ✅ independentes, baixo risco.
 3. **Nova Proposta** ✅ (§2.1 step, §2.2 multi-entrada/asset, §2.3 key_delivery, §2.4 UX, §2.7 mediação).
-4. **Itens ⚠️** (§2.5 periodicidades, §2.6 índice por grupo, §6 comissões) — conforme #94/#93/#95 forem entregues.
+4. **Itens ⚠️** (§2.6 índice por grupo, §6 comissões) — conforme #93/#95 forem entregues. §2.5 periodicidades e §2.8 cap de parcelas/mês já têm backend entregue (#94 PR #96 / #97 stack), prontos para o front.
