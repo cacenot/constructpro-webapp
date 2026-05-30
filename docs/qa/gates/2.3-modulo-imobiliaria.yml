@@ -1,0 +1,50 @@
+schema: 1
+story: "2.3"
+story_title: "Módulo Imobiliária (CRUD completo)"
+gate: CONCERNS
+status_reason: "Implementação completa. Lição da Story 2.2 aplicada corretamente: CNPJ omitido do body do PATCH, mutationFn tipado com AgencyUpdateFormData. Único concern: E2E playwright deferido como débito técnico [EPIC2-T1]."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-05-30T20:25:00Z"
+
+top_issues:
+  - id: QA-2.3-C01
+    severity: medium
+    category: tests
+    description: "AC 18 — testes E2E (npx playwright test tests/e2e/imobiliarias/) não executados. Spec criada e 6 cenários documentados em tests/e2e/imobiliarias/agency-crud.spec.ts, mas execução pendente conforme decisão de PO."
+    location: "tests/e2e/imobiliarias/agency-crud.spec.ts"
+    suggested_owner: dev
+    recommendation: "Executar playwright antes do merge para confirmar 6 cenários E2E passam. Rastrear via EPIC2-T1 em docs/STORY-BACKLOG.md."
+
+waiver:
+  active: false
+
+quality_score: 90
+
+evidence:
+  tests_reviewed: 30
+  risks_identified: 1
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19]
+    ac_gaps: [18]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Zod valida todos os inputs. CNPJ stripped (replace /\\D/g) antes de enviar para API. isValidPhoneNumber de libphonenumber-js bloqueia números inválidos. throwApiError centralizado. CNPJ desabilitado no form de edição e omitido do agencyUpdateSchema."
+  performance:
+    status: PASS
+    notes: "Debounce 300ms no search. queryKey estável (['agencies', queryParams]). PAGE_SIZE=10. invalidateQueries correto em create, update e delete. totalPages com Math.max(1, ...) evita divisão por zero."
+  reliability:
+    status: PASS
+    notes: "Loading states com skeleton rows (10 rows). Empty state com duas variantes (com/sem filtro ativo). Error states em todas as páginas. AlertDialog com confirmação antes de delete. AgencyDeleteDialog encapsula mutation corretamente."
+  maintainability:
+    status: PASS
+    notes: "Lição da 2.2 incorporada: edit page usa AgencyUpdateFormData no mutationFn e desestrutura cnpj antes de chamar mutateAsync. CNPJInput reutilizado de document-input.tsx. PhoneInput sem prop international (fix 2.2 aplicado). Padrão de colunas consistente com broker-columns.tsx."
+
+recommendations:
+  immediate:
+    - action: "Executar npx playwright test tests/e2e/imobiliarias/ antes do merge (rastrear EPIC2-T1)"
+      refs: ["tests/e2e/imobiliarias/agency-crud.spec.ts"]
+  future:
+    - action: "Considerar adicionar trade_name ao placeholder do filtro ('Buscar por razão social, nome fantasia, CNPJ ou CRECI-J...')"
+      refs: ["src/components/imobiliarias/agency-filters.tsx:22"]
