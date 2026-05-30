@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Settings,
   ShoppingCart,
+  UserCheck,
   Users,
 } from 'lucide-react'
 import {
@@ -32,6 +33,7 @@ const navOperacoes = [
 const navComercial = [
   { title: 'Vendas', href: '/vendas', icon: ShoppingCart },
   { title: 'Contratos', href: '/contratos', icon: FileText },
+  { title: 'Corretores', href: '/corretores', icon: UserCheck },
 ]
 
 const navFinanceiro = [{ title: 'Financeiro', href: '/financeiro', icon: Banknote }]

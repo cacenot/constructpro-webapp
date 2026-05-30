@@ -1,0 +1,58 @@
+schema: 1
+story: "2.2"
+story_title: "Módulo Corretor (CRUD completo)"
+gate: CONCERNS
+status_reason: "Implementação completa e fixes aplicados. Dois concerns: PATCH body inclui CPF (semântico, não-blocking) e E2E playwright pendente execução (AC 18)."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-05-30T18:05:00Z"
+
+top_issues:
+  - id: QA-2.2-C01
+    severity: medium
+    category: code
+    description: "Edit page mutationFn usa BrokerCreateFormData (inclui cpf) em vez de BrokerUpdateFormData. Spread ...data envia cpf no PATCH body."
+    location: "pages/corretores/@id/editar/+Page.tsx:36-45"
+    suggested_owner: dev
+    recommendation: "Tipar mutationFn com BrokerUpdateFormData e omitir cpf explicitamente do body."
+
+  - id: QA-2.2-C02
+    severity: medium
+    category: tests
+    description: "AC 18 — testes E2E (npx playwright test tests/e2e/corretores/) não executados. Task 9 marcada pendente desde implementação."
+    location: "tests/e2e/corretores/"
+    suggested_owner: dev
+    recommendation: "Executar playwright antes do merge para confirmar 5 cenários E2E passam."
+
+waiver:
+  active: false
+
+quality_score: 80
+
+evidence:
+  tests_reviewed: 25
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 19]
+    ac_gaps: [18]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Zod valida inputs. CPF stripped. isValidPhoneNumber bloqueia números inválidos antes da API. throwApiError centralizado."
+  performance:
+    status: PASS
+    notes: "Debounce 300ms. queryKey estável. PAGE_SIZE=10. invalidateQueries correto."
+  reliability:
+    status: PASS
+    notes: "Error states e loading states implementados. Empty state com e sem filtro ativo."
+  maintainability:
+    status: CONCERNS
+    notes: "Edit page misusa BrokerCreateFormData onde BrokerUpdateFormData seria correto. Menor, mas cria confusão de tipos."
+
+recommendations:
+  immediate:
+    - action: "Executar npx playwright test tests/e2e/corretores/ antes do merge"
+      refs: ["tests/e2e/corretores/"]
+  future:
+    - action: "Corrigir tipo do mutationFn em editar/+Page.tsx para BrokerUpdateFormData"
+      refs: ["pages/corretores/@id/editar/+Page.tsx"]

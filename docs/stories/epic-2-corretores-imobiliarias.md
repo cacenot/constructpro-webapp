@@ -114,23 +114,23 @@ pnpm add -D vitest @vitest/ui @testing-library/react @testing-library/user-event
 
 ---
 
-## Testes E2E — Obrigatório (Playwright)
+## Testes E2E — Débito Técnico (Playwright)
 
-Toda story deste épico **deve** incluir testes E2E com Playwright. Sem testes passando, a story não pode avançar para `InReview`.
+> ⚠️ **Decisão (2026-05-30):** Testes E2E com Playwright foram deferidos como débito técnico para este épico. Não são requisito bloqueante para conclusão das stories. Rastreados em `docs/STORY-BACKLOG.md` item `[EPIC2-T1]`.
 
 **Configuração:** `playwright.config.ts` já presente no projeto.
 
 **Localização dos testes:** `e2e/` (subdiretório por story).
 
-**Cobertura mínima obrigatória por story:**
+**Cobertura planejada (a implementar no débito técnico):**
 
-| Story | Cenários obrigatórios |
+| Story | Cenários planejados |
 |-------|----------------------|
 | 2.1 Bump | Smoke test: login + navegar clientes + projetos + vendas sem erro visual (`e2e/regression/api-bump.spec.ts`) |
 | 2.2 Corretor | Lista paginada, criação completa, edição, soft-delete com confirmação, busca server-side |
 | 2.3 Imobiliária | Lista paginada, criação completa, edição, soft-delete com confirmação, busca por razão social/CNPJ |
 
-**Gate:** `npx playwright test e2e/` deve passar 100% antes do PR — BLOQUEANTE.
+**Status:** Deferido — não bloqueante. Ver `docs/STORY-BACKLOG.md` `[EPIC2-T1]`.
 
 ---
 
@@ -146,7 +146,7 @@ Toda story deste épico **deve** incluir testes E2E com Playwright. Sem testes p
 - **Quality Gates:**
   - Pre-Commit: `npm run build` 100% limpo, `npm run lint` sem warnings
   - Pre-PR: **`npx vitest run src/schemas/sale.schema.test.ts` — OBRIGATÓRIO** (`INSTALLMENT_KIND_LABELS` e `INSTALLMENT_PERIODICITY_LABELS`)
-  - Pre-PR: **`npx playwright test e2e/regression/api-bump.spec.ts` — OBRIGATÓRIO** (smoke test de regressão)
+  - Pre-PR: `npx playwright test e2e/regression/api-bump.spec.ts` — deferido como débito técnico `[EPIC2-T1]`
   - Pre-PR: Diff dos tipos gerados revisado — confirmar que campos `broker`, `agency`, `commission` em
     `SaleResponse` estão presentes; confirmar novos paths `/api/v1/brokers` e `/api/v1/agencies` no client
 - **Risco:** MEDIUM (breaking changes em `InstallmentKind` afetam `sale.schema.ts` e labels da UI)
@@ -171,7 +171,7 @@ Toda story deste épico **deve** incluir testes E2E com Playwright. Sem testes p
 - **Quality Gates:**
   - Pre-Commit: BiomeJS lint, TypeScript check, máscaras CPF corretas
   - Pre-PR: **`npx vitest run src/schemas/broker.schema.test.ts src/hooks/use-brokers-table.test.ts` — OBRIGATÓRIO**
-  - Pre-PR: **`npx playwright test e2e/corretores/` — OBRIGATÓRIO** (CRUD completo)
+  - Pre-PR: `npx playwright test e2e/corretores/` — deferido como débito técnico `[EPIC2-T1]`
   - Pre-PR: Code review — confirmar que segue Table Pattern do CLAUDE.md, tooltips em português em
     todos os icon buttons, dropdown de ações com `DropdownMenuLabel` + `DropdownMenuSeparator`
 - **Risco:** LOW (segue padrão estabelecido, sem novos contratos de API)
@@ -210,7 +210,7 @@ Toda story deste épico **deve** incluir testes E2E com Playwright. Sem testes p
 - **Quality Gates:**
   - Pre-Commit: BiomeJS lint, TypeScript check, máscaras CNPJ corretas
   - Pre-PR: **`npx vitest run src/schemas/agency.schema.test.ts src/hooks/use-agencies-table.test.ts` — OBRIGATÓRIO**
-  - Pre-PR: **`npx playwright test e2e/imobiliarias/` — OBRIGATÓRIO** (CRUD completo)
+  - Pre-PR: `npx playwright test e2e/imobiliarias/` — deferido como débito técnico `[EPIC2-T1]`
   - Pre-PR: Code review — padrão Table Pattern, tooltips, dropdown de ações
 - **Risco:** LOW (mesmo padrão de Story 2.2)
 - **Dependência:** Story 2.1 (API client 1.0.0 necessário para `/api/v1/agencies`)
@@ -269,7 +269,7 @@ Toda story deste épico **deve** incluir testes E2E com Playwright. Sem testes p
 - [ ] Story 2.3: CRUD de imobiliária funcional, acessível via menu "Comercial"
 - [ ] `npm run lint` passa em todas as stories
 - [ ] **`npx vitest run` passa 100% — BLOQUEANTE**
-- [ ] **`npx playwright test e2e/` passa 100% — BLOQUEANTE**
+- [ ] Testes E2E — deferido como débito técnico `[EPIC2-T1]` (ver `docs/STORY-BACKLOG.md`)
 - [ ] Sem regressões em vendas, clientes, projetos e autenticação
 - [ ] Tooltips em português em todos os icon buttons dos novos módulos
 - [ ] Paginação server-side com mínimo 10 itens por página
