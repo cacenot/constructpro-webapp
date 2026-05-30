@@ -1,3 +1,4 @@
+import type { components } from '@cacenot/construct-pro-api-client'
 import { ConstructionProgressSection } from '@/components/empreendimentos/construction-progress-section'
 import { ProjectVitalsStrip } from '@/components/empreendimentos/project-vitals-strip'
 import { SalesPipelineSection } from '@/components/empreendimentos/sales-pipeline-section'
@@ -48,7 +49,9 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
 
       {/* Construction Progress */}
       {project.progress_updates && project.progress_updates.length > 0 && (
-        <ConstructionProgressSection updates={project.progress_updates} />
+        <ConstructionProgressSection
+          updates={project.progress_updates as components['schemas']['ProgressUpdate-Input'][]}
+        />
       )}
 
       {/* Sales Timeline */}

@@ -68,9 +68,13 @@ function CustomTooltip({
 
 export function SalesTimelineChart({ data }: SalesTimelineChartProps) {
   const chartData = data.entries.map(
-    (entry: { month: string; total_amount_cents: number; sales_count: number }) => ({
+    (entry: {
+      month: string
+      total_amount: { cents: number; decimal: string; brl: string }
+      sales_count: number
+    }) => ({
       monthLabel: formatMonth(entry.month),
-      amount: entry.total_amount_cents / 100,
+      amount: entry.total_amount.cents / 100,
       count: entry.sales_count,
     })
   )

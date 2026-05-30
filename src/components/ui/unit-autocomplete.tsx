@@ -134,7 +134,7 @@ export function UnitAutocomplete({
       onChange({
         id: unit.id,
         name: unit.name,
-        price_cents: unit.price_cents,
+        price_cents: unit.price.cents,
         project_name: projectNames.get(unit.project_id),
       })
       setOpen(false)

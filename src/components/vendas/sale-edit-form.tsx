@@ -89,13 +89,13 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
   const form = useForm<SaleEditFormData>({
     resolver: zodResolver(saleEditFormSchema),
     defaultValues: {
-      index_type_code: sale.contract?.index_type_code ?? '',
+      index_type_code: sale.index_type_code ?? '',
       installment_schedules: [
         {
           kind: 'entry',
           payment_method: 'pix',
           quantity: 1,
-          amount_cents: 0,
+          amount: 0,
           specific_date: null,
           recurrence_type: null,
           recurrence_day: null,
@@ -118,7 +118,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
 
   const totalFinanced = React.useMemo(() => {
     if (!watchedSchedules) return 0
-    return watchedSchedules.reduce((sum, s) => sum + (s.quantity ?? 0) * (s.amount_cents ?? 0), 0)
+    return watchedSchedules.reduce((sum, s) => sum + (s.quantity ?? 0) * (s.amount ?? 0), 0)
   }, [watchedSchedules])
 
   const contractEnd = React.useMemo(() => {
@@ -126,8 +126,9 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
     return computeContractEndDate(watchedSchedules)
   }, [watchedSchedules])
 
-  const diff = totalFinanced - sale.unit_price_cents
-  const diffPercent = sale.unit_price_cents > 0 ? (diff / sale.unit_price_cents) * 100 : 0
+  const unitPriceCents = sale.unit_price?.cents ?? 0
+  const diff = totalFinanced - unitPriceCents
+  const diffPercent = unitPriceCents > 0 ? (diff / unitPriceCents) * 100 : 0
 
   const quantityInputRefs = React.useRef<(HTMLInputElement | null)[]>([])
 
@@ -135,10 +136,10 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
     const recurrenceDay = 10
     const startDate = computeDefaultStartDate('monthly', recurrenceDay, null)
     append({
-      kind: 'monthly',
+      kind: 'regular',
       payment_method: 'boleto',
       quantity: 1,
-      amount_cents: 0,
+      amount: 0,
       specific_date: null,
       recurrence_type: 'monthly',
       recurrence_day: recurrenceDay,
@@ -152,10 +153,10 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
     const recurrenceMonth = 12
     const startDate = computeDefaultStartDate('yearly', recurrenceDay, recurrenceMonth)
     append({
-      kind: 'yearly',
+      kind: 'regular',
       payment_method: 'boleto',
       quantity: 1,
-      amount_cents: 0,
+      amount: 0,
       specific_date: null,
       recurrence_type: 'yearly',
       recurrence_day: recurrenceDay,
@@ -291,7 +292,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
               <div className="grid gap-4 sm:grid-cols-12">
                 <FormField
                   control={form.control}
-                  name="installment_schedules.0.amount_cents"
+                  name="installment_schedules.0.amount"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-4">
                       <FormLabel>Valor da Entrada *</FormLabel>
@@ -386,16 +387,21 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                 {fields.map((field, index) => {
                   if (index === 0) return null
                   const schedule = watchedSchedules?.[index]
-                  const kind = schedule?.kind as 'monthly' | 'yearly' | undefined
+                  const recurrenceType = schedule?.recurrence_type as
+                    | 'monthly'
+                    | 'yearly'
+                    | undefined
                   const recurrenceDay = schedule?.recurrence_day
                   const recurrenceMonth = schedule?.recurrence_month
 
                   const isDateDisabled =
-                    kind === 'yearly' ? !recurrenceDay || !recurrenceMonth : !recurrenceDay
+                    recurrenceType === 'yearly'
+                      ? !recurrenceDay || !recurrenceMonth
+                      : !recurrenceDay
 
                   const allowedDates =
-                    kind && !isDateDisabled
-                      ? computeAllowedDates(kind, recurrenceDay, recurrenceMonth)
+                    recurrenceType && !isDateDisabled
+                      ? computeAllowedDates(recurrenceType, recurrenceDay, recurrenceMonth)
                       : []
 
                   const disabledDates = Array.from({ length: 10957 }, (_, i) => {
@@ -409,7 +415,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                     <div key={field.id} className="rounded-lg border border-border p-4 space-y-4">
                       <div className="flex items-center justify-between">
                         <Badge variant="secondary">
-                          {INSTALLMENT_KIND_LABELS[kind ?? ''] ?? kind}
+                          {schedule?.kind ? INSTALLMENT_KIND_LABELS[schedule.kind] : '—'}
                         </Badge>
                         {isEditable && (
                           <Tooltip>
@@ -460,7 +466,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
 
                         <FormField
                           control={form.control}
-                          name={`installment_schedules.${index}.amount_cents`}
+                          name={`installment_schedules.${index}.amount`}
                           render={({ field: f }) => (
                             <FormItem className="sm:col-span-3">
                               <FormLabel>Valor da Parcela *</FormLabel>
@@ -523,9 +529,12 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                                       ? Number.parseInt(e.target.value, 10)
                                       : null
                                     f.onChange(val)
-                                    if (kind && (kind === 'monthly' || kind === 'yearly')) {
+                                    if (
+                                      recurrenceType &&
+                                      (recurrenceType === 'monthly' || recurrenceType === 'yearly')
+                                    ) {
                                       const newStartDate = computeDefaultStartDate(
-                                        kind,
+                                        recurrenceType,
                                         val,
                                         recurrenceMonth
                                       )
@@ -542,7 +551,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                           )}
                         />
 
-                        {kind === 'yearly' && (
+                        {recurrenceType === 'yearly' && (
                           <FormField
                             control={form.control}
                             name={`installment_schedules.${index}.recurrence_month`}
@@ -561,9 +570,9 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                                         ? Number.parseInt(e.target.value, 10)
                                         : null
                                       f.onChange(val)
-                                      if (kind === 'yearly') {
+                                      if (recurrenceType === 'yearly') {
                                         const newStartDate = computeDefaultStartDate(
-                                          kind,
+                                          'yearly',
                                           recurrenceDay,
                                           val
                                         )
@@ -599,8 +608,8 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                               </FormControl>
                               {isDateDisabled && (
                                 <p className="text-xs text-muted-foreground">
-                                  Preencha o dia{kind === 'yearly' ? ' e mês' : ''} de vencimento
-                                  primeiro
+                                  Preencha o dia{recurrenceType === 'yearly' ? ' e mês' : ''} de
+                                  vencimento primeiro
                                 </p>
                               )}
                               <FormMessage />
@@ -633,7 +642,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
               <div>
                 <p className="text-sm text-muted-foreground">Preço de Tabela</p>
                 <p className="text-2xl font-bold tabular-nums">
-                  R$ {formatCentsToDisplay(sale.unit_price_cents) || '0,00'}
+                  R$ {formatCentsToDisplay(sale.unit_price?.cents) || '0,00'}
                 </p>
               </div>
 
@@ -702,7 +711,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                   <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
                   <div className="space-y-1">
                     {watchedSchedules.map((schedule, index) => {
-                      const subtotal = (schedule.quantity ?? 0) * (schedule.amount_cents ?? 0)
+                      const subtotal = (schedule.quantity ?? 0) * (schedule.amount ?? 0)
                       if (subtotal === 0) return null
                       return (
                         <div
@@ -713,8 +722,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                             {INSTALLMENT_KIND_LABELS[schedule.kind] ?? schedule.kind}
                             {schedule.quantity > 1 && (
                               <span className="ml-1 tabular-nums">
-                                ({schedule.quantity}x R${' '}
-                                {formatCentsToDisplay(schedule.amount_cents)})
+                                ({schedule.quantity}x R$ {formatCentsToDisplay(schedule.amount)})
                               </span>
                             )}
                           </span>

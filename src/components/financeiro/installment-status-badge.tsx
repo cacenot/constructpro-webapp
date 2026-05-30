@@ -13,8 +13,6 @@ const statusStyles: Record<InstallmentStatusValue, string> = {
   partial: 'rounded-full border border-info/30 bg-info/10 text-info',
   paid: 'rounded-full border border-success/30 bg-success/10 text-success',
   canceled: 'rounded-full border bg-muted text-muted-foreground border-border',
-  overdue:
-    'rounded-full border border-destructive/30 bg-destructive/10 text-destructive font-semibold',
 }
 
 interface InstallmentStatusBadgeProps {

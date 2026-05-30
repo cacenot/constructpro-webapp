@@ -65,7 +65,7 @@ export function CustomerPaymentMethodChart({ data }: CustomerPaymentMethodChartP
       value: m.count,
       fill: METHOD_CONFIG[m.method]?.color ?? 'var(--color-chart-6)',
       total: totalCount,
-      amount: formatCurrency(m.total_cents / 100),
+      amount: formatCurrency(m.total.cents / 100),
     }))
     .filter((d) => d.value > 0)
 
@@ -160,7 +160,7 @@ export function CustomerPaymentMethodChart({ data }: CustomerPaymentMethodChartP
                       {METHOD_CONFIG[m.method]?.label ?? m.method}
                     </span>
                     <span className="tabular-nums text-sm font-medium">
-                      {formatCurrency(m.total_cents / 100)}
+                      {formatCurrency(m.total.cents / 100)}
                     </span>
                   </div>
                 ))}

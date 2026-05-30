@@ -38,9 +38,4 @@ describe('InstallmentStatusBadge', () => {
     render(<InstallmentStatusBadge status="canceled" />)
     expect(screen.getByText('Cancelado')).toBeDefined()
   })
-
-  it('exibe "Vencido" para status overdue', () => {
-    render(<InstallmentStatusBadge status="overdue" />)
-    expect(screen.getByText('Vencido')).toBeDefined()
-  })
 })

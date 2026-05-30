@@ -32,7 +32,7 @@ export function CustomerPaymentsTab({ customer }: CustomerPaymentsTabProps) {
           <CardContent className="pt-5 pb-4">
             <p className="text-xs font-medium text-success">Total Pago</p>
             <p className="tabular-nums mt-1 text-2xl font-bold text-success">
-              {formatCurrency(payment_summary.total_paid_cents / 100)}
+              {formatCurrency(payment_summary.total_paid.cents / 100)}
             </p>
           </CardContent>
         </Card>

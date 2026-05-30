@@ -88,7 +88,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           kind: 'entry',
           payment_method: 'pix',
           quantity: 1,
-          amount_cents: 0,
+          amount: 0,
           specific_date: null,
           recurrence_type: null,
           recurrence_day: null,
@@ -112,7 +112,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
   const totalFinanced = React.useMemo(() => {
     if (!watchedSchedules) return 0
     return watchedSchedules.reduce((sum, s) => {
-      return sum + (s.quantity ?? 0) * (s.amount_cents ?? 0)
+      return sum + (s.quantity ?? 0) * (s.amount ?? 0)
     }, 0)
   }, [watchedSchedules])
 
@@ -146,10 +146,10 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     const recurrenceDay = 10
     const startDate = computeDefaultStartDate('monthly', recurrenceDay, null)
     append({
-      kind: 'monthly',
+      kind: 'regular',
       payment_method: 'boleto',
       quantity: 1,
-      amount_cents: 0,
+      amount: 0,
       specific_date: null,
       recurrence_type: 'monthly',
       recurrence_day: recurrenceDay,
@@ -163,10 +163,10 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     const recurrenceMonth = 12
     const startDate = computeDefaultStartDate('yearly', recurrenceDay, recurrenceMonth)
     append({
-      kind: 'yearly',
+      kind: 'regular',
       payment_method: 'boleto',
       quantity: 1,
-      amount_cents: 0,
+      amount: 0,
       specific_date: null,
       recurrence_type: 'yearly',
       recurrence_day: recurrenceDay,
@@ -300,7 +300,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                   <div className="grid gap-4 sm:grid-cols-12">
                     <FormField
                       control={form.control}
-                      name="installment_schedules.0.amount_cents"
+                      name="installment_schedules.0.amount"
                       render={({ field }) => (
                         <FormItem className="sm:col-span-4">
                           <FormLabel>Valor da Entrada *</FormLabel>
@@ -386,16 +386,21 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                     {fields.map((field, index) => {
                       if (index === 0) return null
                       const schedule = watchedSchedules?.[index]
-                      const kind = schedule?.kind as 'monthly' | 'yearly' | undefined
+                      const recurrenceType = schedule?.recurrence_type as
+                        | 'monthly'
+                        | 'yearly'
+                        | undefined
                       const recurrenceDay = schedule?.recurrence_day
                       const recurrenceMonth = schedule?.recurrence_month
 
                       const isDateDisabled =
-                        kind === 'yearly' ? !recurrenceDay || !recurrenceMonth : !recurrenceDay
+                        recurrenceType === 'yearly'
+                          ? !recurrenceDay || !recurrenceMonth
+                          : !recurrenceDay
 
                       const allowedDates =
-                        kind && !isDateDisabled
-                          ? computeAllowedDates(kind, recurrenceDay, recurrenceMonth)
+                        recurrenceType && !isDateDisabled
+                          ? computeAllowedDates(recurrenceType, recurrenceDay, recurrenceMonth)
                           : []
 
                       const disabledDates = Array.from({ length: 10957 }, (_, i) => {
@@ -412,7 +417,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                         >
                           <div className="flex items-center justify-between">
                             <Badge variant="secondary">
-                              {INSTALLMENT_KIND_LABELS[kind ?? ''] ?? kind}
+                              {schedule?.kind ? INSTALLMENT_KIND_LABELS[schedule.kind] : '—'}
                             </Badge>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -460,7 +465,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
 
                             <FormField
                               control={form.control}
-                              name={`installment_schedules.${index}.amount_cents`}
+                              name={`installment_schedules.${index}.amount`}
                               render={({ field: f }) => (
                                 <FormItem className="sm:col-span-3">
                                   <FormLabel>Valor da Parcela *</FormLabel>
@@ -515,9 +520,13 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                                           : null
                                         f.onChange(val)
                                         // Update start_date with new default
-                                        if (kind && (kind === 'monthly' || kind === 'yearly')) {
+                                        if (
+                                          recurrenceType &&
+                                          (recurrenceType === 'monthly' ||
+                                            recurrenceType === 'yearly')
+                                        ) {
                                           const newStartDate = computeDefaultStartDate(
-                                            kind,
+                                            recurrenceType,
                                             val,
                                             recurrenceMonth
                                           )
@@ -534,7 +543,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                               )}
                             />
 
-                            {kind === 'yearly' && (
+                            {recurrenceType === 'yearly' && (
                               <FormField
                                 control={form.control}
                                 name={`installment_schedules.${index}.recurrence_month`}
@@ -553,9 +562,9 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                                             : null
                                           f.onChange(val)
                                           // Update start_date with new default
-                                          if (kind === 'yearly') {
+                                          if (recurrenceType === 'yearly') {
                                             const newStartDate = computeDefaultStartDate(
-                                              kind,
+                                              recurrenceType,
                                               recurrenceDay,
                                               val
                                             )
@@ -591,7 +600,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                                   </FormControl>
                                   {isDateDisabled && (
                                     <p className="text-xs text-muted-foreground">
-                                      Preencha o dia{kind === 'yearly' ? ' e mês' : ''} de
+                                      Preencha o dia{recurrenceType === 'yearly' ? ' e mês' : ''} de
                                       vencimento primeiro
                                     </p>
                                   )}
@@ -718,7 +727,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                       <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
                       <div className="space-y-1">
                         {watchedSchedules.map((schedule, index) => {
-                          const subtotal = (schedule.quantity ?? 0) * (schedule.amount_cents ?? 0)
+                          const subtotal = (schedule.quantity ?? 0) * (schedule.amount ?? 0)
                           if (subtotal === 0) return null
                           return (
                             <div
@@ -729,8 +738,8 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                                 {INSTALLMENT_KIND_LABELS[schedule.kind] ?? schedule.kind}
                                 {schedule.quantity > 1 && (
                                   <span className="ml-1 tabular-nums">
-                                    ({schedule.quantity}x R${' '}
-                                    {formatCentsToDisplay(schedule.amount_cents)})
+                                    ({schedule.quantity}x R$ {formatCentsToDisplay(schedule.amount)}
+                                    )
                                   </span>
                                 )}
                               </span>

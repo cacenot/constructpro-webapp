@@ -10,14 +10,14 @@ type InstallmentListSummary = components['schemas']['InstallmentListSummary']
 interface InstallmentsQuery {
   page?: number | null
   page_size?: number | null
-  contract_id?: string | null
-  kind?: string[] | null
-  status?: string[] | null
-  payment_method?: string[] | null
+  contract_id?: number | null
+  kind?: components['schemas']['InstallmentKind'][] | null
+  status?: components['schemas']['InstallmentStatus'][] | null
+  payment_method?: components['schemas']['PaymentMethod'][] | null
   'due_date[min]'?: string | null
   'due_date[max]'?: string | null
-  customer_id?: string | null
-  sort_by?: string[] | null
+  customer_id?: number | null
+  sort_by?: string[]
 }
 
 export const installmentKeys = {

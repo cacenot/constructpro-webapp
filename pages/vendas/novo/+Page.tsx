@@ -22,7 +22,7 @@ export default function SaleNewPage() {
             kind: schedule.kind,
             payment_method: schedule.payment_method,
             quantity: schedule.quantity,
-            amount_cents: schedule.amount_cents,
+            amount: schedule.amount,
             specific_date: schedule.specific_date ?? undefined,
             recurrence_type: schedule.recurrence_type ?? undefined,
             recurrence_day: schedule.recurrence_day ?? undefined,

@@ -29,7 +29,7 @@ export default function SaleEditPage() {
             kind: s.kind,
             payment_method: s.payment_method,
             quantity: s.quantity,
-            amount_cents: s.amount_cents,
+            amount: s.amount,
             specific_date: s.specific_date ?? undefined,
             recurrence_type: s.recurrence_type ?? undefined,
             recurrence_day: s.recurrence_day ?? undefined,

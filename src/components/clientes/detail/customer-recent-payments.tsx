@@ -49,7 +49,7 @@ export function CustomerRecentPayments({ payments }: CustomerRecentPaymentsProps
                 <div className="flex-1 pb-5">
                   <div className="flex items-baseline justify-between">
                     <p className="tabular-nums text-sm font-semibold">
-                      {formatCurrency(payment.amount_cents / 100)}
+                      {formatCurrency(payment.amount.cents / 100)}
                     </p>
                     <span className="text-xs text-muted-foreground">
                       Contrato {formatId(payment.contract_id)}

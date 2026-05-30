@@ -71,13 +71,13 @@ function ContractCard({ contract }: { contract: CustomerContractSummary }) {
           <div>
             <p className="text-xs text-muted-foreground">Principal</p>
             <p className="tabular-nums mt-0.5 font-semibold">
-              {formatCurrency(contract.principal_amount_cents / 100)}
+              {formatCurrency(contract.principal_amount.cents / 100)}
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Saldo Devedor</p>
             <p className="tabular-nums mt-0.5 font-semibold">
-              {formatCurrency(contract.outstanding_balance_cents / 100)}
+              {formatCurrency(contract.outstanding_balance.cents / 100)}
             </p>
           </div>
           <div>

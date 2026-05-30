@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 
-type ProgressUpdate = components['schemas']['ProgressUpdate']
+type ProgressUpdate = components['schemas']['ProgressUpdate-Input']
 
 interface ConstructionProgressSectionProps {
   updates: ProgressUpdate[]

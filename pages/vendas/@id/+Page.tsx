@@ -120,18 +120,19 @@ export default function SaleDetailPage() {
   }
 
   const metrics = sale.metrics
-  const discountCents = metrics?.discount_cents ?? sale.unit_price_cents - sale.amount_cents
+  const discountCents =
+    metrics?.discount?.cents ?? (sale.unit_price?.cents ?? 0) - (sale.amount?.cents ?? 0)
   const discountPctStr = metrics
     ? metrics.discount_percentage
-    : sale.unit_price_cents > 0
-      ? ((discountCents / sale.unit_price_cents) * 100).toFixed(2)
+    : (sale.unit_price?.cents ?? 0) > 0
+      ? ((discountCents / (sale.unit_price?.cents ?? 1)) * 100).toFixed(2)
       : '0'
 
   const summary = sale.installment_summary
   const totalInstallments = summary?.total_count ?? 0
-  const totalAmount = summary?.total_amount_cents
-    ? formatCurrency(summary.total_amount_cents / 100)
-    : formatCurrency(sale.amount_cents / 100)
+  const totalAmount = summary?.total_amount?.cents
+    ? formatCurrency(summary.total_amount.cents / 100)
+    : formatCurrency(sale.amount.cents / 100)
 
   return (
     <AppLayout>
@@ -243,7 +244,7 @@ export default function SaleDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
-              <p className="font-semibold">{sale.user?.full_name ?? '—'}</p>
+              <p className="font-semibold">{sale.user?.display_name ?? '—'}</p>
               <p className="text-xs text-muted-foreground">
                 Proposta criada em {formatDate(sale.created_at)}
               </p>
@@ -262,14 +263,14 @@ export default function SaleDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Valor total da proposta</span>
                 <span className="tabular-nums font-semibold">
-                  {formatCurrency(sale.amount_cents / 100)}
+                  {formatCurrency(sale.amount.cents / 100)}
                 </span>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Preço de tabela</span>
                 <span className="tabular-nums text-sm">
-                  {formatCurrency(sale.unit_price_cents / 100)}
+                  {formatCurrency(sale.unit_price.cents / 100)}
                 </span>
               </div>
               {discountCents !== 0 && (
@@ -291,11 +292,11 @@ export default function SaleDetailPage() {
                   </span>
                 </div>
               )}
-              {metrics?.price_per_sqm_cents != null && (
+              {metrics?.price_per_sqm?.cents != null && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Preço por m²</span>
                   <span className="tabular-nums text-sm">
-                    {formatCurrency(metrics.price_per_sqm_cents / 100)}
+                    {formatCurrency((metrics.price_per_sqm?.cents ?? 0) / 100)}
                   </span>
                 </div>
               )}
@@ -318,11 +319,11 @@ export default function SaleDetailPage() {
                     <span className="text-sm text-muted-foreground">Total de parcelas</span>
                     <span className="tabular-nums text-sm">{totalInstallments}</span>
                   </div>
-                  {metrics?.entry_amount_cents != null && (
+                  {metrics?.entry_amount?.cents != null && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Entrada</span>
                       <span className="tabular-nums text-sm">
-                        {formatCurrency(metrics.entry_amount_cents / 100)}
+                        {formatCurrency((metrics.entry_amount?.cents ?? 0) / 100)}
                         {metrics.entry_percentage != null && (
                           <span className="ml-1.5 text-xs opacity-70">
                             ({Number(metrics.entry_percentage).toFixed(1)}%)
@@ -331,11 +332,11 @@ export default function SaleDetailPage() {
                       </span>
                     </div>
                   )}
-                  {metrics?.financed_amount_cents != null && (
+                  {metrics?.financed_amount?.cents != null && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Valor financiado</span>
                       <span className="tabular-nums text-sm">
-                        {formatCurrency(metrics.financed_amount_cents / 100)}
+                        {formatCurrency((metrics.financed_amount?.cents ?? 0) / 100)}
                       </span>
                     </div>
                   )}
@@ -373,12 +374,12 @@ export default function SaleDetailPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Valor principal</span>
                     <span className="tabular-nums text-sm">
-                      {formatCurrency(sale.contract.principal_amount_cents / 100)}
+                      {formatCurrency(sale.contract.principal_amount.cents / 100)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Índice de correção</span>
-                    <span className="text-sm">{sale.contract.index_type_code}</span>
+                    <span className="text-sm">{sale.index_type_code}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Assinado em</span>
@@ -433,10 +434,10 @@ export default function SaleDetailPage() {
                         {schedule.count}
                       </TableCell>
                       <TableCell className="px-6 text-right tabular-nums">
-                        {formatCurrency(schedule.amount_cents / 100)}
+                        {formatCurrency(schedule.amount.cents / 100)}
                       </TableCell>
                       <TableCell className="px-6 text-right tabular-nums">
-                        {formatCurrency(schedule.total_amount_cents / 100)}
+                        {formatCurrency(schedule.total_amount.cents / 100)}
                       </TableCell>
                       <TableCell className="hidden px-6 md:table-cell">
                         {schedule.first_due_date === schedule.last_due_date ? (
