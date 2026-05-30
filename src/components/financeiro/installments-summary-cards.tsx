@@ -30,9 +30,9 @@ export function InstallmentsSummaryCards({ summary, isLoading }: InstallmentsSum
     )
   }
 
-  const totalCents = summary?.total_current_amount_cents ?? 0
-  const receivedCents = summary?.total_paid_amount_cents ?? 0
-  const overdueCents = summary?.total_overdue_amount_cents ?? 0
+  const totalCents = summary?.total_current_amount?.cents ?? 0
+  const receivedCents = summary?.total_paid_amount?.cents ?? 0
+  const overdueCents = summary?.total_overdue_amount?.cents ?? 0
   const overdueCount = summary?.overdue_count ?? 0
   const toReceiveCents = Math.max(0, totalCents - receivedCents)
 

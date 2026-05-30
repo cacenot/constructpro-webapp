@@ -178,19 +178,19 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Total Vendido</span>
                 <span className="tabular-nums text-sm font-semibold text-success">
-                  {formatCurrency(data.total_sold_cents / 100)}
+                  {formatCurrency(data.total_sold.cents / 100)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Em Propostas</span>
                 <span className="tabular-nums text-sm font-medium">
-                  {formatCurrency(data.total_proposal_cents / 100)}
+                  {formatCurrency(data.total_proposal.cents / 100)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Preço Médio</span>
                 <span className="tabular-nums text-sm font-medium">
-                  {formatCurrency(data.avg_sale_price_cents / 100)}
+                  {formatCurrency(data.avg_sale_price.cents / 100)}
                 </span>
               </div>
               {data.avg_discount_percentage != null && (

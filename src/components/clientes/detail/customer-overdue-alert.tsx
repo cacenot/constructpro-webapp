@@ -21,7 +21,7 @@ export function CustomerOverdueAlert({ data }: CustomerOverdueAlertProps) {
           {data.overdue_count} parcela{data.overdue_count > 1 ? 's' : ''} em atraso
         </p>
         <p className="tabular-nums text-xs text-destructive/70">
-          Total em atraso: {formatCurrency(data.overdue_amount_cents / 100)}
+          Total em atraso: {formatCurrency((data.overdue_amount?.cents ?? 0) / 100)}
         </p>
       </div>
     </div>
@@ -29,7 +29,7 @@ export function CustomerOverdueAlert({ data }: CustomerOverdueAlertProps) {
 }
 
 export function NextDueCard({ data }: { data: CustomerInstallmentOverview }) {
-  if (!data.next_due_date || data.next_due_amount_cents == null) return null
+  if (!data.next_due_date || data.next_due_amount == null) return null
 
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-card p-4">
@@ -39,7 +39,7 @@ export function NextDueCard({ data }: { data: CustomerInstallmentOverview }) {
       <div>
         <p className="text-sm text-muted-foreground">Próximo Vencimento</p>
         <p className="tabular-nums font-semibold">
-          {formatCurrency(data.next_due_amount_cents / 100)}
+          {formatCurrency((data.next_due_amount?.cents ?? 0) / 100)}
           <span className="ml-2 text-sm font-normal text-muted-foreground">
             em{' '}
             {new Date(data.next_due_date).toLocaleDateString('pt-BR', {

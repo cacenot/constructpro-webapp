@@ -2,10 +2,12 @@ import {
   Banknote,
   Building2,
   FileText,
+  Landmark,
   Layers,
   LayoutDashboard,
   Settings,
   ShoppingCart,
+  UserCheck,
   Users,
 } from 'lucide-react'
 import {
@@ -32,6 +34,8 @@ const navOperacoes = [
 const navComercial = [
   { title: 'Vendas', href: '/vendas', icon: ShoppingCart },
   { title: 'Contratos', href: '/contratos', icon: FileText },
+  { title: 'Corretores', href: '/corretores', icon: UserCheck },
+  { title: 'Imobiliárias', href: '/imobiliarias', icon: Landmark },
 ]
 
 const navFinanceiro = [{ title: 'Financeiro', href: '/financeiro', icon: Banknote }]

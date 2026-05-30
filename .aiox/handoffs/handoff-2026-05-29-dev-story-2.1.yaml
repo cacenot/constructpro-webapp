@@ -1,0 +1,161 @@
+handoff:
+  from_agent: "@dev (Dex)"
+  to_agent: "@dev (Dex)"
+  story_context:
+    story_id: "2.1"
+    story_path: "docs/stories/2.1.story.md"
+    story_status: "InProgress"
+    current_task: "Task 4 — Corrigir outros arquivos afetados (sessão 2)"
+    branch: "feat/2.1-api-client-bump"
+
+  decisions:
+    - "amount_cents → amount em forms (API InstallmentPaymentRequest usa .amount não .amount_cents)"
+    - "kind monthly/yearly → regular (periodicity separado; recurrence_type permanece monthly/yearly)"
+    - "variation_ppm → variation.ppm (objeto nested em 1.0.0)"
+    - "paid_amount/remaining_amount = MoneyObject {cents,decimal,brl} não string"
+    - "index_type_code removido de ContractResponse — SaleResponse ainda tem"
+    - "InstallmentStatus sem overdue (scheduled|invoiced|partial|paid|canceled)"
+    - "ProgressUpdate → ProgressUpdate-Input"
+    - "is_draft = boolean false não string"
+    - "UnitCreate.price = Money; para create/update via API o campo chama-se price (não price_cents)"
+    - "correction_basis removido de TenantConfigResponse e TenantConfigUpdate"
+    - "user.full_name → user.display_name em SaleResponse e SalesSummaryResponse"
+    - "sale-form.tsx e sale-edit-form.tsx: kind variable usa recurrence_type para lógica monthly/yearly"
+
+  files_modified_done:
+    - "src/components/ui/customer-autocomplete.tsx"
+    - "src/components/ui/customer-filter.tsx"
+    - "src/components/financeiro/installment-status-badge.tsx"
+    - "src/components/financeiro/pay-installment-dialog.tsx"
+    - "src/components/contratos/contract-row.tsx"
+    - "src/components/financeiro/installments-columns.tsx"
+    - "src/components/empreendimentos/construction-progress-section.tsx"
+    - "src/components/financeiro/installment-detail-drawer.tsx"
+    - "src/components/vendas/sale-form.tsx (partial — addMonthly/addYearly já usa kind:regular)"
+    - "src/components/vendas/sales-columns.tsx (user.full_name → display_name)"
+    - "src/hooks/use-installments.ts (contract_id: string → number)"
+    - "src/hooks/use-customers-table.ts (type?: string[] → ('individual'|'company')[])"
+    - "src/hooks/use-sales-table.ts (status?: string[] → union type)"
+    - "src/lib/installment-utils.ts (computeDefaultStartDate param: kind → recurrenceType)"
+
+  pending_fixes:
+    - file: "src/lib/installment-utils.ts"
+      fixes:
+        - "computeAllowedDates: param kind → recurrenceType (same logic)"
+        - "computeContractEndDate: schedule.kind === 'monthly' → schedule.recurrence_type === 'monthly'"
+        - "computeContractEndDate: schedule.kind === 'yearly' → schedule.recurrence_type === 'yearly'"
+
+    - file: "src/components/vendas/sale-form.tsx"
+      fixes:
+        - "line ~389: const kind = schedule?.kind as 'monthly'|'yearly'|undefined → const recurrenceType = schedule?.recurrence_type; const kind = schedule?.kind"
+        - "line ~394: kind === 'yearly' → recurrenceType === 'yearly'"
+        - "line ~397-398: computeAllowedDates(kind,...) → computeAllowedDates(recurrenceType as 'monthly'|'yearly', ...)"
+        - "line ~415: INSTALLMENT_KIND_LABELS[kind ?? ''] ?? kind → kind ? (INSTALLMENT_KIND_LABELS[kind] ?? kind) : ''"
+        - "line ~518: kind === 'monthly' || kind === 'yearly' → recurrenceType === 'monthly' || recurrenceType === 'yearly'"
+        - "line ~519-521: computeDefaultStartDate(kind,...) → computeDefaultStartDate(recurrenceType as 'monthly'|'yearly',...)"
+        - "line ~537: kind === 'yearly' → recurrenceType === 'yearly'"
+        - "line ~556: kind === 'yearly' → recurrenceType === 'yearly'"
+        - "line ~557-560: computeDefaultStartDate(kind,...) → computeDefaultStartDate(recurrenceType,...)"
+        - "line ~594: kind === 'yearly' → recurrenceType === 'yearly'"
+
+    - file: "src/components/vendas/sale-edit-form.tsx"
+      fixes:
+        - "line 92: sale.contract?.index_type_code → sale.index_type_code"
+        - "line 139: kind: 'monthly' → kind: 'regular'"
+        - "line 140: amount_cents: 0 → amount: 0"
+        - "line 156: kind: 'yearly' → kind: 'regular'"
+        - "line 158: amount_cents: 0 → amount: 0"
+        - "line 295: name installment_schedules.0.amount_cents → installment_schedules.0.amount"
+        - "line 390: const kind = schedule?.kind as ... → const recurrenceType = schedule?.recurrence_type; const kind = schedule?.kind"
+        - "line 394: kind === 'yearly' → recurrenceType === 'yearly'"
+        - "line 397-398: computeAllowedDates(kind,...) → computeAllowedDates(recurrenceType as 'monthly'|'yearly',...)"
+        - "line 413: INSTALLMENT_KIND_LABELS[kind ?? ''] ?? kind → kind ? (INSTALLMENT_KIND_LABELS[kind] ?? kind) : ''"
+        - "line 464: installment_schedules.${index}.amount_cents → installment_schedules.${index}.amount"
+        - "line 527: kind === 'monthly' || kind === 'yearly' → recurrenceType === 'monthly' || recurrenceType === 'yearly'"
+        - "line 528-530: computeDefaultStartDate(kind,...) → computeDefaultStartDate(recurrenceType as 'monthly'|'yearly',...)"
+        - "line 546: kind === 'yearly' → recurrenceType === 'yearly'"
+        - "line 565: kind === 'yearly' → recurrenceType === 'yearly'"
+        - "line 566-569: computeDefaultStartDate(kind,...) → computeDefaultStartDate(recurrenceType,...)"
+        - "line 603: kind === 'yearly' → recurrenceType === 'yearly'"
+        - "line 637: sale.unit_price_cents → sale.unit_price?.cents ?? 0"
+        - "line 706: schedule.amount_cents → schedule.amount"
+        - "line 718: schedule.amount_cents → schedule.amount"
+
+    - file: "src/schemas/tenant-config.schema.ts"
+      fixes:
+        - "remove: correction_basis: z.enum(['outstanding_balance', 'total_contract_value'])"
+
+    - file: "src/components/configuracoes/tenant-config-form.tsx"
+      fixes:
+        - "line 2: remove getCorrectionBasisOptions from import"
+        - "line 85: remove const correctionBasisOptions = getCorrectionBasisOptions()"
+        - "lines 415-438: remove entire correction_basis FormField block"
+
+    - file: "src/components/configuracoes/tenant-config-section.tsx"
+      fixes:
+        - "line 106: remove correction_basis: config.correction_basis ?? 'outstanding_balance',"
+
+    - file: "src/components/empreendimentos/project-overview-tab.tsx"
+      fixes:
+        - "line 51: project.progress_updates → (project.progress_updates as import type ProgressUpdate from construction-progress-section) OR cast via import type from API client"
+        - "add import: import type { components } from '@cacenot/construct-pro-api-client'"
+        - "add type: type ProgressUpdate = components['schemas']['ProgressUpdate-Input']"
+        - "change: updates={project.progress_updates} → updates={project.progress_updates as ProgressUpdate[]}"
+
+    - file: "pages/vendas/@id/editar/+Page.tsx"
+      fixes:
+        - "line 32: amount_cents: s.amount_cents → amount: s.amount"
+
+    - file: "pages/vendas/novo/+Page.tsx"
+      fixes:
+        - "line 25: amount_cents: schedule.amount_cents → amount: schedule.amount"
+
+    - file: "pages/unidades/@id/editar/+Page.tsx"
+      fixes:
+        - "line 84: price_cents: data.price_cents → price: data.price_cents"
+        - "line 154: price_cents: unit.price_cents → price_cents: unit.price?.cents ?? 0"
+
+    - file: "pages/unidades/novo/+Page.tsx"
+      fixes:
+        - "line 22: price_cents: data.price_cents → price: data.price_cents"
+
+    - file: "pages/contratos/@id/+Page.tsx"
+      fixes:
+        - "line 102-103: total_amount_cents → total_amount?.cents"
+        - "line 190: principal_amount_cents → principal_amount.cents"
+        - "line 204: financial.principal_amount_cents → financial.principal_amount.cents"
+        - "line 213: financial.outstanding_balance_cents → financial.outstanding_balance.cents"
+        - "line 217: financial.total_paid_cents → financial.total_paid.cents"
+        - "line 232: total_correction_cents > 0 → total_correction.cents > 0 ; total_adjustment_cents !== 0 → total_adjustment.cents !== 0"
+        - "line 234-238: total_correction_cents/total_adjustment_cents → .cents"
+        - "lines 257,259: next_due_amount_cents → next_due_amount?.cents"
+        - "lines 325,328: schedule.amount_cents/total_amount_cents → .cents"
+        - "lines 390,396,444: correctionSummary.total_correction_cents → .cents"
+        - "line 397: principalAmountCents={contract.principal_amount_cents} → principal_amount.cents"
+        - "lines 423,428,429: entry.variation_ppm → entry.variation.ppm"
+        - "line 433: entry.amount_cents → entry.amount.cents"
+        - "line 461: paymentSummary.total_paid_cents → total_paid.cents"
+        - "line 497: item.total_cents → item.total.cents"
+        - "line 520: principalAmountCents={contract.principal_amount_cents} → principal_amount.cents"
+        - "lines 547-573: all balance entry _cents → .cents (opening_balance, corrections, payments, adjustments, closing_balance)"
+
+    - file: "pages/vendas/@id/+Page.tsx"
+      fixes:
+        - "line 123: metrics.discount_cents → metrics.discount?.cents ; sale.unit_price_cents → sale.unit_price.cents ; sale.amount_cents → sale.amount.cents"
+        - "lines 126-127: sale.unit_price_cents → sale.unit_price.cents"
+        - "lines 132-134: summary.total_amount_cents → summary.total_amount?.cents ; sale.amount_cents → sale.amount.cents"
+        - "line 246: sale.user?.full_name → sale.user?.display_name"
+        - "line 265: sale.amount_cents → sale.amount.cents"
+        - "line 272: sale.unit_price_cents → sale.unit_price.cents"
+        - "lines 294-298: metrics.price_per_sqm_cents → metrics.price_per_sqm?.cents"
+        - "lines 321-338: metrics.entry_amount_cents → metrics.entry_amount?.cents ; metrics.financed_amount_cents → metrics.financed_amount?.cents"
+        - "line 376: sale.contract.principal_amount_cents → sale.contract.principal_amount.cents"
+        - "line 381: sale.contract.index_type_code → sale.index_type_code"
+        - "lines 436,439: schedule.amount_cents/total_amount_cents → .cents"
+
+    - file: "tests/unit/components/financeiro/installment-status-badge.test.tsx"
+      fixes:
+        - "lines 42-45: remove test block for 'overdue' status (no longer valid InstallmentStatusValue)"
+
+  next_action: "@dev *develop 2.1 — ler este handoff e aplicar todos os pending_fixes acima"
+  consumed: false

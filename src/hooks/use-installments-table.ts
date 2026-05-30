@@ -5,6 +5,7 @@ import { computeDateRangePreset, type DateRangeValue } from '@/components/ui/dat
 import {
   type InstallmentListSummary,
   type InstallmentSummaryItemResponse,
+  type InstallmentsQuery,
   useInstallmentsSummary,
 } from './use-installments'
 
@@ -99,24 +100,16 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
   )
 
   const queryParams = useMemo(() => {
-    const params: {
-      page: number
-      page_size: number
-      status?: string[]
-      kind?: string[]
-      'due_date[min]'?: string
-      'due_date[max]'?: string
-      customer_id?: string
-      sort_by?: string[]
-    } = { page, page_size: PAGE_SIZE }
+    const params: InstallmentsQuery = { page, page_size: PAGE_SIZE }
 
-    if (statusFilter.length > 0) params.status = statusFilter
-    if (kindFilter.length > 0) params.kind = kindFilter
+    if (statusFilter.length > 0)
+      params.status = statusFilter as NonNullable<InstallmentsQuery['status']>
+    if (kindFilter.length > 0) params.kind = kindFilter as NonNullable<InstallmentsQuery['kind']>
 
     const effectiveDueDate = dueDateRange
     if (effectiveDueDate?.min) params['due_date[min]'] = effectiveDueDate.min
     if (effectiveDueDate?.max) params['due_date[max]'] = effectiveDueDate.max
-    if (customer > 0) params.customer_id = String(customer)
+    if (customer > 0) params.customer_id = customer
     if (sort) params.sort_by = [sort]
 
     return params

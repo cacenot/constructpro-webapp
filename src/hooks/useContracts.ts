@@ -2,11 +2,11 @@ import type { paths } from '@cacenot/construct-pro-api-client'
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { useQuery } from '@tanstack/react-query'
 
-type ContractsQuery = paths['/api/v1/contracts/']['get']['parameters']['query']
+type ContractsQuery = paths['/api/v1/contracts']['get']['parameters']['query']
 type ContractResponse =
   paths['/api/v1/contracts/{contract_id}']['get']['responses']['200']['content']['application/json']
 type PaginatedContractsResponse =
-  paths['/api/v1/contracts/']['get']['responses']['200']['content']['application/json']
+  paths['/api/v1/contracts']['get']['responses']['200']['content']['application/json']
 
 export const contractKeys = {
   all: ['contracts'] as const,
@@ -25,7 +25,7 @@ export function useContracts(params?: ContractsQuery) {
   return useQuery({
     queryKey: contractKeys.list(params),
     queryFn: async () => {
-      const { data, error } = await client.GET('/api/v1/contracts/', {
+      const { data, error } = await client.GET('/api/v1/contracts', {
         params: { query: params },
       })
 

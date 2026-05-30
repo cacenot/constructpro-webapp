@@ -1,5 +1,4 @@
 import {
-  getCorrectionBasisOptions,
   getInvoiceGenerationTimingOptions,
   getSaleLostAutomationRuleOptions,
 } from '@cacenot/construct-pro-api-client'
@@ -82,7 +81,10 @@ export function TenantConfigForm({
 
   const invoiceTimingOptions = getInvoiceGenerationTimingOptions()
   const saleLostRuleOptions = getSaleLostAutomationRuleOptions()
-  const correctionBasisOptions = getCorrectionBasisOptions()
+  const correctionBasisOptions: { value: string; label: string }[] = [
+    { value: 'outstanding_balance', label: 'Saldo devedor' },
+    { value: 'total_contract_value', label: 'Valor total do contrato' },
+  ]
 
   return (
     <Form {...form}>

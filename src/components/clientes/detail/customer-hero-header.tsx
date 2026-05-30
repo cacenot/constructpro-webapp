@@ -160,7 +160,7 @@ export function CustomerHeroHeader({ customer }: CustomerHeroHeaderProps) {
               <div>
                 <p className="text-xs text-muted-foreground">Saldo Devedor Total</p>
                 <p className="tabular-nums mt-1 text-2xl font-bold">
-                  {formatCurrency(financial.outstanding_balance_cents / 100)}
+                  {formatCurrency(financial.outstanding_balance.cents / 100)}
                 </p>
               </div>
               <div className="space-y-1.5">

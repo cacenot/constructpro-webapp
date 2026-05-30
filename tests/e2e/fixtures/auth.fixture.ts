@@ -2,6 +2,7 @@ import { test as base, type Page } from '@playwright/test'
 import { registerClientesHandlers } from '../mocks/handlers/clientes'
 import { registerConfiguracoesHandlers } from '../mocks/handlers/configuracoes'
 import { registerContratosHandlers } from '../mocks/handlers/contratos'
+import { registerCorretoresHandlers } from '../mocks/handlers/corretores'
 import { registerEmpreendimentosHandlers } from '../mocks/handlers/empreendimentos'
 import { registerFinanceiroHandlers } from '../mocks/handlers/financeiro'
 import { registerUnidadesHandlers } from '../mocks/handlers/unidades'
@@ -28,6 +29,7 @@ export async function registerAllApiHandlers(page: Page) {
     registerVendasHandlers(page),
     registerFinanceiroHandlers(page),
     registerContratosHandlers(page),
+    registerCorretoresHandlers(page),
   ])
 }
 

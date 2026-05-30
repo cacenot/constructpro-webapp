@@ -52,7 +52,7 @@ export function UnitRow({ unit, projectMap }: UnitRowProps) {
 
       {/* Price */}
       <div className="hidden lg:block text-sm font-medium tabular-nums w-40 shrink-0">
-        {formatCurrency(unit.price_cents / 100)}
+        {formatCurrency(unit.price.cents / 100)}
       </div>
 
       {/* Status Badge */}

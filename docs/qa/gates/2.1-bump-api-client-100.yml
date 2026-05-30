@@ -1,0 +1,44 @@
+schema: 1
+story: "2.1"
+gate: CONCERNS
+status_reason: "Código completo e todos os testes passando (build 0 erros, lint 0 warnings, Vitest 21/21, Playwright 4/4). CONCERNS por: PR não criado ainda (Task 9 pendente para @devops) e 2 falhas pré-existentes em installment-utils.test.ts não introduzidas por esta story."
+reviewer: "Quinn"
+updated: "2026-05-29T17:46:00Z"
+top_issues:
+  - id: "REQ-001"
+    severity: medium
+    finding: "Task 9 (PR isolado + PR description) ainda não executada — pendente @devops"
+    suggested_action: "Executar @devops *push e gh pr create com description documentando breaking changes antes do merge"
+  - id: "TEST-001"
+    severity: low
+    finding: "2 falhas pré-existentes em tests/unit/schemas/installment-utils.test.ts (computeContractEndDate) — não introduzidas por Story 2.1"
+    suggested_action: "Abrir backlog item para corrigir em story futura — não bloqueia esta story"
+waiver:
+  active: false
+
+evidence:
+  build: "PASS — 0 TypeScript errors, 14 HTML docs pre-rendered in 454ms"
+  lint: "PASS — 163 files checked, 0 warnings (BiomeJS)"
+  unit_tests: "PASS — 21/21 (tests/unit/schemas/sale.schema.test.ts)"
+  e2e_tests: "PASS — 4/4 (tests/e2e/regression/api-bump.spec.ts, Chromium)"
+  api_client_version: "1.0.0 confirmed in package.json"
+  breaking_changes:
+    - "INSTALLMENT_KIND_LABELS: entry/regular/balloon/key_delivery/extra — OK"
+    - "INSTALLMENT_PERIODICITY_LABELS: one_shot/monthly/bimonthly/quarterly/semestral/yearly — OK"
+    - "SaleResponse.commission / .broker / .agency — types present"
+    - "SaleCreate.broker_id / agency_id / commission_broker_rate / commission_agency_rate — types present"
+    - "/api/v1/brokers e /api/v1/agencies — paths disponíveis no client tipado"
+  pr_isolation: "PASS — diff contém apenas src/, pages/, tests/, package.json, pnpm-lock.yaml. Sem arquivos de módulo corretores/imobiliárias."
+  regression: "PASS — telas existentes (dashboard, clientes, empreendimentos, vendas) sem TypeErrors ou erro 500"
+
+ac_coverage:
+  ac1_package_version: "PASS"
+  ac2_build_zero_errors: "PASS"
+  ac3_lint_zero_warnings: "PASS"
+  ac4_installment_kind_labels: "PASS"
+  ac5_new_api_paths: "PASS"
+  ac6_sale_response_commission_fields: "PASS"
+  ac7_sale_create_commission_fields: "PASS"
+  ac8_no_regressions: "PASS"
+  ac9_pr_isolated: "PARTIAL — branch isolado confirmado, PR ainda não criado (@devops pending)"
+  ac10_pr_description: "PENDING — aguarda @devops *push + gh pr create"

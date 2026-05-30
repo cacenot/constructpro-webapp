@@ -52,37 +52,37 @@ function CustomTooltip({
         <div className="flex justify-between gap-6">
           <span className="text-muted-foreground">Abertura</span>
           <span className="tabular-nums font-medium">
-            {formatCurrency(data.opening_balance_cents / 100)}
+            {formatCurrency(data.opening_balance.cents / 100)}
           </span>
         </div>
-        {data.corrections_cents !== 0 && (
+        {data.corrections.cents !== 0 && (
           <div className="flex justify-between gap-6">
             <span className="text-muted-foreground">Correções</span>
             <span className="tabular-nums font-medium text-warning">
-              +{formatCurrency(data.corrections_cents / 100)}
+              +{formatCurrency(data.corrections.cents / 100)}
             </span>
           </div>
         )}
-        {data.payments_cents !== 0 && (
+        {data.payments.cents !== 0 && (
           <div className="flex justify-between gap-6">
             <span className="text-muted-foreground">Pagamentos</span>
             <span className="tabular-nums font-medium text-success">
-              -{formatCurrency(data.payments_cents / 100)}
+              -{formatCurrency(data.payments.cents / 100)}
             </span>
           </div>
         )}
-        {data.adjustments_cents !== 0 && (
+        {data.adjustments.cents !== 0 && (
           <div className="flex justify-between gap-6">
             <span className="text-muted-foreground">Ajustes</span>
             <span className="tabular-nums font-medium">
-              {formatCurrency(data.adjustments_cents / 100)}
+              {formatCurrency(data.adjustments.cents / 100)}
             </span>
           </div>
         )}
         <div className="mt-1 flex justify-between gap-6 border-t pt-1">
           <span className="font-medium">Fechamento</span>
           <span className="tabular-nums font-semibold">
-            {formatCurrency(data.closing_balance_cents / 100)}
+            {formatCurrency(data.closing_balance.cents / 100)}
           </span>
         </div>
       </div>
@@ -94,7 +94,7 @@ export function BalanceTimelineChart({ entries, principalAmountCents }: BalanceT
   const chartData = entries.map((entry) => ({
     ...entry,
     month_label: formatMonth(entry.month),
-    closing_balance: entry.closing_balance_cents / 100,
+    closing_balance: entry.closing_balance.cents / 100,
   }))
 
   const principalValue = principalAmountCents / 100
