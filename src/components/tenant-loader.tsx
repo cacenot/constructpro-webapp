@@ -30,8 +30,8 @@ export function TenantLoader({ children }: { children: ReactNode }) {
     if (data?.tenants?.length) {
       setTenants(data.tenants)
       if (!tenantId) {
-        const firstTenant = data.tenants[0]
-        if (firstTenant) setTenantId(firstTenant.id)
+        const activeTenantId = data.active_tenant_id ?? data.tenants[0]?.id
+        if (activeTenantId) setTenantId(activeTenantId)
       }
     }
   }, [data, tenantId, setTenantId, setTenants])

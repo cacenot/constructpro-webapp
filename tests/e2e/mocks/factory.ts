@@ -255,6 +255,34 @@ export function user(overrides: Partial<UserFactory> = {}): UserFactory {
   }
 }
 
+// ─── Broker ───────────────────────────────────────────────────────────────────
+
+export interface BrokerFactory {
+  id: number
+  cpf: string
+  full_name: string
+  creci: string
+  email: string | null
+  phone: string | null
+  created_at: string
+  updated_at: string | null
+}
+
+export function broker(overrides: Partial<BrokerFactory> = {}): BrokerFactory {
+  const id = nextId()
+  return {
+    id,
+    cpf: '52998224725',
+    full_name: `Corretor Teste ${id}`,
+    creci: `CRECI-SP ${String(id).padStart(5, '0')}`,
+    email: `corretor${id}@teste.com`,
+    phone: '+5511987654321',
+    created_at: '2026-01-15T10:00:00Z',
+    updated_at: null,
+    ...overrides,
+  }
+}
+
 // ─── Paginação genérica ───────────────────────────────────────────────────────
 
 export function paginated<T>(items: T[], total?: number) {
