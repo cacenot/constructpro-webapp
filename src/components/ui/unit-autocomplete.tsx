@@ -26,11 +26,12 @@ export interface UnitAutocompleteProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  projectId?: number
 }
 
 type ApiClient = ReturnType<typeof useApiClient>['client']
 
-async function searchUnits(client: ApiClient, search: string) {
+async function searchUnits(client: ApiClient, search: string, projectId?: number) {
   const { data, error } = await client.GET('/api/v1/units', {
     params: {
       query: {
@@ -38,6 +39,7 @@ async function searchUnits(client: ApiClient, search: string) {
         status: ['available'],
         page: 1,
         page_size: 20,
+        project_id: projectId,
       },
     },
   })
@@ -90,6 +92,7 @@ export function UnitAutocomplete({
   placeholder = 'Selecione uma unidade...',
   disabled = false,
   className,
+  projectId,
 }: UnitAutocompleteProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState('')
@@ -103,6 +106,11 @@ export function UnitAutocomplete({
     return () => clearTimeout(timer)
   }, [search])
 
+  React.useEffect(() => {
+    setSearch('')
+    setDebouncedSearch('')
+  }, [projectId])
+
   const selectedUnitQuery = useQuery({
     queryKey: ['unit', value],
     queryFn: () => (value ? getUnitById(client, value) : null),
@@ -111,8 +119,8 @@ export function UnitAutocomplete({
   })
 
   const searchQuery = useQuery({
-    queryKey: ['units-search', debouncedSearch],
-    queryFn: () => searchUnits(client, debouncedSearch),
+    queryKey: ['units-search', debouncedSearch, projectId],
+    queryFn: () => searchUnits(client, debouncedSearch, projectId),
     enabled: open,
     staleTime: 30 * 1000,
   })
@@ -120,7 +128,7 @@ export function UnitAutocomplete({
   const projectNamesQuery = useQuery({
     queryKey: ['project-names-map'],
     queryFn: () => fetchProjectNames(client),
-    enabled: open || !!value,
+    enabled: !projectId && (open || !!value),
     staleTime: 10 * 60 * 1000,
   })
 
@@ -155,6 +163,7 @@ export function UnitAutocomplete({
           type="button"
           role="combobox"
           aria-expanded={open}
+          aria-disabled={disabled ? 'true' : undefined}
           disabled={disabled}
           className={cn(
             'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background',
@@ -193,7 +202,9 @@ export function UnitAutocomplete({
               <CommandEmpty>
                 {debouncedSearch
                   ? 'Nenhuma unidade disponível encontrada.'
-                  : 'Digite para buscar...'}
+                  : projectId
+                    ? 'Nenhuma unidade disponível neste empreendimento.'
+                    : 'Digite para buscar...'}
               </CommandEmpty>
             ) : (
               <CommandGroup heading="Unidades Disponíveis">
