@@ -35,6 +35,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import type { SelectedUnit } from '@/components/ui/unit-autocomplete'
 import { computeAllowedDates, computeDefaultStartDate } from '@/lib/installment-utils'
 import {
+  ASSET_TYPE_LABELS,
+  type AssetType,
   INSTALLMENT_KIND_LABELS,
   PAYMENT_METHOD_LABELS,
   type SaleFormData,
@@ -76,6 +78,32 @@ interface SaleFormStep2Props {
   remove: UseFieldArrayRemove
 }
 
+function getDefaultAssetMetadata(type: AssetType) {
+  switch (type) {
+    case 'vehicle':
+      return { type, plate: '', renavam: '', brand: '', model: '', year: '' as unknown as number }
+    case 'real_estate':
+      return {
+        type,
+        address: '',
+        property_type: '',
+        area_sqm: '' as unknown as number,
+        registration_number: '',
+      }
+    case 'land':
+      return { type, address: '', area_sqm: '' as unknown as number, registration_number: '' }
+    case 'boat':
+      return {
+        type,
+        registration: '',
+        length_meters: '' as unknown as number,
+        brand: '',
+        model: '',
+        year: '' as unknown as number,
+      }
+  }
+}
+
 export function SaleFormStep2({
   form,
   selectedUnit,
@@ -97,6 +125,7 @@ export function SaleFormStep2({
   remove,
 }: SaleFormStep2Props) {
   const quantityInputRefs = React.useRef<(HTMLInputElement | null)[]>([])
+  const lastEntryRef = React.useRef<HTMLDivElement | null>(null)
 
   const handleCustomerChange = React.useCallback(
     (customer: SelectedCustomer | null) => {
@@ -106,6 +135,21 @@ export function SaleFormStep2({
     },
     [form]
   )
+
+  const addEntrySchedule = React.useCallback(() => {
+    append({
+      kind: 'entry',
+      payment_method: 'pix',
+      quantity: 1,
+      amount: 0,
+      specific_date: null,
+      recurrence_type: null,
+      recurrence_day: null,
+      recurrence_month: null,
+      start_date: null,
+      asset_proposal: null,
+    })
+  }, [append])
 
   const addMonthlySchedule = React.useCallback(() => {
     const recurrenceDay = 10
@@ -197,6 +241,17 @@ export function SaleFormStep2({
     }
   }, [fields.length])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lastEntryRef is a stable ref
+  React.useEffect(() => {
+    if (lastEntryRef.current) {
+      lastEntryRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [fields.length])
+
+  const entryFields = fields
+    .map((field, index) => ({ field, index }))
+    .filter(({ index }) => (watchedSchedules?.[index]?.kind ?? fields[index]?.kind) === 'entry')
+
   return (
     <div className="space-y-6">
       {/* Chip read-only: empreendimento + unidade selecionados */}
@@ -228,7 +283,7 @@ export function SaleFormStep2({
         </Card>
       )}
 
-      {/* Card Dados da Venda (sem unit_id — gerenciado pelo Step 1) */}
+      {/* Card Dados da Venda */}
       <Card>
         <CardHeader>
           <CardTitle aria-live="polite">Dados da Venda</CardTitle>
@@ -440,62 +495,469 @@ export function SaleFormStep2({
           <CardTitle>Pagamento</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Entrada */}
+          {/* Entrada — N entradas dinâmicas */}
           <div>
-            <p className="mb-3 text-sm font-medium">Entrada</p>
-            <div className="grid gap-4 sm:grid-cols-12">
-              <FormField
-                control={form.control}
-                name="installment_schedules.0.amount"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-4">
-                    <FormLabel>Valor da Entrada *</FormLabel>
-                    <FormControl>
-                      <CurrencyInput value={field.value} onChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-medium">Entrada</p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button type="button" variant="outline" size="sm" onClick={addEntrySchedule}>
+                    <Plus className="mr-2 size-4" />
+                    Adicionar Entrada
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Adicionar nova entrada</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
-              <FormField
-                control={form.control}
-                name="installment_schedules.0.specific_date"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-4">
-                    <FormLabel>Data de Pagamento *</FormLabel>
-                    <FormControl>
-                      <DatePicker value={field.value} onChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-3">
+              {entryFields.map(({ field, index: realIndex }, entryIdx) => {
+                const schedule = watchedSchedules?.[realIndex]
+                const paymentMethod = schedule?.payment_method
+                const assetProposal = schedule?.asset_proposal
+                const assetType = assetProposal?.type
+                const isNotFirst = entryIdx > 0
 
-              <FormField
-                control={form.control}
-                name="installment_schedules.0.payment_method"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-4">
-                    <FormLabel>Forma de Pagamento *</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                return (
+                  <div
+                    key={field.id}
+                    ref={isNotFirst && entryIdx === entryFields.length - 1 ? lastEntryRef : null}
+                    className="relative rounded-xl border border-border/50 p-4 space-y-4"
+                  >
+                    {isNotFirst && (
+                      <div className="absolute right-3 top-3">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => remove(realIndex)}
+                              className="size-7 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Remover entrada</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    )}
+
+                    <div className="grid gap-4 sm:grid-cols-12">
+                      <FormField
+                        control={form.control}
+                        name={`installment_schedules.${realIndex}.amount`}
+                        render={({ field: f }) => (
+                          <FormItem className="sm:col-span-4">
+                            <FormLabel>Valor da Entrada *</FormLabel>
+                            <FormControl>
+                              <CurrencyInput value={f.value} onChange={f.onChange} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`installment_schedules.${realIndex}.specific_date`}
+                        render={({ field: f }) => (
+                          <FormItem className="sm:col-span-4">
+                            <FormLabel>Data de Pagamento *</FormLabel>
+                            <FormControl>
+                              <DatePicker value={f.value} onChange={f.onChange} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`installment_schedules.${realIndex}.payment_method`}
+                        render={({ field: f }) => (
+                          <FormItem className="sm:col-span-4">
+                            <FormLabel>Forma de Pagamento *</FormLabel>
+                            <Select
+                              value={f.value}
+                              onValueChange={(val) => {
+                                f.onChange(val)
+                                if (val !== 'asset') {
+                                  form.setValue(
+                                    `installment_schedules.${realIndex}.asset_proposal`,
+                                    null
+                                  )
+                                }
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
+                                  <SelectItem key={value} value={value}>
+                                    {label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Sub-form de bem */}
+                    {paymentMethod === 'asset' && (
+                      <>
+                        <Separator className="my-1" />
+                        <div className="space-y-4">
+                          <div className="grid gap-4 sm:grid-cols-12">
+                            <FormItem className="sm:col-span-12">
+                              <FormLabel>Tipo de Bem *</FormLabel>
+                              <Select
+                                value={assetType ?? ''}
+                                onValueChange={(val) => {
+                                  const type = val as AssetType
+                                  form.setValue(
+                                    `installment_schedules.${realIndex}.asset_proposal`,
+                                    { type, asset_metadata: getDefaultAssetMetadata(type) },
+                                    { shouldValidate: true }
+                                  )
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Selecione o tipo" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {Object.entries(ASSET_TYPE_LABELS).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                      {label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          </div>
+
+                          {assetType === 'vehicle' && (
+                            <div className="grid gap-4 sm:grid-cols-12">
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.plate`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Placa *</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="ABC-1234" {...f} value={f.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.renavam`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>RENAVAM *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="12345678901"
+                                        {...f}
+                                        value={f.value ?? ''}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.brand`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Marca *</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Toyota" {...f} value={f.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.model`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-8">
+                                    <FormLabel>Modelo *</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Corolla" {...f} value={f.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.year`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Ano *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        placeholder="2024"
+                                        min={1900}
+                                        max={2030}
+                                        className="tabular-nums"
+                                        value={f.value ?? ''}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                          f.onChange(e.target.value ? Number(e.target.value) : '')
+                                        }
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+
+                          {assetType === 'real_estate' && (
+                            <div className="grid gap-4 sm:grid-cols-12">
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.address`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-8">
+                                    <FormLabel>Endereço *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Rua, número, bairro"
+                                        {...f}
+                                        value={f.value ?? ''}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.property_type`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Tipo de Imóvel *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Apartamento"
+                                        {...f}
+                                        value={f.value ?? ''}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.area_sqm`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-6">
+                                    <FormLabel>Área (m²) *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        placeholder="0"
+                                        min={0}
+                                        className="tabular-nums"
+                                        value={f.value ?? ''}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                          f.onChange(e.target.value ? Number(e.target.value) : '')
+                                        }
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.registration_number`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-6">
+                                    <FormLabel>Nº de Registro *</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="000.000" {...f} value={f.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+
+                          {assetType === 'land' && (
+                            <div className="grid gap-4 sm:grid-cols-12">
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.address`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-8">
+                                    <FormLabel>Endereço *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        placeholder="Localização do terreno"
+                                        {...f}
+                                        value={f.value ?? ''}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.area_sqm`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Área (m²) *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        placeholder="0"
+                                        min={0}
+                                        className="tabular-nums"
+                                        value={f.value ?? ''}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                          f.onChange(e.target.value ? Number(e.target.value) : '')
+                                        }
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.registration_number`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-12">
+                                    <FormLabel>Nº de Registro *</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="000.000" {...f} value={f.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+
+                          {assetType === 'boat' && (
+                            <div className="grid gap-4 sm:grid-cols-12">
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.registration`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Registro *</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="TM-XXXXXX" {...f} value={f.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.length_meters`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Comprimento (m) *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        placeholder="0"
+                                        min={0}
+                                        className="tabular-nums"
+                                        value={f.value ?? ''}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                          f.onChange(e.target.value ? Number(e.target.value) : '')
+                                        }
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.brand`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Marca *</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="Yamaha" {...f} value={f.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.model`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-8">
+                                    <FormLabel>Modelo *</FormLabel>
+                                    <FormControl>
+                                      <Input placeholder="242X" {...f} value={f.value ?? ''} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${realIndex}.asset_proposal.asset_metadata.year`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Ano *</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        placeholder="2024"
+                                        min={1900}
+                                        max={2030}
+                                        className="tabular-nums"
+                                        value={f.value ?? ''}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                          f.onChange(e.target.value ? Number(e.target.value) : '')
+                                        }
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
 
@@ -532,7 +994,8 @@ export function SaleFormStep2({
               </DropdownMenu>
             </div>
 
-            {fields.length <= 1 && (
+            {fields.filter((_, i) => (watchedSchedules?.[i]?.kind ?? fields[i]?.kind) !== 'entry')
+              .length === 0 && (
               <p className="mb-3 text-sm text-muted-foreground">
                 Clique em "Adicionar Parcelas" para adicionar parcelas mensais, bimestrais,
                 trimestrais, semestrais ou anuais.
@@ -541,7 +1004,9 @@ export function SaleFormStep2({
 
             <div className="space-y-4">
               {fields.map((field, index) => {
-                if (index === 0) return null
+                const currentKind =
+                  watchedSchedules?.[index]?.kind ?? (field as { kind?: string }).kind
+                if (currentKind === 'entry') return null
                 const schedule = watchedSchedules?.[index]
                 const recurrenceType = schedule?.recurrence_type as
                   | 'monthly'
