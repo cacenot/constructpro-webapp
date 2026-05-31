@@ -1,0 +1,41 @@
+schema: 1
+story: '3.2'
+story_title: 'Comissão na Edição e Exibição de Proposta'
+gate: PASS
+status_reason: 'Todos os 10 critérios de aceitação implementados corretamente. Lint e build passam sem erros. Código consistente com padrões do projeto.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-05-30T00:00:00.000Z'
+
+top_issues: []
+waiver: { active: false }
+
+quality_score: 95
+
+expires: '2026-06-13T00:00:00.000Z'
+
+evidence:
+  tests_reviewed: { count: 0 }
+  risks_identified: { count: 2 }
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Sem XSS — valores exibidos via JSX (React escapa). Sem input não sanitizado. Sem secrets hardcoded.'
+  performance:
+    status: PASS
+    notes: 'Queries com staleTime adequado (5-10min). Nenhuma query desnecessária adicionada.'
+  reliability:
+    status: PASS
+    notes: 'Erros de API tratados via throwApiError/handleApiError. Cascade de limpeza funciona corretamente.'
+  maintainability:
+    status: PASS
+    notes: 'buildCommissionRate extraído para src/lib/commission-utils.ts — reutilizado por novo/ e editar/. superRefine idêntico entre saleFormSchema e saleEditFormSchema.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'buildCommissionRate usa .toFixed() retornando strings para percentage e decimal. Considerar alinhar com tipos numéricos se a API der erro 422 em produção.'
+      refs: ['src/lib/commission-utils.ts']

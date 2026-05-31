@@ -84,7 +84,33 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
     staleTime: 10 * 60 * 1000,
   })
 
+  const brokersQuery = useQuery({
+    queryKey: ['brokers-select'],
+    queryFn: async () => {
+      const { data, error } = await client.GET('/api/v1/brokers', {
+        params: { query: { page: 1, page_size: 100 } },
+      })
+      if (error) throw new Error('Falha ao carregar corretores')
+      return data
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const agenciesQuery = useQuery({
+    queryKey: ['agencies-select'],
+    queryFn: async () => {
+      const { data, error } = await client.GET('/api/v1/agencies', {
+        params: { query: { page: 1, page_size: 100 } },
+      })
+      if (error) throw new Error('Falha ao carregar imobiliárias')
+      return data
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+
   const indexTypes = indexTypesQuery.data?.items ?? []
+  const brokers = brokersQuery.data?.items ?? []
+  const agencies = agenciesQuery.data?.items ?? []
 
   const form = useForm<SaleEditFormData>({
     resolver: zodResolver(saleEditFormSchema),
@@ -103,6 +129,14 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
           start_date: null,
         },
       ],
+      broker_id: sale.broker?.id ?? null,
+      commission_broker_rate: sale.commission_broker_rate?.ppm
+        ? sale.commission_broker_rate.ppm / 10000
+        : null,
+      agency_id: sale.agency?.id ?? null,
+      commission_agency_rate: sale.commission_agency_rate?.ppm
+        ? sale.commission_agency_rate.ppm / 10000
+        : null,
     },
   })
 
@@ -114,6 +148,16 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
   const watchedSchedules = useWatch({
     control: form.control,
     name: 'installment_schedules',
+  })
+
+  const watchedBrokerId = useWatch({
+    control: form.control,
+    name: 'broker_id',
+  })
+
+  const watchedAgencyId = useWatch({
+    control: form.control,
+    name: 'agency_id',
   })
 
   const totalFinanced = React.useMemo(() => {
@@ -280,7 +324,201 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
           </CardContent>
         </Card>
 
-        {/* Card 3: Pagamento (Entrada + Parcelas) */}
+        {/* Card 3: Comissão */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Comissão</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isEditable ? (
+              <>
+                <div className="grid gap-4 sm:grid-cols-12">
+                  <FormField
+                    control={form.control}
+                    name="broker_id"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-6">
+                        <FormLabel>Corretor</FormLabel>
+                        <Select
+                          value={field.value?.toString() ?? ''}
+                          onValueChange={(val) => {
+                            const num = val ? Number(val) : null
+                            field.onChange(num)
+                            if (!num) {
+                              form.setValue('agency_id', null)
+                              form.setValue('commission_broker_rate', null)
+                              form.setValue('commission_agency_rate', null)
+                            }
+                          }}
+                          disabled={brokersQuery.isLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue
+                                placeholder={
+                                  brokersQuery.isLoading
+                                    ? 'Carregando...'
+                                    : brokersQuery.isError
+                                      ? 'Erro ao carregar corretores'
+                                      : 'Selecione um corretor'
+                                }
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum corretor</SelectItem>
+                            {brokers.map((broker) => (
+                              <SelectItem key={broker.id} value={broker.id.toString()}>
+                                {broker.full_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {watchedBrokerId && (
+                    <FormField
+                      control={form.control}
+                      name="commission_broker_rate"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-4">
+                          <FormLabel>Taxa do Corretor (%)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="Ex: 1.5"
+                              value={field.value ?? ''}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                field.onChange(e.target.value ? Number(e.target.value) : null)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-12">
+                  <FormField
+                    control={form.control}
+                    name="agency_id"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-6">
+                        <FormLabel>Imobiliária</FormLabel>
+                        <Select
+                          value={field.value?.toString() ?? ''}
+                          onValueChange={(val) => {
+                            const num = val ? Number(val) : null
+                            field.onChange(num)
+                            if (!num) {
+                              form.setValue('commission_agency_rate', null)
+                            }
+                          }}
+                          disabled={!watchedBrokerId || agenciesQuery.isLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger
+                              className="w-full"
+                              aria-disabled={!watchedBrokerId ? 'true' : undefined}
+                            >
+                              <SelectValue
+                                placeholder={
+                                  !watchedBrokerId
+                                    ? 'Selecione um corretor primeiro'
+                                    : agenciesQuery.isLoading
+                                      ? 'Carregando...'
+                                      : agenciesQuery.isError
+                                        ? 'Erro ao carregar imobiliárias'
+                                        : 'Selecione uma imobiliária'
+                                }
+                              />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">Nenhuma imobiliária</SelectItem>
+                            {agencies.map((agency) => (
+                              <SelectItem key={agency.id} value={agency.id.toString()}>
+                                {agency.trade_name ?? agency.legal_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {watchedAgencyId && (
+                    <FormField
+                      control={form.control}
+                      name="commission_agency_rate"
+                      render={({ field }) => (
+                        <FormItem className="sm:col-span-4">
+                          <FormLabel>Taxa da Imobiliária (%)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="Ex: 3.0"
+                              value={field.value ?? ''}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                field.onChange(e.target.value ? Number(e.target.value) : null)
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-12">
+                  <div className="sm:col-span-6">
+                    <p className="text-sm text-muted-foreground">Corretor</p>
+                    <p className="text-sm font-medium">{sale.broker?.full_name ?? '—'}</p>
+                  </div>
+                  <div className="sm:col-span-4">
+                    <p className="text-sm text-muted-foreground">Taxa do Corretor (%)</p>
+                    <p className="text-sm font-medium">
+                      {sale.commission_broker_rate?.ppm != null
+                        ? `${(sale.commission_broker_rate.ppm / 10000).toFixed(2)}%`
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-12">
+                  <div className="sm:col-span-6">
+                    <p className="text-sm text-muted-foreground">Imobiliária</p>
+                    <p className="text-sm font-medium">
+                      {sale.agency?.trade_name ?? sale.agency?.legal_name ?? '—'}
+                    </p>
+                  </div>
+                  <div className="sm:col-span-4">
+                    <p className="text-sm text-muted-foreground">Taxa da Imobiliária (%)</p>
+                    <p className="text-sm font-medium">
+                      {sale.commission_agency_rate?.ppm != null
+                        ? `${(sale.commission_agency_rate.ppm / 10000).toFixed(2)}%`
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Pagamento (Entrada + Parcelas) */}
         <Card>
           <CardHeader>
             <CardTitle>Pagamento</CardTitle>
@@ -625,7 +863,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
           </CardContent>
         </Card>
 
-        {/* Card 4: Resumo Financeiro */}
+        {/* Card 5: Resumo Financeiro */}
         <Card>
           <CardHeader>
             <CardTitle>Resumo Financeiro</CardTitle>
