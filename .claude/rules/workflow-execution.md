@@ -46,7 +46,8 @@ Uma task validada é lei: deve ser executada conforme configurada, com todas as 
 - **Task:** `dev-develop-story.md`
 - **Modes:** Interactive / YOLO / Pre-Flight
 - **CodeRabbit:** Self-healing max 2 iterations
-- **Pre-condition:** UX spec presente (`docs/stories/{id}-ux-spec.md`) se story for UI
+- **Pre-condition (1):** Branch `task/{N.M}-{descricao}` ativa — ver `dev-branch-gate.md`. Se ausente → delegar `@devops *setup-branch {storyId}` antes de qualquer edição
+- **Pre-condition (2):** UX spec presente (`docs/stories/{id}-ux-spec.md`) se story for UI
 - **Status:** Ready → InProgress
 
 #### Phase 4: QA Gate (@qa)
