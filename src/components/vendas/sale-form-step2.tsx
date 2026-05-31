@@ -619,34 +619,40 @@ export function SaleFormStep2({
                         <Separator className="my-1" />
                         <div className="space-y-4">
                           <div className="grid gap-4 sm:grid-cols-12">
-                            <FormItem className="sm:col-span-12">
-                              <FormLabel>Tipo de Bem *</FormLabel>
-                              <Select
-                                value={assetType ?? ''}
-                                onValueChange={(val) => {
-                                  const type = val as AssetType
-                                  form.setValue(
-                                    `installment_schedules.${realIndex}.asset_proposal`,
-                                    { type, asset_metadata: getDefaultAssetMetadata(type) },
-                                    { shouldValidate: true }
-                                  )
-                                }}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Selecione o tipo" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {Object.entries(ASSET_TYPE_LABELS).map(([value, label]) => (
-                                    <SelectItem key={value} value={value}>
-                                      {label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
+                            <FormField
+                              control={form.control}
+                              name={`installment_schedules.${realIndex}.asset_proposal`}
+                              render={() => (
+                                <FormItem className="sm:col-span-12">
+                                  <FormLabel>Tipo de Bem *</FormLabel>
+                                  <Select
+                                    value={assetType ?? ''}
+                                    onValueChange={(val) => {
+                                      const type = val as AssetType
+                                      form.setValue(
+                                        `installment_schedules.${realIndex}.asset_proposal`,
+                                        { type, asset_metadata: getDefaultAssetMetadata(type) },
+                                        { shouldValidate: true }
+                                      )
+                                    }}
+                                  >
+                                    <FormControl>
+                                      <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Selecione o tipo" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      {Object.entries(ASSET_TYPE_LABELS).map(([value, label]) => (
+                                        <SelectItem key={value} value={value}>
+                                          {label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                           </div>
 
                           {assetType === 'vehicle' && (
