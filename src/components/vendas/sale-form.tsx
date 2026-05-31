@@ -1,57 +1,22 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowUp,
-  CalendarClock,
-  Equal,
-  Loader2,
-  Plus,
-  Save,
-  Trash2,
-} from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowUp, CalendarClock, Check, Equal } from 'lucide-react'
 import * as React from 'react'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CurrencyInput, formatCentsToDisplay } from '@/components/ui/currency-input'
-import { CustomerAutocomplete, type SelectedCustomer } from '@/components/ui/customer-autocomplete'
-import { DatePicker } from '@/components/ui/date-picker'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { formatCentsToDisplay } from '@/components/ui/currency-input'
+import { Form } from '@/components/ui/form'
+import type { SelectedProject } from '@/components/ui/project-autocomplete'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { type SelectedUnit, UnitAutocomplete } from '@/components/ui/unit-autocomplete'
-import {
-  computeAllowedDates,
-  computeContractEndDate,
-  computeDefaultStartDate,
-  formatBRDate,
-} from '@/lib/installment-utils'
+import type { SelectedUnit } from '@/components/ui/unit-autocomplete'
+import { computeContractEndDate, formatBRDate } from '@/lib/installment-utils'
 import { cn } from '@/lib/utils'
-import {
-  INSTALLMENT_KIND_LABELS,
-  PAYMENT_METHOD_LABELS,
-  type SaleFormData,
-  saleFormSchema,
-} from '@/schemas/sale.schema'
+import { INSTALLMENT_KIND_LABELS, type SaleFormData, saleFormSchema } from '@/schemas/sale.schema'
+import { SaleFormStep1 } from './sale-form-step1'
+import { SaleFormStep2 } from './sale-form-step2'
 
 interface SaleFormProps {
   onSubmit: (data: SaleFormData) => Promise<void>
@@ -61,7 +26,9 @@ interface SaleFormProps {
 
 export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormProps) {
   const { client } = useApiClient()
+  const [step, setStep] = React.useState<1 | 2>(1)
   const [selectedUnit, setSelectedUnit] = React.useState<SelectedUnit | null>(null)
+  const [selectedProject, setSelectedProject] = React.useState<SelectedProject | null>(null)
 
   const indexTypesQuery = useQuery({
     queryKey: ['index-types'],
@@ -74,8 +41,6 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     },
     staleTime: 10 * 60 * 1000,
   })
-
-  const indexTypes = indexTypesQuery.data?.items ?? []
 
   const brokersQuery = useQuery({
     queryKey: ['brokers-select'],
@@ -103,6 +68,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
 
   const brokers = brokersQuery.data?.items ?? []
   const agencies = agenciesQuery.data?.items ?? []
+  const indexTypes = indexTypesQuery.data?.items ?? []
 
   const form = useForm<SaleFormData>({
     resolver: zodResolver(saleFormSchema),
@@ -172,60 +138,16 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     [form]
   )
 
-  const handleCustomerChange = React.useCallback(
-    (customer: SelectedCustomer | null) => {
-      form.setValue('customer_id', customer?.id ?? (undefined as unknown as number), {
-        shouldValidate: true,
-      })
+  const handleProjectChange = React.useCallback(
+    (project: SelectedProject | null) => {
+      if (project?.id !== selectedProject?.id) {
+        form.setValue('unit_id', undefined as unknown as number)
+        setSelectedUnit(null)
+      }
+      setSelectedProject(project)
     },
-    [form]
+    [form, selectedProject]
   )
-
-  const quantityInputRefs = React.useRef<(HTMLInputElement | null)[]>([])
-
-  const addMonthlySchedule = React.useCallback(() => {
-    const recurrenceDay = 10
-    const startDate = computeDefaultStartDate('monthly', recurrenceDay, null)
-    append({
-      kind: 'regular',
-      payment_method: 'boleto',
-      quantity: 1,
-      amount: 0,
-      specific_date: null,
-      recurrence_type: 'monthly',
-      recurrence_day: recurrenceDay,
-      recurrence_month: null,
-      start_date: startDate || null,
-    })
-  }, [append])
-
-  const addYearlySchedule = React.useCallback(() => {
-    const recurrenceDay = 15
-    const recurrenceMonth = 12
-    const startDate = computeDefaultStartDate('yearly', recurrenceDay, recurrenceMonth)
-    append({
-      kind: 'regular',
-      payment_method: 'boleto',
-      quantity: 1,
-      amount: 0,
-      specific_date: null,
-      recurrence_type: 'yearly',
-      recurrence_day: recurrenceDay,
-      recurrence_month: recurrenceMonth,
-      start_date: startDate || null,
-    })
-  }, [append])
-
-  // Focus on quantity input when new installment is added
-  React.useEffect(() => {
-    const lastIndex = fields.length - 1
-    if (lastIndex > 0) {
-      // Defer focus to allow DOM to update
-      setTimeout(() => {
-        quantityInputRefs.current[lastIndex]?.focus()
-      }, 0)
-    }
-  }, [fields.length])
 
   const handleSubmit = async (data: SaleFormData) => {
     await onSubmit(data)
@@ -258,701 +180,194 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           </div>
         </div>
 
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_340px]">
-          {/* Left column: Form cards */}
-          <div className="space-y-6">
-            {/* Card 1: Dados da Venda */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Dados da Venda</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-12">
-                  <FormField
-                    control={form.control}
-                    name="unit_id"
-                    render={({ field }) => (
-                      <FormItem className="sm:col-span-6">
-                        <FormLabel>Unidade *</FormLabel>
-                        <FormControl>
-                          <UnitAutocomplete value={field.value} onChange={handleUnitChange} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="customer_id"
-                    render={({ field }) => (
-                      <FormItem className="sm:col-span-6">
-                        <FormLabel>Cliente *</FormLabel>
-                        <FormControl>
-                          <CustomerAutocomplete
-                            value={field.value}
-                            onChange={handleCustomerChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-12">
-                  <FormField
-                    control={form.control}
-                    name="index_type_code"
-                    render={({ field }) => (
-                      <FormItem className="sm:col-span-4">
-                        <FormLabel>Índice de Correção *</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {indexTypes.map((indexType) => (
-                              <SelectItem key={indexType.code} value={indexType.code}>
-                                {indexType.code}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Card Comissão */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Comissão</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-12">
-                  <FormField
-                    control={form.control}
-                    name="broker_id"
-                    render={({ field }) => (
-                      <FormItem className="sm:col-span-6">
-                        <FormLabel>Corretor</FormLabel>
-                        <Select
-                          value={field.value?.toString() ?? ''}
-                          onValueChange={(val) => {
-                            const num = val ? Number(val) : null
-                            field.onChange(num)
-                            if (!num) {
-                              form.setValue('agency_id', null)
-                              form.setValue('commission_broker_rate', null)
-                              form.setValue('commission_agency_rate', null)
-                            }
-                          }}
-                          disabled={brokersQuery.isLoading}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue
-                                placeholder={
-                                  brokersQuery.isLoading
-                                    ? 'Carregando...'
-                                    : brokersQuery.isError
-                                      ? 'Erro ao carregar corretores'
-                                      : 'Selecione um corretor'
-                                }
-                              />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {brokers.map((broker) => (
-                              <SelectItem key={broker.id} value={broker.id.toString()}>
-                                {broker.full_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {watchedBrokerId && (
-                    <FormField
-                      control={form.control}
-                      name="commission_broker_rate"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-4">
-                          <FormLabel>Taxa de Comissão do Corretor (%)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="Ex: 1.5"
-                              value={field.value ?? ''}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                field.onChange(e.target.value ? Number(e.target.value) : null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-12">
-                  <FormField
-                    control={form.control}
-                    name="agency_id"
-                    render={({ field }) => (
-                      <FormItem className="sm:col-span-6">
-                        <FormLabel>Imobiliária</FormLabel>
-                        <Select
-                          value={field.value?.toString() ?? ''}
-                          onValueChange={(val) => {
-                            const num = val ? Number(val) : null
-                            field.onChange(num)
-                            if (!num) {
-                              form.setValue('commission_agency_rate', null)
-                            }
-                          }}
-                          disabled={!watchedBrokerId || agenciesQuery.isLoading}
-                        >
-                          <FormControl>
-                            <SelectTrigger
-                              className="w-full"
-                              aria-disabled={!watchedBrokerId ? 'true' : undefined}
-                            >
-                              <SelectValue
-                                placeholder={
-                                  !watchedBrokerId
-                                    ? 'Selecione um corretor primeiro'
-                                    : agenciesQuery.isLoading
-                                      ? 'Carregando...'
-                                      : agenciesQuery.isError
-                                        ? 'Erro ao carregar imobiliárias'
-                                        : 'Selecione uma imobiliária'
-                                }
-                              />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {agencies.map((agency) => (
-                              <SelectItem key={agency.id} value={agency.id.toString()}>
-                                {agency.trade_name ?? agency.legal_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {watchedAgencyId && (
-                    <FormField
-                      control={form.control}
-                      name="commission_agency_rate"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-4">
-                          <FormLabel>Taxa de Comissão da Imobiliária (%)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="Ex: 3.0"
-                              value={field.value ?? ''}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                field.onChange(e.target.value ? Number(e.target.value) : null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Card 2: Pagamento (Entrada + Parcelas) */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Pagamento</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Entrada section */}
-                <div>
-                  <p className="mb-3 text-sm font-medium">Entrada</p>
-                  <div className="grid gap-4 sm:grid-cols-12">
-                    <FormField
-                      control={form.control}
-                      name="installment_schedules.0.amount"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-4">
-                          <FormLabel>Valor da Entrada *</FormLabel>
-                          <FormControl>
-                            <CurrencyInput value={field.value} onChange={field.onChange} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="installment_schedules.0.specific_date"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-4">
-                          <FormLabel>Data de Pagamento *</FormLabel>
-                          <FormControl>
-                            <DatePicker value={field.value} onChange={field.onChange} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="installment_schedules.0.payment_method"
-                      render={({ field }) => (
-                        <FormItem className="sm:col-span-4">
-                          <FormLabel>Forma de Pagamento *</FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Selecione" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Parcelas section */}
-                <div>
-                  <div className="mb-4 flex items-center justify-between">
-                    <p className="text-sm font-medium">Parcelas</p>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addMonthlySchedule}
-                      >
-                        <Plus className="mr-2 size-4" />
-                        Mensais
-                      </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={addYearlySchedule}>
-                        <Plus className="mr-2 size-4" />
-                        Anuais
-                      </Button>
-                    </div>
-                  </div>
-
-                  {fields.length <= 1 && (
-                    <p className="mb-3 text-sm text-muted-foreground">
-                      Clique em "Mensais" ou "Anuais" para adicionar parcelas.
-                    </p>
-                  )}
-
-                  <div className="space-y-4">
-                    {fields.map((field, index) => {
-                      if (index === 0) return null
-                      const schedule = watchedSchedules?.[index]
-                      const recurrenceType = schedule?.recurrence_type as
-                        | 'monthly'
-                        | 'yearly'
-                        | undefined
-                      const recurrenceDay = schedule?.recurrence_day
-                      const recurrenceMonth = schedule?.recurrence_month
-
-                      const isDateDisabled =
-                        recurrenceType === 'yearly'
-                          ? !recurrenceDay || !recurrenceMonth
-                          : !recurrenceDay
-
-                      const allowedDates =
-                        recurrenceType && !isDateDisabled
-                          ? computeAllowedDates(recurrenceType, recurrenceDay, recurrenceMonth)
-                          : []
-
-                      const disabledDates = Array.from({ length: 10957 }, (_, i) => {
-                        const d = new Date()
-                        d.setDate(d.getDate() + i)
-                        const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-                        return allowedDates.includes(iso) ? '' : iso
-                      }).filter(Boolean)
-
-                      return (
-                        <div
-                          key={field.id}
-                          className="rounded-lg border border-border p-4 space-y-4"
-                        >
-                          <div className="flex items-center justify-between">
-                            <Badge variant="secondary">
-                              {schedule?.kind ? INSTALLMENT_KIND_LABELS[schedule.kind] : '—'}
-                            </Badge>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => remove(index)}
-                                >
-                                  <Trash2 className="size-4 text-destructive" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Remover parcela</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-
-                          <div className="grid gap-4 sm:grid-cols-12">
-                            <FormField
-                              control={form.control}
-                              name={`installment_schedules.${index}.quantity`}
-                              render={({ field: f }) => (
-                                <FormItem className="sm:col-span-2">
-                                  <FormLabel>Quantidade *</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      ref={(el) => {
-                                        quantityInputRefs.current[index] = el
-                                      }}
-                                      type="number"
-                                      min="1"
-                                      value={f.value ?? ''}
-                                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                        f.onChange(
-                                          e.target.value ? Number.parseInt(e.target.value, 10) : 1
-                                        )
-                                      }
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name={`installment_schedules.${index}.amount`}
-                              render={({ field: f }) => (
-                                <FormItem className="sm:col-span-3">
-                                  <FormLabel>Valor da Parcela *</FormLabel>
-                                  <FormControl>
-                                    <CurrencyInput value={f.value} onChange={f.onChange} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name={`installment_schedules.${index}.payment_method`}
-                              render={({ field: f }) => (
-                                <FormItem className="sm:col-span-3">
-                                  <FormLabel>Pagamento *</FormLabel>
-                                  <Select value={f.value} onValueChange={f.onChange}>
-                                    <FormControl>
-                                      <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Selecione" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      {Object.entries(PAYMENT_METHOD_LABELS).map(([v, label]) => (
-                                        <SelectItem key={v} value={v}>
-                                          {label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name={`installment_schedules.${index}.recurrence_day`}
-                              render={({ field: f }) => (
-                                <FormItem className="sm:col-span-2">
-                                  <FormLabel>Dia Vcto. *</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      max="31"
-                                      value={f.value ?? ''}
-                                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                        const val = e.target.value
-                                          ? Number.parseInt(e.target.value, 10)
-                                          : null
-                                        f.onChange(val)
-                                        // Update start_date with new default
-                                        if (
-                                          recurrenceType &&
-                                          (recurrenceType === 'monthly' ||
-                                            recurrenceType === 'yearly')
-                                        ) {
-                                          const newStartDate = computeDefaultStartDate(
-                                            recurrenceType,
-                                            val,
-                                            recurrenceMonth
-                                          )
-                                          form.setValue(
-                                            `installment_schedules.${index}.start_date`,
-                                            newStartDate || null
-                                          )
-                                        }
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            {recurrenceType === 'yearly' && (
-                              <FormField
-                                control={form.control}
-                                name={`installment_schedules.${index}.recurrence_month`}
-                                render={({ field: f }) => (
-                                  <FormItem className="sm:col-span-2">
-                                    <FormLabel>Mês *</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        max="12"
-                                        value={f.value ?? ''}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                          const val = e.target.value
-                                            ? Number.parseInt(e.target.value, 10)
-                                            : null
-                                          f.onChange(val)
-                                          // Update start_date with new default
-                                          if (recurrenceType === 'yearly') {
-                                            const newStartDate = computeDefaultStartDate(
-                                              recurrenceType,
-                                              recurrenceDay,
-                                              val
-                                            )
-                                            form.setValue(
-                                              `installment_schedules.${index}.start_date`,
-                                              newStartDate || null
-                                            )
-                                          }
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            )}
-                          </div>
-
-                          <div className="grid gap-4 sm:grid-cols-12">
-                            <FormField
-                              control={form.control}
-                              name={`installment_schedules.${index}.start_date`}
-                              render={({ field: f }) => (
-                                <FormItem className="sm:col-span-4">
-                                  <FormLabel>Data de Início *</FormLabel>
-                                  <FormControl>
-                                    <DatePicker
-                                      value={f.value}
-                                      onChange={f.onChange}
-                                      disabled={isDateDisabled}
-                                      disabledDates={disabledDates}
-                                    />
-                                  </FormControl>
-                                  {isDateDisabled && (
-                                    <p className="text-xs text-muted-foreground">
-                                      Preencha o dia{recurrenceType === 'yearly' ? ' e mês' : ''} de
-                                      vencimento primeiro
-                                    </p>
-                                  )}
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Cadastrando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 size-4" />
-                    Cadastrar Proposta
-                  </>
-                )}
-              </Button>
+        {/* Step indicator */}
+        <ol className="flex items-center">
+          <li className="flex items-center" aria-current={step === 1 ? 'step' : undefined}>
+            <div
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
+                'bg-primary text-primary-foreground'
+              )}
+            >
+              {step > 1 ? <Check className="size-4" /> : '1'}
             </div>
-          </div>
+            <span className="ml-2 text-sm">
+              <span className="hidden sm:inline">Empreendimento e </span>Unidade
+            </span>
+          </li>
+          <li className="mx-4 h-px flex-1 bg-border" aria-hidden="true" />
+          <li className="flex items-center" aria-current={step === 2 ? 'step' : undefined}>
+            <div
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
+                step === 2
+                  ? 'bg-primary text-primary-foreground'
+                  : 'border-2 border-muted-foreground text-muted-foreground'
+              )}
+            >
+              2
+            </div>
+            <span className={cn('ml-2 text-sm', step < 2 && 'text-muted-foreground')}>
+              Financeiro
+            </span>
+          </li>
+        </ol>
 
-          {/* Right column: Resumo Financeiro (sticky sidebar) */}
-          <div className="lg:sticky lg:top-24">
-            <Card>
-              <CardHeader>
-                <CardTitle>Resumo Financeiro</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Valor Financiado</p>
-                    <p className="text-2xl font-bold tabular-nums">
-                      R$ {formatCentsToDisplay(totalFinanced) || '0,00'}
-                    </p>
-                  </div>
+        {/* Steps */}
+        {step === 1 ? (
+          <SaleFormStep1
+            form={form}
+            selectedProject={selectedProject}
+            onProjectChange={handleProjectChange}
+            selectedUnit={selectedUnit}
+            onUnitChange={handleUnitChange}
+            onNext={() => setStep(2)}
+          />
+        ) : (
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_340px]">
+            <SaleFormStep2
+              form={form}
+              selectedUnit={selectedUnit}
+              selectedProject={selectedProject}
+              onBack={() => setStep(1)}
+              isSubmitting={isSubmitting}
+              brokers={brokers}
+              brokersLoading={brokersQuery.isLoading}
+              brokersError={brokersQuery.isError}
+              agencies={agencies}
+              agenciesLoading={agenciesQuery.isLoading}
+              agenciesError={agenciesQuery.isError}
+              indexTypes={indexTypes}
+              watchedBrokerId={watchedBrokerId}
+              watchedAgencyId={watchedAgencyId}
+              watchedSchedules={watchedSchedules}
+              fields={fields}
+              append={append}
+              remove={remove}
+            />
 
-                  {selectedUnit && (
+            {/* Resumo Financeiro (sticky sidebar) */}
+            <div className="lg:sticky lg:top-24">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Resumo Financeiro</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Preço da Unidade</p>
+                      <p className="text-sm text-muted-foreground">Valor Financiado</p>
                       <p className="text-2xl font-bold tabular-nums">
-                        R$ {formatCentsToDisplay(unitPriceCents) || '0,00'}
+                        R$ {formatCentsToDisplay(totalFinanced) || '0,00'}
                       </p>
                     </div>
-                  )}
 
-                  {selectedUnit && totalFinanced > 0 && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Diferença</p>
-                      <div className="flex items-center gap-2">
-                        {diff === 0 ? (
-                          <>
-                            <Equal className="size-5 text-success" />
-                            <span className="text-sm font-medium text-success">Igual ao preço</span>
-                          </>
-                        ) : diff > 0 ? (
-                          <>
-                            <ArrowUp className="size-5 text-success" />
-                            <div>
-                              <p className="text-lg font-bold tabular-nums text-success">
-                                + R$ {formatCentsToDisplay(diff)}
-                              </p>
-                              <p className="text-xs tabular-nums text-muted-foreground">
-                                {diffPercent.toFixed(1)}% acima
-                              </p>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <ArrowDown className="size-5 text-warning" />
-                            <div>
-                              <p className="text-lg font-bold tabular-nums text-warning">
-                                - R$ {formatCentsToDisplay(Math.abs(diff))}
-                              </p>
-                              <p className="text-xs tabular-nums text-muted-foreground">
-                                {Math.abs(diffPercent).toFixed(1)}% abaixo
-                              </p>
-                            </div>
-                          </>
-                        )}
+                    {selectedUnit && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Preço da Unidade</p>
+                        <p className="text-2xl font-bold tabular-nums">
+                          R$ {formatCentsToDisplay(unitPriceCents) || '0,00'}
+                        </p>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {contractEnd.endDate && (
-                    <div>
-                      <p className="text-sm text-muted-foreground">Previsão de Término</p>
-                      <div className="flex items-center gap-2">
-                        <CalendarClock className="size-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-lg font-bold tabular-nums">
-                            {formatBRDate(contractEnd.endDate)}
-                          </p>
-                          {contractEnd.totalMonths > 0 && (
-                            <p className="text-xs tabular-nums text-muted-foreground">
-                              {contractEnd.totalMonths} meses
-                            </p>
+                    {selectedUnit && totalFinanced > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Diferença</p>
+                        <div className="flex items-center gap-2">
+                          {diff === 0 ? (
+                            <>
+                              <Equal className="size-5 text-success" />
+                              <span className="text-sm font-medium text-success">
+                                Igual ao preço
+                              </span>
+                            </>
+                          ) : diff > 0 ? (
+                            <>
+                              <ArrowUp className="size-5 text-success" />
+                              <div>
+                                <p className="text-lg font-bold tabular-nums text-success">
+                                  + R$ {formatCentsToDisplay(diff)}
+                                </p>
+                                <p className="text-xs tabular-nums text-muted-foreground">
+                                  {diffPercent.toFixed(1)}% acima
+                                </p>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDown className="size-5 text-warning" />
+                              <div>
+                                <p className="text-lg font-bold tabular-nums text-warning">
+                                  - R$ {formatCentsToDisplay(Math.abs(diff))}
+                                </p>
+                                <p className="text-xs tabular-nums text-muted-foreground">
+                                  {Math.abs(diffPercent).toFixed(1)}% abaixo
+                                </p>
+                              </div>
+                            </>
                           )}
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
 
-                {watchedSchedules && watchedSchedules.length > 0 && (
-                  <>
-                    <Separator />
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
-                      <div className="space-y-1">
-                        {watchedSchedules.map((schedule, index) => {
-                          const subtotal = (schedule.quantity ?? 0) * (schedule.amount ?? 0)
-                          if (subtotal === 0) return null
-                          return (
-                            <div
-                              key={fields[index]?.id ?? index}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <span className="text-muted-foreground">
-                                {INSTALLMENT_KIND_LABELS[schedule.kind] ?? schedule.kind}
-                                {schedule.quantity > 1 && (
-                                  <span className="ml-1 tabular-nums">
-                                    ({schedule.quantity}x R$ {formatCentsToDisplay(schedule.amount)}
-                                    )
-                                  </span>
-                                )}
-                              </span>
-                              <span className={cn('font-medium tabular-nums')}>
-                                R$ {formatCentsToDisplay(subtotal)}
-                              </span>
-                            </div>
-                          )
-                        })}
+                    {contractEnd.endDate && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Previsão de Término</p>
+                        <div className="flex items-center gap-2">
+                          <CalendarClock className="size-5 text-muted-foreground" />
+                          <div>
+                            <p className="text-lg font-bold tabular-nums">
+                              {formatBRDate(contractEnd.endDate)}
+                            </p>
+                            {contractEnd.totalMonths > 0 && (
+                              <p className="text-xs tabular-nums text-muted-foreground">
+                                {contractEnd.totalMonths} meses
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                    )}
+                  </div>
+
+                  {watchedSchedules && watchedSchedules.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
+                        <div className="space-y-1">
+                          {watchedSchedules.map((schedule, index) => {
+                            const subtotal = (schedule.quantity ?? 0) * (schedule.amount ?? 0)
+                            if (subtotal === 0) return null
+                            return (
+                              <div
+                                key={fields[index]?.id ?? index}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <span className="text-muted-foreground">
+                                  {INSTALLMENT_KIND_LABELS[schedule.kind] ?? schedule.kind}
+                                  {schedule.quantity > 1 && (
+                                    <span className="ml-1 tabular-nums">
+                                      ({schedule.quantity}x R${' '}
+                                      {formatCentsToDisplay(schedule.amount)})
+                                    </span>
+                                  )}
+                                </span>
+                                <span className={cn('font-medium tabular-nums')}>
+                                  R$ {formatCentsToDisplay(subtotal)}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
+        )}
       </form>
     </Form>
   )
