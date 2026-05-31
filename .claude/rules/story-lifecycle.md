@@ -18,7 +18,7 @@ Draft → Ready → InProgress → InReview → Done
 | Ready | @po validates (GO) | @po | **MUST update status field in story file from Draft → Ready** |
 | InProgress | @dev starts implementation; @qa FAIL returns story | @dev / @qa | **MUST update status field: Ready → InProgress on dev start, or InReview → InProgress on QA FAIL** |
 | InReview | @dev completes implementation | @dev | **MUST update status field from InProgress → InReview before QA handoff** |
-| Done | @qa PASS, CONCERNS, or WAIVED | @qa | **MUST update status field from InReview → Done before @devops push** |
+| Done | @qa PASS, CONCERNS, or WAIVED | @qa | **MUST update status field from InReview → Done before @devops PR** — @devops abre PR `task/{N.M}` → `feat/epic-{N}` e faz merge |
 
 **CRITICAL:** The `Draft → Ready` transition is the responsibility of @po during `*validate-story-draft`. When verdict is GO (including conditional GO after fixes are applied), @po MUST update the story's Status field to `Ready` and log the transition in the Change Log. A story left in `Draft` after a GO verdict is a process violation.
 

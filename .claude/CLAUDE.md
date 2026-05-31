@@ -145,7 +145,7 @@ O AIOX carrega regras contextuais de `.claude/rules/` automaticamente. Regras co
 | `mcp-usage.md` | MCP server usage rules and tool selection priority |
 | `story-lifecycle.md` | Story status transitions and quality gates |
 | `ux-gate.md` | UX-first gate: @dev bloqueado para telas sem artefato de @ux-design-expert |
-| `dev-branch-gate.md` | Branch gate: @dev bloqueado para implementar sem branch task/{N.M}-{descricao} ativa |
+| `dev-branch-gate.md` | Branch gate: @dev bloqueado sem branch task/{N.M}; @devops abre PR task→feat/epic pós-QA; PR feat/epic→main ao fim do épico |
 | `workflow-execution.md` | 4 primary workflows (SDC, QA Loop, Spec Pipeline, Brownfield) |
 
 > **Diretório:** `.claude/rules/` — rules são carregadas automaticamente pelo Claude Code quando relevantes.

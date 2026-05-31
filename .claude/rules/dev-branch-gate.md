@@ -105,13 +105,74 @@ Após setup, `@devops` confirma para `@dev` retomar.
 
 ---
 
+## Post-QA Flow (@devops)
+
+Após `@qa` emitir veredicto **PASS**, **CONCERNS** ou **WAIVED**:
+
+### Step 1 — Abrir PR task → épico
+
+```bash
+gh pr create \
+  --base feat/epic-{N} \
+  --head task/{N.M}-{descricao} \
+  --title "feat({N.M}): {titulo-da-story}" \
+  --body "Closes story {N.M}. QA: {veredicto}."
+```
+
+**NUNCA** abrir PR direto para `main` a partir de uma branch `task/`.
+
+### Step 2 — Merge do PR
+
+Após aprovação (ou auto-merge se configurado):
+
+```bash
+gh pr merge --squash --delete-branch
+```
+
+### Step 3 — Atualizar feat/epic-{N} localmente
+
+```bash
+git checkout feat/epic-{N}
+git pull origin feat/epic-{N}
+```
+
+Próxima task deve ser criada a partir deste `feat/epic-{N}` já atualizado (ver Procedimento de Setup acima, step 3).
+
+### Ao fim do épico — PR épico → main
+
+Quando todas as stories do épico estiverem `Done`:
+
+```bash
+gh pr create \
+  --base main \
+  --head feat/epic-{N} \
+  --title "feat(epic-{N}): {nome-do-epico}" \
+  --body "Epic {N} completo. Stories: {lista}."
+```
+
+---
+
 ## Responsabilidades
 
 | Agente | Responsabilidade |
 |--------|-----------------|
 | `@dev` | Verificar branch antes de qualquer edição — BLOQUEADO sem branch correta |
-| `@devops` | Criar `feat/epic-{N}` + `task/{N.M}-{descricao}` quando solicitado |
+| `@devops` | Criar `feat/epic-{N}` + `task/{N.M}-{descricao}`; abrir PR `task → feat/epic`; merge; PR `feat/epic → main` ao fim do épico |
 | `@sm` | Ao criar story, incluir `branch_name` sugerido no Dev Notes |
+
+---
+
+## Hierarquia de Branches
+
+```
+main
+  └── feat/epic-{N}         ← base do épico (não mergeia em main até épico completo)
+        ├── task/{N.1}-*    ← task 1 (PR → feat/epic após QA)
+        ├── task/{N.2}-*    ← task 2 (branches de feat/epic atualizado)
+        └── task/{N.M}-*    ← última task
+```
+
+**Regra:** `task/*` → `feat/epic-*` → `main`. Nunca `task/*` → `main`.
 
 ---
 
@@ -122,5 +183,6 @@ Não há exceções. Branch correta é pré-requisito absoluto para implementaç
 ---
 
 **Estabelecido:** 2026-05-31
+**Atualizado:** 2026-05-31 (Post-QA Flow + hierarquia de branches)
 **Owner:** @devops (Gage)
-**Enforced by:** @dev (pre-implementation check)
+**Enforced by:** @dev (pre-implementation check), @devops (post-QA PR flow)

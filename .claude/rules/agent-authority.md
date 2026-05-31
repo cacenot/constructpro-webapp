@@ -18,6 +18,8 @@ paths:
 | MCP add/remove/configure | YES | BLOCKED |
 | CI/CD pipeline management | YES | BLOCKED |
 | Release management | YES | BLOCKED |
+| PR `task/{N.M}` → `feat/epic-{N}` (post-QA) | YES | BLOCKED |
+| PR `feat/epic-{N}` → `main` (fim do épico) | YES | BLOCKED |
 
 ### @pm (Morgan) — Epic Orchestration
 
@@ -104,7 +106,12 @@ ANY agent → @devops *push
 
 ### Story Flow
 ```
-@sm *draft → @po *validate → @dev *develop → @qa *qa-gate → @devops *push
+@sm *draft → @po *validate → @dev *develop → @qa *qa-gate → @devops *task-pr (task → feat/epic)
+```
+
+### Epic Completion Flow
+```
+[todas stories Done] → @devops *epic-pr (feat/epic → main)
 ```
 
 ### Epic Flow
