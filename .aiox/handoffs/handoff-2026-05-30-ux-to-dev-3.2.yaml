@@ -1,0 +1,24 @@
+handoff:
+  from_agent: "@ux-design-expert (Uma)"
+  to_agent: "@dev (Dex)"
+  story_context:
+    story_id: "3.2"
+    story_path: "docs/stories/3.2.story.md"
+    story_status: "Ready"
+    current_task: "UX Gate completo — pronto para implementação"
+    branch: "task/3.1-comissao-criacao-proposta"
+
+  decisions:
+    - "Card 'Comissão' entre Card 'Configuração' e Card 'Pagamento' no sale-edit-form"
+    - "Card 'Comissão Prevista' em row separada (full-width) após 'Values + Contract' no detalhe — não expandir grid 2-col existente"
+    - "Selects clearable via SelectItem value='' ('Nenhum corretor' / 'Nenhuma imobiliária')"
+    - "Read-only usa padrão text-sm/font-medium já existente no Card 'Dados da Venda'"
+    - "Taxa read-only: (ppm / 10000).toFixed(2) + '%'"
+
+  files_produced:
+    - "docs/stories/3.2-ux-spec.md"
+
+  blockers: []
+
+  next_action: "@dev *develop 3.2 — UX Gate desbloqueado, implementar conforme docs/stories/3.2-ux-spec.md"
+  consumed: true

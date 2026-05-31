@@ -97,23 +97,111 @@ const installmentScheduleSchema = z
     }
   })
 
-export const saleFormSchema = z.object({
-  unit_id: z.number({ error: 'Unidade é obrigatória' }).min(1, 'Unidade é obrigatória'),
-  customer_id: z.number({ error: 'Cliente é obrigatório' }).min(1, 'Cliente é obrigatório'),
-  index_type_code: z.string().min(1, 'Índice de correção é obrigatório'),
-  installment_schedules: z
-    .array(installmentScheduleSchema)
-    .min(1, 'Pelo menos uma parcela é obrigatória'),
-})
+export const saleFormSchema = z
+  .object({
+    unit_id: z.number({ error: 'Unidade é obrigatória' }).min(1, 'Unidade é obrigatória'),
+    customer_id: z.number({ error: 'Cliente é obrigatório' }).min(1, 'Cliente é obrigatório'),
+    index_type_code: z.string().min(1, 'Índice de correção é obrigatório'),
+    installment_schedules: z
+      .array(installmentScheduleSchema)
+      .min(1, 'Pelo menos uma parcela é obrigatória'),
+    broker_id: z.number().optional().nullable(),
+    commission_broker_rate: z.number().optional().nullable(),
+    agency_id: z.number().optional().nullable(),
+    commission_agency_rate: z.number().optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.broker_id) {
+      if (data.commission_broker_rate == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Taxa de comissão do corretor é obrigatória quando corretor selecionado.',
+          path: ['commission_broker_rate'],
+        })
+      } else if (data.commission_broker_rate <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Taxa deve ser maior que zero.',
+          path: ['commission_broker_rate'],
+        })
+      }
+    }
+    if (data.agency_id) {
+      if (!data.broker_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Selecione um corretor antes de escolher imobiliária.',
+          path: ['agency_id'],
+        })
+      }
+      if (data.commission_agency_rate == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Taxa de comissão da imobiliária é obrigatória quando imobiliária selecionada.',
+          path: ['commission_agency_rate'],
+        })
+      } else if (data.commission_agency_rate <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Taxa deve ser maior que zero.',
+          path: ['commission_agency_rate'],
+        })
+      }
+    }
+  })
 
 export type SaleFormData = z.infer<typeof saleFormSchema>
 export type InstallmentScheduleFormData = z.infer<typeof installmentScheduleSchema>
 
-export const saleEditFormSchema = z.object({
-  index_type_code: z.string().min(1, 'Índice de correção é obrigatório'),
-  installment_schedules: z
-    .array(installmentScheduleSchema)
-    .min(1, 'Pelo menos uma parcela é obrigatória'),
-})
+export const saleEditFormSchema = z
+  .object({
+    index_type_code: z.string().min(1, 'Índice de correção é obrigatório'),
+    installment_schedules: z
+      .array(installmentScheduleSchema)
+      .min(1, 'Pelo menos uma parcela é obrigatória'),
+    broker_id: z.number().optional().nullable(),
+    commission_broker_rate: z.number().optional().nullable(),
+    agency_id: z.number().optional().nullable(),
+    commission_agency_rate: z.number().optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.broker_id) {
+      if (data.commission_broker_rate == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Taxa de comissão do corretor é obrigatória quando corretor selecionado.',
+          path: ['commission_broker_rate'],
+        })
+      } else if (data.commission_broker_rate <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Taxa deve ser maior que zero.',
+          path: ['commission_broker_rate'],
+        })
+      }
+    }
+    if (data.agency_id) {
+      if (!data.broker_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Selecione um corretor antes de escolher imobiliária.',
+          path: ['agency_id'],
+        })
+      }
+      if (data.commission_agency_rate == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Taxa de comissão da imobiliária é obrigatória quando imobiliária selecionada.',
+          path: ['commission_agency_rate'],
+        })
+      } else if (data.commission_agency_rate <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Taxa deve ser maior que zero.',
+          path: ['commission_agency_rate'],
+        })
+      }
+    }
+  })
 
 export type SaleEditFormData = z.infer<typeof saleEditFormSchema>
