@@ -110,10 +110,10 @@ de corretor/imobiliária/taxas na página de detalhe da venda.
 
 ## Requisitos de Compatibilidade
 
-- [ ] API `POST /api/v1/sales` com body sem campos de comissão continua funcionando (campos opcionais)
-- [ ] `PATCH /api/v1/sales/{sale_id}` sem campos de comissão é no-op (API garante)
-- [ ] Propostas existentes sem comissão continuam exibindo o detalhe sem o card de comissão
-- [ ] Nenhuma mudança em rotas, navegação ou módulos externos
+- [x] API `POST /api/v1/sales` com body sem campos de comissão continua funcionando (campos opcionais)
+- [x] `PATCH /api/v1/sales/{sale_id}` sem campos de comissão é no-op (API garante)
+- [x] Propostas existentes sem comissão continuam exibindo o detalhe sem o card de comissão
+- [x] Nenhuma mudança em rotas, navegação ou módulos externos
 
 ---
 
@@ -129,11 +129,11 @@ de corretor/imobiliária/taxas na página de detalhe da venda.
 
 ## Definition of Done
 
-- [ ] Story 3.1 concluída com UX spec aprovado e campos de comissão funcionando na criação
-- [ ] Story 3.2 concluída com comissão editável e exibida no detalhe da venda
-- [ ] Lint (`npm run lint`) e build (`npm run build`) passando sem erros
-- [ ] Funcionalidade existente de criação/edição/aprovação de venda sem regressões
-- [ ] QA gate PASS ou CONCERNS documentados em ambas as stories
+- [x] Story 3.1 concluída com UX spec aprovado e campos de comissão funcionando na criação
+- [x] Story 3.2 concluída com comissão editável e exibida no detalhe da venda
+- [x] Lint (`npm run lint`) e build (`npm run build`) passando sem erros
+- [x] Funcionalidade existente de criação/edição/aprovação de venda sem regressões
+- [x] QA gate PASS ou CONCERNS documentados em ambas as stories
 
 ---
 
