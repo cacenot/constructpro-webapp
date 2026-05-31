@@ -43,6 +43,16 @@ git push -u origin task/{N.M}-{descricao}
 
 ### 3. Desenvolvimento da task
 
+**@dev DEVE verificar branch antes de qualquer edição de arquivo:**
+
+```bash
+git branch --show-current
+# Esperado: task/{N.M}-{descricao}
+```
+
+Se branch errada → solicitar `@devops *setup-branch {storyId}` antes de continuar.
+Se branch correta → implementar normalmente.
+
 - Commits com prefixo convencional referenciando a story:
   ```
   feat(story-N.M): <descricao>
@@ -133,7 +143,15 @@ main ─────────────────────────
 ## Referência rápida
 
 ```bash
-# Criar branch de task a partir do épico
+# [DEV] Verificar branch antes de implementar (obrigatório)
+git branch --show-current
+
+# [DEVOPS] Setup completo: épico + task (quando @dev está na branch errada)
+git checkout main && git pull origin main
+git checkout -b feat/epic-{N} && git push -u origin feat/epic-{N}
+git checkout -b task/{N.M}-{descricao} && git push -u origin task/{N.M}-{descricao}
+
+# Criar branch de task a partir do épico (quando épico já existe)
 git checkout feat/epic-{N} && git checkout -b task/{N.M}-{descricao}
 
 # PR de task para o épico
