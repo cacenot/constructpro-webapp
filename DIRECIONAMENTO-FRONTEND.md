@@ -12,24 +12,24 @@
 
 ## Status de Execução Frontend
 
-> Atualizado em 2026-05-29 por `@po (Pax)`. Referência: branch `feat/2.1-api-client-bump`.
+> Atualizado em 2026-05-31 por `@po (Pax)`.
 
-| Seção | Descrição | Status Frontend | Story | Observação |
-|-------|-----------|----------------|-------|------------|
-| §0 | Bump API client 1.0.0 | 🟡 **InReview** | Story 2.1 🔄 | Dev completo, `package.json` em `1.0.0`. Aguarda QA gate para `Done` |
-| §2.3 | Labels `key_delivery` | 🟢 **EXECUTADO** | Story 2.1 ✅ | `sale.schema.ts` atualizado como breaking change |
-| §2.5 | Periodicidades (bimensal/trimestral/semestral) | 🟡 **PARCIAL** | Story 2.1 ✅ | Schema/labels OK; UI de seleção e cálculo de datas em `installment-utils.ts` pendentes — Epic 3 |
-| §3 | Empreendimento — campos novos | 🔴 **PENDENTE** | — | Necessita Epic 4 (ou story em Epic 1 expandido) |
-| §4 | Módulo Corretor | 🔴 **PENDENTE** | Story 2.2 (a criar) | Epic 2, dependência: Story 2.1 ✅ |
-| §5 | Módulo Imobiliária | 🔴 **PENDENTE** | Story 2.3 (a criar) | Epic 2, dependência: Story 2.1 ✅ |
-| §7 | Navegação (Corretores/Imobiliárias) | 🔴 **PENDENTE** | Story 2.2/2.3 | Incluído no escopo das stories de módulo |
-| §2.1 | Wizard step empreendimento × unidade | 🔴 **PENDENTE** | Epic 3 (a criar) | — |
-| §2.2 | Multi-entrada + entrada via bem (asset) | 🔴 **PENDENTE** | Epic 3 (a criar) | — |
-| §2.4 | UX da montagem de parcelas | 🔴 **PENDENTE** | Epic 3 (a criar) | — |
-| §2.7 | Vincular corretor/imobiliária à venda | 🔴 **PENDENTE** | Epic 3 (a criar) | Depende Stories 2.2 e 2.3 |
-| §2.8 | Teto de parcelas por mês | 🔴 **PENDENTE** | Epic 3 (a criar) | API entregue (#97) |
-| §2.6 | Índice por grupo de parcelas | ⚠️ **BLOQUEADO** | Epic 3 (condicional) | Aguarda API #93 |
-| §6 | Relatório de comissões | ⚠️ **BLOQUEADO** | Epic futuro | Aguarda API #95 |
+| Seção | Descrição | Status Frontend | Story/Epic | Observação |
+|-------|-----------|----------------|------------|------------|
+| §0 | Bump API client 1.0.0 | ✅ **Done** | Story 2.1 ✅ | Merged PR Epic 2 |
+| §2.3 | Labels `key_delivery` | ✅ **Done** | Story 2.1 ✅ | `sale.schema.ts` atualizado |
+| §4 | Módulo Corretor | ✅ **Done** | Story 2.2 ✅ | Epic 2 merged |
+| §5 | Módulo Imobiliária | ✅ **Done** | Story 2.3 ✅ | Epic 2 merged |
+| §7 | Navegação (Corretores/Imobiliárias) | ✅ **Done** | Story 2.2/2.3 ✅ | Menu "Comercial" atualizado |
+| §2.7 | Vincular corretor/imobiliária à venda | ✅ **Done** | Story 3.1/3.2 ✅ | Epic 3 merged |
+| §2.5 | Periodicidades (bimestral/trimestral/semestral) | 🔴 **PENDENTE** | Epic 4, Story 4.2 | UI de seleção + cálculo datas `installment-utils.ts` |
+| §2.1 | Wizard step empreendimento × unidade | 🔴 **PENDENTE** | Epic 4, Story 4.1 | — |
+| §2.2 | Multi-entrada + entrada via bem (asset) | 🔴 **PENDENTE** | Epic 4, Story 4.3 | — |
+| §2.4 | UX da montagem de parcelas | 🔴 **PENDENTE** | Epic 4, Story 4.4 | — |
+| §2.8 | Teto de parcelas por mês | 🔴 **PENDENTE** | Epic 4, Story 4.5 | API entregue (#97) |
+| §3 | Empreendimento — campos novos | 🔴 **PENDENTE** | Epic 5, Story 5.1 | — |
+| §2.6 | Índice por grupo de parcelas | ⚠️ **BLOQUEADO** | Epic 4 (condicional) | Aguarda API #93 |
+| §6 | Relatório de comissões | ⚠️ **BLOQUEADO** | Epic 6 (condicional) | Aguarda API #95 |
 
 ---
 
@@ -395,21 +395,34 @@ não nessa doc — e vale sinalizar a atualização dela.
 
 ## 10. Backlog de Execução — Estado Atual das Stories
 
-> Atualizado em 2026-05-29 por `@po (Pax)`.
+> Atualizado em 2026-05-31 por `@po (Pax)`.
 
-### Stories Existentes
+### Stories Concluídas
+
+| Story | Título | Épico | Status |
+|-------|--------|-------|--------|
+| **2.1** | Bump API client 1.0.0 | Epic 2 | ✅ **Done** |
+| **2.2** | Módulo Corretor (CRUD completo) | Epic 2 | ✅ **Done** |
+| **2.3** | Módulo Imobiliária (CRUD completo) | Epic 2 | ✅ **Done** |
+| **3.1** | Comissão na Criação de Proposta | Epic 3 | ✅ **Done** |
+| **3.2** | Comissão na Edição e Exibição de Proposta | Epic 3 | ✅ **Done** |
+
+### Stories Existentes (em andamento)
 
 | Story | Título | Épico | Status | Ação necessária |
 |-------|--------|-------|--------|----------------|
-| **2.1** | Bump API client 1.0.0 | Epic 2 | 🟡 **InReview** | Dev completo. Executar `@qa` gate e depois `@po *close-story 2.1` |
-| **1.1** | Lista de Vendas | Epic 1 | 📝 **Draft** | Validar com `@po *validate-story-draft 1.1` |
+| **1.1** | Lista de Vendas | Epic 1 | 📝 **Draft** | `@po *validate-story-draft 1.1` |
 
 ### Stories a Criar (via `@sm`)
 
 | Story | Título | Épico | Dependência | Seção DIRECIONAMENTO |
 |-------|--------|-------|-------------|---------------------|
-| **2.2** | Módulo Corretor (CRUD completo) | Epic 2 | Story 2.1 ✅ | §4 |
-| **2.3** | Módulo Imobiliária (CRUD completo) | Epic 2 | Story 2.1 ✅ | §5 |
+| **4.1** | Wizard step empreendimento × unidade | Epic 4 | — | §2.1 |
+| **4.2** | Periodicidades bimestral/trimestral/semestral | Epic 4 | — | §2.5 |
+| **4.3** | Multi-entrada + entrada via bem (asset) | Epic 4 | — | §2.2 |
+| **4.4** | UX de montagem de parcelas | Epic 4 | — | §2.4 |
+| **4.5** | Teto de parcelas por mês (cap + config tenant) | Epic 4 | — | §2.8 |
+| **5.1** | Empreendimento — completar formulário | Epic 5 | — | §3 |
 | **1.2** | Criação de Proposta (form base) | Epic 1 | Story 1.1 | §2 (estado atual) |
 | **1.3** | Detalhe de Venda | Epic 1 | Story 1.2 | — |
 | **1.4** | Edição de Proposta | Epic 1 | Story 1.3 | — |
@@ -419,26 +432,29 @@ não nessa doc — e vale sinalizar a atualização dela.
 
 > Stories 1.2–1.7 estão definidas no `epic-1-vendas-contratos.md` mas sem arquivos `.story.md` criados.
 
-### Épicos a Criar (via `@pm`)
+### Épicos Existentes
 
-| Épico | Escopo | Seções | Dependência |
-|-------|--------|--------|-------------|
-| **Epic 3** | Nova Proposta — melhorias pós-API 1.0.0 | §2.1, §2.2, §2.4, §2.5, §2.7, §2.8 | Stories 2.2 e 2.3 (§2.7) |
-| **Epic 4** | Empreendimento — completar formulário | §3 | Story 2.1 ✅ |
-| **Epic 5** (condicional) | Relatório de Comissões | §6 | Aguarda API #95 |
+| Épico | Escopo | Status |
+|-------|--------|--------|
+| **Epic 1** | Módulo de Vendas e Contratos | 🟡 Em andamento |
+| **Epic 2** | Corretores + Imobiliárias + API bump | ✅ **Done** |
+| **Epic 3** | Comissão na proposta | ✅ **Done** |
+| **Epic 4** | Nova Proposta — melhorias pós-API 1.0.0 | 📋 **Criado** — aguarda `@sm *draft` |
+| **Epic 5** | Empreendimento — completar formulário | 📋 **Criado** — aguarda `@sm *draft` |
+| **Epic 6** | Relatório de Comissões | ⚠️ **Condicional** — bloqueado API #95 |
 
 ### Próxima Ação Recomendada
 
 ```
 Prioridade 1 (paralelas, independentes):
-  @sm *draft → Story 2.2 (Corretor) — epic: epic-2-corretores-imobiliarias.md
-  @sm *draft → Story 2.3 (Imobiliária) — epic: epic-2-corretores-imobiliarias.md
+  @sm *draft → Story 4.1 (Wizard step) — epic: epic-4-nova-proposta-melhorias.md
+  @sm *draft → Story 4.2 (Periodicidades) — epic: epic-4-nova-proposta-melhorias.md
+  @sm *draft → Story 5.1 (Empreendimento campos) — epic: epic-5-empreendimento-campos.md
 
 Prioridade 2:
-  @po *validate-story-draft 1.1  (Story 1.1 já existe em Draft)
-  @sm *draft → Stories 1.2–1.7 (epic: epic-1-vendas-contratos.md)
+  @po *validate-story-draft 1.1
+  @sm *draft → Stories 4.3–4.5 (Multi-entrada, UX parcelas, Teto)
 
-Prioridade 3 (após 2.2 e 2.3):
-  @pm *create-epic → Epic 3 (Nova Proposta melhorias)
-  @pm *create-epic → Epic 4 (Empreendimento campos novos)
+Prioridade 3 (condicional — após API #95):
+  @sm *draft → Stories do Epic 6 (Relatório de Comissões)
 ```
