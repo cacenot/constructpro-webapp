@@ -87,6 +87,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           recurrence_day: null,
           recurrence_month: null,
           start_date: null,
+          asset_proposal: null,
         },
       ],
       broker_id: null,
