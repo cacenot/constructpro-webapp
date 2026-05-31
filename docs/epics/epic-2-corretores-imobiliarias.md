@@ -264,15 +264,15 @@ pnpm add -D vitest @vitest/ui @testing-library/react @testing-library/user-event
 
 ## Definição de Pronto
 
-- [ ] Story 2.1: `npm run build` 100% limpo com client 1.0.0
-- [ ] Story 2.2: CRUD de corretor funcional, acessível via menu "Comercial"
-- [ ] Story 2.3: CRUD de imobiliária funcional, acessível via menu "Comercial"
-- [ ] `npm run lint` passa em todas as stories
-- [ ] **`npx vitest run` passa 100% — BLOQUEANTE**
+- [x] Story 2.1: `npm run build` 100% limpo com client 1.0.0
+- [x] Story 2.2: CRUD de corretor funcional, acessível via menu "Comercial"
+- [x] Story 2.3: CRUD de imobiliária funcional, acessível via menu "Comercial"
+- [x] `npm run lint` passa em todas as stories
+- [x] **`npx vitest run` passa 100% — BLOQUEANTE**
 - [ ] Testes E2E — deferido como débito técnico `[EPIC2-T1]` (ver `docs/STORY-BACKLOG.md`)
-- [ ] Sem regressões em vendas, clientes, projetos e autenticação
-- [ ] Tooltips em português em todos os icon buttons dos novos módulos
-- [ ] Paginação server-side com mínimo 10 itens por página
+- [x] Sem regressões em vendas, clientes, projetos e autenticação
+- [x] Tooltips em português em todos os icon buttons dos novos módulos
+- [x] Paginação server-side com mínimo 10 itens por página
 
 ---
 
@@ -297,7 +297,7 @@ O épico entrega os módulos de mediação que desbloqueiam a Story 2.7 (vincula
 
 ```yaml
 epic_id: epic-2
-status: Ready
+status: Done
 created_by: "@pm (Morgan)"
 created_at: "2026-05-29"
 domain_reference: DIRECIONAMENTO-FRONTEND.md (§0, §4, §5, §7)
