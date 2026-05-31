@@ -1,11 +1,26 @@
 import type { SaleFormData } from '@/schemas/sale.schema'
 
+type RecurrenceType = 'monthly' | 'bimonthly' | 'quarterly' | 'semestral' | 'yearly'
+
+// Adds N months to start date, clamping the day if the target month has fewer days.
+// Fixes JS overflow: new Date(2026, 0, 31).setMonth(1) → Mar 3, not Feb 28.
+function addMonthsClamped(start: Date, monthsToAdd: number, dayOfMonth: number): Date {
+  const baseYear = start.getFullYear()
+  const baseMonth = start.getMonth()
+  const targetMonthTotal = baseMonth + monthsToAdd
+  const targetYear = baseYear + Math.floor(targetMonthTotal / 12)
+  const targetMonthIndex = ((targetMonthTotal % 12) + 12) % 12
+  const daysInTarget = new Date(targetYear, targetMonthIndex + 1, 0).getDate()
+  const targetDay = Math.min(dayOfMonth, daysInTarget)
+  return new Date(targetYear, targetMonthIndex, targetDay)
+}
+
 /**
  * Compute the default start date based on recurrence_day/month.
  * Returns the next occurrence of that day/month.
  */
 export function computeDefaultStartDate(
-  recurrenceType: 'monthly' | 'yearly',
+  recurrenceType: RecurrenceType,
   recurrenceDay: number | null | undefined,
   recurrenceMonth: number | null | undefined
 ): string {
@@ -16,7 +31,12 @@ export function computeDefaultStartDate(
   const currentMonth = now.getMonth()
   const currentDay = now.getDate()
 
-  if (recurrenceType === 'monthly') {
+  if (
+    recurrenceType === 'monthly' ||
+    recurrenceType === 'bimonthly' ||
+    recurrenceType === 'quarterly' ||
+    recurrenceType === 'semestral'
+  ) {
     const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
     const dayToUse = Math.min(recurrenceDay, daysInCurrentMonth)
 
@@ -53,12 +73,12 @@ export function computeDefaultStartDate(
 
 /**
  * Compute the allowed dates for a date input based on recurrence_day and optionally recurrence_month.
- * For monthly: only the given day of every month for the next 30 years.
- * For yearly: only the given day/month for the next 30 years.
+ * For monthly/bimonthly/quarterly/semestral: all occurrences of the given day in any month for 30 years.
+ * For yearly: only the given day/month for 30 years.
  * Returns an array of YYYY-MM-DD strings.
  */
 export function computeAllowedDates(
-  kind: 'monthly' | 'yearly',
+  kind: RecurrenceType,
   recurrenceDay: number | null | undefined,
   recurrenceMonth: number | null | undefined
 ): string[] {
@@ -68,7 +88,7 @@ export function computeAllowedDates(
   const startYear = now.getFullYear()
   const endYear = startYear + 30
 
-  if (kind === 'monthly') {
+  if (kind === 'monthly' || kind === 'bimonthly' || kind === 'quarterly' || kind === 'semestral') {
     for (let year = startYear; year <= endYear; year++) {
       for (let month = 0; month < 12; month++) {
         const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -117,13 +137,23 @@ export function computeContractEndDate(schedules: SaleFormData['installment_sche
       if (!latestDate || d > latestDate) latestDate = d
     }
 
-    if (schedule.recurrence_type === 'monthly' && schedule.start_date && schedule.recurrence_day) {
+    const intervalMap: Partial<Record<string, number>> = {
+      monthly: 1,
+      bimonthly: 2,
+      quarterly: 3,
+      semestral: 6,
+    }
+    const intervalMonths = schedule.recurrence_type
+      ? intervalMap[schedule.recurrence_type]
+      : undefined
+
+    if (intervalMonths !== undefined && schedule.start_date && schedule.recurrence_day) {
       const start = new Date(schedule.start_date)
-      const months = (schedule.quantity ?? 1) - 1
-      const end = new Date(start)
-      end.setMonth(end.getMonth() + months)
+      const intervals = (schedule.quantity ?? 1) - 1
+      const end = addMonthsClamped(start, intervals * intervalMonths, schedule.recurrence_day)
       if (!latestDate || end > latestDate) latestDate = end
-      if (months + 1 > totalMonths) totalMonths = months + 1
+      const months = intervals * intervalMonths + 1
+      if (months > totalMonths) totalMonths = months
     }
 
     if (schedule.recurrence_type === 'yearly' && schedule.start_date && schedule.recurrence_day) {

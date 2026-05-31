@@ -8,7 +8,13 @@ export const installmentKindValues = [
   'extra',
 ] as const
 export const paymentMethodValues = ['boleto', 'pix', 'cash', 'transfer', 'card'] as const
-export const recurrenceTypeValues = ['monthly', 'yearly'] as const
+export const recurrenceTypeValues = [
+  'monthly',
+  'bimonthly',
+  'quarterly',
+  'semestral',
+  'yearly',
+] as const
 
 export type InstallmentKind = (typeof installmentKindValues)[number]
 export type InstallmentPeriodicity =
