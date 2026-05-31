@@ -7,6 +7,16 @@ import { SaleForm } from '@/components/vendas/sale-form'
 import { handleApiError, throwApiError } from '@/lib/api-error'
 import type { SaleFormData } from '@/schemas/sale.schema'
 
+function buildCommissionRate(percent: number) {
+  return {
+    ppm: Math.round(percent * 10000),
+    percentage: percent.toFixed(4),
+    decimal: (percent / 100).toFixed(6),
+    basis_points: Math.round(percent * 100),
+    formatted: `${percent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`,
+  }
+}
+
 export default function SaleNewPage() {
   const { client } = useApiClient()
   const queryClient = useQueryClient()
@@ -29,6 +39,14 @@ export default function SaleNewPage() {
             recurrence_month: schedule.recurrence_month ?? undefined,
             start_date: schedule.start_date ?? undefined,
           })),
+          broker_id: data.broker_id ?? undefined,
+          commission_broker_rate: data.commission_broker_rate
+            ? buildCommissionRate(data.commission_broker_rate)
+            : undefined,
+          agency_id: data.agency_id ?? undefined,
+          commission_agency_rate: data.commission_agency_rate
+            ? buildCommissionRate(data.commission_agency_rate)
+            : undefined,
         },
       })
 
