@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Loader2, Plus, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, Loader2, Plus, Save, Trash2 } from 'lucide-react'
 import * as React from 'react'
 import type {
   FieldArrayWithId,
@@ -12,6 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CurrencyInput, formatCentsToDisplay } from '@/components/ui/currency-input'
 import { CustomerAutocomplete, type SelectedCustomer } from '@/components/ui/customer-autocomplete'
 import { DatePicker } from '@/components/ui/date-picker'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import type { SelectedProject } from '@/components/ui/project-autocomplete'
@@ -128,6 +136,54 @@ export function SaleFormStep2({
       recurrence_type: 'yearly',
       recurrence_day: recurrenceDay,
       recurrence_month: recurrenceMonth,
+      start_date: startDate || null,
+    })
+  }, [append])
+
+  const addBimonthlySchedule = React.useCallback(() => {
+    const recurrenceDay = 10
+    const startDate = computeDefaultStartDate('bimonthly', recurrenceDay, null)
+    append({
+      kind: 'regular',
+      payment_method: 'boleto',
+      quantity: 1,
+      amount: 0,
+      specific_date: null,
+      recurrence_type: 'bimonthly',
+      recurrence_day: recurrenceDay,
+      recurrence_month: null,
+      start_date: startDate || null,
+    })
+  }, [append])
+
+  const addQuarterlySchedule = React.useCallback(() => {
+    const recurrenceDay = 10
+    const startDate = computeDefaultStartDate('quarterly', recurrenceDay, null)
+    append({
+      kind: 'regular',
+      payment_method: 'boleto',
+      quantity: 1,
+      amount: 0,
+      specific_date: null,
+      recurrence_type: 'quarterly',
+      recurrence_day: recurrenceDay,
+      recurrence_month: null,
+      start_date: startDate || null,
+    })
+  }, [append])
+
+  const addSemestralSchedule = React.useCallback(() => {
+    const recurrenceDay = 10
+    const startDate = computeDefaultStartDate('semestral', recurrenceDay, null)
+    append({
+      kind: 'regular',
+      payment_method: 'boleto',
+      quantity: 1,
+      amount: 0,
+      specific_date: null,
+      recurrence_type: 'semestral',
+      recurrence_day: recurrenceDay,
+      recurrence_month: null,
       start_date: startDate || null,
     })
   }, [append])
@@ -449,21 +505,37 @@ export function SaleFormStep2({
           <div>
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm font-medium">Parcelas</p>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={addMonthlySchedule}>
-                  <Plus className="mr-2 size-4" />
-                  Mensais
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={addYearlySchedule}>
-                  <Plus className="mr-2 size-4" />
-                  Anuais
-                </Button>
-              </div>
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="outline" size="sm">
+                        <Plus className="mr-2 size-4" />
+                        Adicionar Parcelas
+                        <ChevronDown className="ml-2 size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Adicionar grupo de parcelas</p>
+                  </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Tipo de Parcela</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={addMonthlySchedule}>Mensais</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={addBimonthlySchedule}>Bimestrais</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={addQuarterlySchedule}>Trimestrais</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={addSemestralSchedule}>Semestrais</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={addYearlySchedule}>Anuais</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {fields.length <= 1 && (
               <p className="mb-3 text-sm text-muted-foreground">
-                Clique em "Mensais" ou "Anuais" para adicionar parcelas.
+                Clique em "Adicionar Parcelas" para adicionar parcelas mensais, bimestrais,
+                trimestrais, semestrais ou anuais.
               </p>
             )}
 
@@ -471,7 +543,13 @@ export function SaleFormStep2({
               {fields.map((field, index) => {
                 if (index === 0) return null
                 const schedule = watchedSchedules?.[index]
-                const recurrenceType = schedule?.recurrence_type as 'monthly' | 'yearly' | undefined
+                const recurrenceType = schedule?.recurrence_type as
+                  | 'monthly'
+                  | 'bimonthly'
+                  | 'quarterly'
+                  | 'semestral'
+                  | 'yearly'
+                  | undefined
                 const recurrenceDay = schedule?.recurrence_day
                 const recurrenceMonth = schedule?.recurrence_month
 
@@ -598,7 +676,11 @@ export function SaleFormStep2({
                                   f.onChange(val)
                                   if (
                                     recurrenceType &&
-                                    (recurrenceType === 'monthly' || recurrenceType === 'yearly')
+                                    (recurrenceType === 'monthly' ||
+                                      recurrenceType === 'bimonthly' ||
+                                      recurrenceType === 'quarterly' ||
+                                      recurrenceType === 'semestral' ||
+                                      recurrenceType === 'yearly')
                                   ) {
                                     const newStartDate = computeDefaultStartDate(
                                       recurrenceType,

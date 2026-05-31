@@ -1,0 +1,16 @@
+schema: 1
+story: '4.1'
+gate: PASS
+status_reason: 'Todos os 7 ACs implementados corretamente. Lint limpo, build TypeScript sem erros, zero regressão em sale-edit-form.tsx.'
+reviewer: 'Quinn'
+updated: '2026-05-31T00:00:00Z'
+top_issues:
+  - id: 'MNT-001'
+    severity: low
+    finding: 'fetchProjectNames permanece definido em unit-autocomplete.tsx mesmo quando projectId fornecido — dead code nesse contexto, mas necessário para retrocompatibilidade (backward compat via enabled: !projectId)'
+    suggested_action: 'Manter como está — não é bug. Avaliar extração futura se UnitAutocomplete for simplificado'
+  - id: 'MNT-002'
+    severity: low
+    finding: 'ProjectAutocomplete no SaleFormStep1 usa <Label> ao invés de <FormLabel> — sem associação formal de form field para o campo de empreendimento'
+    suggested_action: 'Manter como está — funciona corretamente e é consistent com outros autocompletes no projeto. Corrigir se houver padronização futura'
+waiver: { active: false }
