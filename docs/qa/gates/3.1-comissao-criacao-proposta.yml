@@ -1,0 +1,12 @@
+schema: 1
+story: '3.1'
+gate: PASS
+status_reason: 'Todos os 10 critérios de aceitação implementados corretamente. Lint e build sem erros.'
+reviewer: 'Quinn'
+updated: '2026-05-30T22:03:00Z'
+top_issues:
+  - id: 'UX-001'
+    severity: low
+    finding: 'Select de Corretor/Imobiliária sem opção de limpeza (clear) — usuário não consegue desmarcar após seleção sem recarregar o formulário.'
+    suggested_action: 'Adicionar SelectItem "Nenhum" ou botão de clear em story 3.2 ou como melhoria incremental'
+waiver: { active: false }
