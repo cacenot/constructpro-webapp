@@ -1,0 +1,24 @@
+handoff:
+  from_agent: "@ux-design-expert (Uma)"
+  to_agent: "@dev (Dex)"
+  story_context:
+    story_id: "3.1"
+    story_path: "docs/stories/3.1.story.md"
+    story_status: "Draft"
+    current_task: "UX Gate completo — pronto para implementação"
+    branch: "feat/epic-3"
+
+  decisions:
+    - "Card 'Comissão' entre Card 'Dados da Venda' e Card 'Pagamento' na left column"
+    - "Taxas unmounted (não disabled) — renderização condicional via watchedBrokerId"
+    - "Select Imobiliária: sempre visível, disabled={!watchedBrokerId} + aria-disabled"
+    - "Placeholder muda conforme estado do broker (2 textos diferentes)"
+    - "Input taxa: type=number, step=0.01 — usuário digita %, conversão PPM apenas no mutationFn"
+
+  files_produced:
+    - "docs/stories/3.1-ux-spec.md"
+
+  blockers: []
+
+  next_action: "@dev *develop 3.1 — UX Gate desbloqueado, implementar conforme docs/stories/3.1-ux-spec.md"
+  consumed: true

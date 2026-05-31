@@ -35,7 +35,7 @@ Itens de débito técnico, follow-ups e otimizações rastreados por story/épic
   - [ ] CI pipeline passa com suíte E2E completa do épico
 - **Acceptance**: `npx playwright test e2e/` passa 100% sem erros para todos os módulos do Épico 2.
 - **Referências**:
-  - `docs/stories/epic-2-corretores-imobiliarias.md` — seção "Testes E2E"
+  - `docs/epics/epic-2-corretores-imobiliarias.md` — seção "Testes E2E"
   - `docs/stories/2.2.story.md` — AC 18, Task 9
   - `docs/stories/2.1.story.md` — Task 7
 
