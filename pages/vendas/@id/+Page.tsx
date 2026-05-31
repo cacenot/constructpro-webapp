@@ -405,6 +405,59 @@ export default function SaleDetailPage() {
           </Card>
         </div>
 
+        {/* Comissão Prevista */}
+        {sale.broker_id && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Comissão Prevista</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Corretor</span>
+                <span className="tabular-nums text-sm">{sale.broker?.full_name ?? '—'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Taxa do corretor</span>
+                <span className="tabular-nums text-sm">
+                  {sale.commission_broker_rate?.ppm != null
+                    ? `${(sale.commission_broker_rate.ppm / 10000).toFixed(2)}%`
+                    : '—'}
+                </span>
+              </div>
+              {sale.agency_id && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Imobiliária</span>
+                    <span className="tabular-nums text-sm">
+                      {sale.agency?.trade_name ?? sale.agency?.legal_name ?? '—'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Taxa da imobiliária</span>
+                    <span className="tabular-nums text-sm">
+                      {sale.commission_agency_rate?.ppm != null
+                        ? `${(sale.commission_agency_rate.ppm / 10000).toFixed(2)}%`
+                        : '—'}
+                    </span>
+                  </div>
+                </>
+              )}
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Total estimado</span>
+                <span className="tabular-nums font-semibold">
+                  {formatCurrency(
+                    (((sale.commission_broker_rate?.ppm ?? 0) / 10000 +
+                      (sale.commission_agency_rate?.ppm ?? 0) / 10000) /
+                      100) *
+                      (sale.amount.cents / 100)
+                  )}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Cronograma de Parcelas */}
         {summary?.schedules && summary.schedules.length > 0 && (
           <Card>

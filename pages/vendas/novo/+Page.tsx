@@ -5,17 +5,8 @@ import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { SaleForm } from '@/components/vendas/sale-form'
 import { handleApiError, throwApiError } from '@/lib/api-error'
+import { buildCommissionRate } from '@/lib/commission-utils'
 import type { SaleFormData } from '@/schemas/sale.schema'
-
-function buildCommissionRate(percent: number) {
-  return {
-    ppm: Math.round(percent * 10000),
-    percentage: percent.toFixed(4),
-    decimal: (percent / 100).toFixed(6),
-    basis_points: Math.round(percent * 100),
-    formatted: `${percent.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`,
-  }
-}
 
 export default function SaleNewPage() {
   const { client } = useApiClient()
