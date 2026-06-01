@@ -41,11 +41,14 @@ parcelas e guardrail de teto de parcelas por mês-calendário.
    mais clara com grupos (entrada, regular, balão, entrega das chaves, extra).
 5. **Story 4.5 — Teto de parcelas por mês:** validação local (pré-submit) e tratamento do 422 do
    backend; configuração `max_installments_per_month` na tela de configurações do tenant.
+6. **Story 4.6 — Wizard 3 steps com resumo financeiro persistente:** refatorar wizard de 2 para
+   3 steps (Dados da Venda, Comissão, Pagamento); extrair `<SaleFormSummary>` como sidebar
+   persistente em todos os steps.
 
-**Item condicional (bloqueado):**
+**Item condicional (bloqueado — futuro):**
 - **§2.6 — Índice por grupo de parcelas:** mover seletor de índice para dentro de cada grupo.
   Bloqueado por API [#93](https://github.com/cacenot/construct-pro-api/issues/93). Incluir como
-  Story 4.6 quando a API entregar.
+  Story 4.7 quando a API entregar.
 
 ---
 
@@ -201,7 +204,40 @@ e adicionar campo de configuração `max_installments_per_month` na tela de conf
 
 ---
 
-### Story 4.6 — Índice por grupo de parcelas [CONDICIONAL — bloqueado API #93]
+### Story 4.6 — Wizard 3 steps: Dados da Venda → Comissão → Pagamento com resumo financeiro persistente
+
+**Descrição:** Refatorar o wizard de nova proposta de 2 para 3 steps claramente separados —
+Dados da Venda (empreendimento + cliente + unidade), Comissão (corretor, imobiliária, taxas) e
+Pagamento (schedules de parcelas) — com componente `<SaleFormSummary>` extraído e exibido como
+sidebar persistente em todos os 3 steps.
+
+**Executor Assignment:** `executor: @dev`, `quality_gate: @qa`
+**Quality Gate Tools:** `[ux_review, regression_check, component_extraction]`
+**UX Gate:** `@ux-design-expert` produz `docs/stories/4.6-ux-spec.md` antes de `@dev` iniciar.
+
+**Escopo:**
+- `src/components/vendas/sale-form.tsx` — refatorar state para `1|2|3`, atualizar stepper,
+  orquestrar 3 sub-componentes + `<SaleFormSummary>` como sidebar em todos os steps
+- `src/components/vendas/sale-form-step1.tsx` — renomear label para "Dados da Venda"
+- `src/components/vendas/sale-form-step2.tsx` — refatorar para conter **apenas** campos de
+  Comissão (broker_id, agency_id, commission_broker_rate, commission_agency_rate)
+- `src/components/vendas/sale-form-step3.tsx` — **novo arquivo**; blocos de parcelas
+  movidos do atual `sale-form-step2.tsx`
+- `src/components/vendas/sale-form-summary.tsx` — **novo arquivo**; extração do bloco
+  `<Card>Resumo Financeiro</Card>` do atual `sale-form.tsx`
+
+**API:** ✅ Sem chamadas novas — refatoração puramente de UI/componentes.
+
+**AC principais:**
+- Wizard com 3 steps: "Dados da Venda", "Comissão", "Pagamento"
+- `<SaleFormSummary>` renderizado em todos os 3 steps como sidebar
+- Step 1 com estado vazio no resumo (sem unidade selecionada)
+- Navegação: Step 1 → 2 (só com unidade), 2 → 3, 3 → submit
+- Nenhuma regressão: asset, multi-entrada, periodicidades funcionando
+
+---
+
+### Story 4.7 — Índice por grupo de parcelas [CONDICIONAL — bloqueado API #93]
 
 **Descrição:** Mover seletor de índice do nível global da proposta para dentro de cada grupo de
 parcelas, com toggle "usar o mesmo índice para toda a proposta".
@@ -238,23 +274,27 @@ parcelas, com toggle "usar o mesmo índice para toda a proposta".
 
 ```
 Story 4.1 (Wizard) ─┐
-Story 4.2 (Period.) ─┤─► Story 4.4 (UX builder) ─► Story 4.5 (Teto)
-Story 4.3 (Asset)  ─┘
+Story 4.2 (Period.) ─┤─► Story 4.4 (UX builder) ─► Story 4.5 (Teto) ─┐
+Story 4.3 (Asset)  ─┘                                                    ├─► Story 4.6 (3 Steps)
+                                                    (pode rodar em ──────┘
+                                                     paralelo com 4.4)
 ```
 
 Story 4.4 depende de 4.1, 4.2, 4.3 para ter todos os grupos definidos no builder.
 Story 4.5 pode rodar em paralelo com 4.4 (afeta config do tenant, não o builder).
+Story 4.6 pode rodar em paralelo com 4.4/4.5 — é refatoração estrutural independente do builder.
+Story 4.7 bloqueada por API #93 — condicional.
 
 ---
 
 ## Definition of Done
 
-- [ ] Stories 4.1–4.5 concluídas e QA gate PASS/CONCERNS documentados
+- [ ] Stories 4.1–4.6 concluídas e QA gate PASS/CONCERNS documentados
 - [ ] `npm run build` limpo
 - [ ] `npm run lint` sem warnings
 - [ ] Testes unitários `installment-utils.test.ts` passando (Story 4.2)
 - [ ] Sem regressão no fluxo completo de proposta (criação → aprovação → contrato)
-- [ ] Story 4.6 em aguardo da API #93
+- [ ] Story 4.7 em aguardo da API #93
 
 ---
 
@@ -266,7 +306,7 @@ status: Ready
 created_by: "@po (Pax)"
 created_at: "2026-05-31"
 domain_reference: DIRECIONAMENTO-FRONTEND.md (§2.1, §2.2, §2.4, §2.5, §2.8)
-stories_count: 5 (+ 1 condicional)
+stories_count: 6 (+ 1 condicional)
 risk_level: MEDIUM
 priority: "Alta — melhorias no core do fluxo comercial, API já entregue"
 next_agent: "@sm"
@@ -275,5 +315,5 @@ dependencies:
   - "Epic 2: API client 1.0.0 ✅"
   - "Epic 3: Comissão na proposta ✅"
 blocked_items:
-  - "Story 4.6: índice por grupo — bloqueado API #93"
+  - "Story 4.7: índice por grupo — bloqueado API #93"
 ```
