@@ -1,8 +1,6 @@
+import { validateCNPJ } from '@cacenot/construct-pro-api-client'
 import { z } from 'zod'
 
-/**
- * Text input max lengths for project fields
- */
 export const PROJECT_TEXT_LIMITS = {
   NAME: 200,
   DESCRIPTION: 2000,
@@ -14,6 +12,15 @@ export const PROJECT_TEXT_LIMITS = {
   POSTAL_CODE: 20,
   FLOORS: 10,
   FEATURE: 100,
+  TOTAL_AREA: 100,
+  LEGAL_NAME: 200,
+  TRADE_NAME: 200,
+  STATE_REGISTRATION: 50,
+  MUNICIPAL_REGISTRATION: 50,
+  INCORPORATION_REGISTRY_NUMBER: 100,
+  MOTHER_PROPERTY_REGISTRATION: 100,
+  CONSTRUCTION_PERMIT_NUMBER: 100,
+  OCCUPANCY_PERMIT_NUMBER: 100,
 } as const
 
 /**
@@ -78,6 +85,100 @@ export const projectCreateSchema = z.object({
   delivery_date: z.string().optional().nullable(),
 
   features: z.array(z.string().max(PROJECT_TEXT_LIMITS.FEATURE)).optional(),
+
+  total_area: z
+    .string()
+    .max(PROJECT_TEXT_LIMITS.TOTAL_AREA, `Máximo ${PROJECT_TEXT_LIMITS.TOTAL_AREA} caracteres`)
+    .optional()
+    .nullable(),
+
+  cnpj: z
+    .string()
+    .optional()
+    .nullable()
+    .refine(
+      (val) => {
+        if (!val) return true
+        const digits = val.replace(/\D/g, '')
+        if (digits.length !== 14) return false
+        return validateCNPJ(digits)
+      },
+      { message: 'CNPJ inválido' }
+    ),
+
+  legal_name: z
+    .string()
+    .max(PROJECT_TEXT_LIMITS.LEGAL_NAME, `Máximo ${PROJECT_TEXT_LIMITS.LEGAL_NAME} caracteres`)
+    .optional()
+    .nullable(),
+
+  trade_name: z
+    .string()
+    .max(PROJECT_TEXT_LIMITS.TRADE_NAME, `Máximo ${PROJECT_TEXT_LIMITS.TRADE_NAME} caracteres`)
+    .optional()
+    .nullable(),
+
+  state_registration: z
+    .string()
+    .max(
+      PROJECT_TEXT_LIMITS.STATE_REGISTRATION,
+      `Máximo ${PROJECT_TEXT_LIMITS.STATE_REGISTRATION} caracteres`
+    )
+    .optional()
+    .nullable(),
+
+  municipal_registration: z
+    .string()
+    .max(
+      PROJECT_TEXT_LIMITS.MUNICIPAL_REGISTRATION,
+      `Máximo ${PROJECT_TEXT_LIMITS.MUNICIPAL_REGISTRATION} caracteres`
+    )
+    .optional()
+    .nullable(),
+
+  incorporation_registry_number: z
+    .string()
+    .max(
+      PROJECT_TEXT_LIMITS.INCORPORATION_REGISTRY_NUMBER,
+      `Máximo ${PROJECT_TEXT_LIMITS.INCORPORATION_REGISTRY_NUMBER} caracteres`
+    )
+    .optional()
+    .nullable(),
+
+  mother_property_registration: z
+    .string()
+    .max(
+      PROJECT_TEXT_LIMITS.MOTHER_PROPERTY_REGISTRATION,
+      `Máximo ${PROJECT_TEXT_LIMITS.MOTHER_PROPERTY_REGISTRATION} caracteres`
+    )
+    .optional()
+    .nullable(),
+
+  cno: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((val) => !val || val.replace(/\D/g, '').length === 12, {
+      message: 'CNO deve ter exatamente 12 dígitos',
+    }),
+
+  construction_permit_number: z
+    .string()
+    .max(
+      PROJECT_TEXT_LIMITS.CONSTRUCTION_PERMIT_NUMBER,
+      `Máximo ${PROJECT_TEXT_LIMITS.CONSTRUCTION_PERMIT_NUMBER} caracteres`
+    )
+    .optional()
+    .nullable(),
+
+  occupancy_permit_number: z
+    .string()
+    .max(
+      PROJECT_TEXT_LIMITS.OCCUPANCY_PERMIT_NUMBER,
+      `Máximo ${PROJECT_TEXT_LIMITS.OCCUPANCY_PERMIT_NUMBER} caracteres`
+    )
+    .optional()
+    .nullable(),
 })
 
 /**
