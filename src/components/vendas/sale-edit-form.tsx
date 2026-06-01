@@ -126,8 +126,11 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
               amount: s.amount,
               specific_date: s.specific_date ?? null,
               recurrence_type: s.recurrence_type ?? null,
-              recurrence_day: null,
-              recurrence_month: null,
+              recurrence_day: s.start_date ? new Date(`${s.start_date}T12:00:00`).getDate() : null,
+              recurrence_month:
+                s.recurrence_type === 'yearly' && s.start_date
+                  ? new Date(`${s.start_date}T12:00:00`).getMonth() + 1
+                  : null,
               start_date: s.start_date ?? null,
               asset_proposal: (s.asset_proposal ??
                 null) as InstallmentScheduleFormData['asset_proposal'],

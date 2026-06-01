@@ -78,6 +78,25 @@ function getDefaultAssetMetadata(type: AssetType) {
   }
 }
 
+// Session-scoped cache: same allowedDates set → same disabledDates list
+const _disabledDatesCache = new Map<string, string[]>()
+
+function getDisabledDates(allowedDates: string[]): string[] {
+  if (!allowedDates.length) return []
+  const key = allowedDates.join(',')
+  const cached = _disabledDatesCache.get(key)
+  if (cached) return cached
+  const today = new Date()
+  const result = Array.from({ length: 10957 }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(d.getDate() + i)
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return allowedDates.includes(iso) ? '' : iso
+  }).filter(Boolean)
+  _disabledDatesCache.set(key, result)
+  return result
+}
+
 function getScheduleBadgeLabel(kind: InstallmentKind, recurrenceType?: string | null): string {
   if (kind === 'regular' && recurrenceType) {
     return INSTALLMENT_PERIODICITY_LABELS[recurrenceType as InstallmentPeriodicity] ?? 'Regular'
@@ -955,14 +974,7 @@ export function InstallmentScheduleBuilder({
                         ? computeAllowedDates(recurrenceType, recurrenceDay, recurrenceMonth)
                         : []
 
-                    const disabledDates = allowedDates.length
-                      ? Array.from({ length: 10957 }, (_, i) => {
-                          const d = new Date()
-                          d.setDate(d.getDate() + i)
-                          const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-                          return allowedDates.includes(iso) ? '' : iso
-                        }).filter(Boolean)
-                      : []
+                    const disabledDates = getDisabledDates(allowedDates)
 
                     return (
                       <div
