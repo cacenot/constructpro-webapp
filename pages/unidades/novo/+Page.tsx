@@ -19,9 +19,14 @@ export default function UnitNewPage() {
           category: data.category,
           project_id: data.project_id,
           area: data.area,
-          // UnitCreate.price type in generated schema is wrong (Money object instead of integer)
-          // API expects integer cents — cast is required until schema is corrected upstream
-          price: data.price_cents as unknown as { cents: number; decimal: string; brl: string },
+          price: {
+            cents: data.price_cents,
+            decimal: (data.price_cents / 100).toFixed(2),
+            brl: (data.price_cents / 100).toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            }),
+          },
           description: data.description || null,
           apartment_type: data.apartment_type || null,
           bedrooms: data.bedrooms ?? null,
