@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { type BrasilApiCepResponse, CEPInput } from '@/components/ui/cep-input'
+import { CNPJInput } from '@/components/ui/document-input'
 import { FeaturesInput } from '@/components/ui/features-input'
 import {
   Form,
@@ -84,6 +85,17 @@ export function ProjectForm({
       floors: initialData?.floors || '',
       delivery_date: initialData?.delivery_date || null,
       features: initialData?.features || [],
+      total_area: initialData?.total_area || '',
+      cnpj: initialData?.cnpj || '',
+      legal_name: initialData?.legal_name || '',
+      trade_name: initialData?.trade_name || '',
+      state_registration: initialData?.state_registration || '',
+      municipal_registration: initialData?.municipal_registration || '',
+      incorporation_registry_number: initialData?.incorporation_registry_number || '',
+      mother_property_registration: initialData?.mother_property_registration || '',
+      cno: initialData?.cno || '',
+      construction_permit_number: initialData?.construction_permit_number || '',
+      occupancy_permit_number: initialData?.occupancy_permit_number || '',
     },
   })
 
@@ -207,6 +219,26 @@ export function ProjectForm({
                   <FormDescription>
                     {field.value?.length || 0}/{PROJECT_TEXT_LIMITS.DESCRIPTION} caracteres
                   </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Total Area */}
+            <FormField
+              control={form.control}
+              name="total_area"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Área Total</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={field.value || ''}
+                      maxLength={PROJECT_TEXT_LIMITS.TOTAL_AREA}
+                      placeholder="Ex: 12.500 m²"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -421,6 +453,221 @@ export function ProjectForm({
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
+
+        {/* SPE */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Pessoa Jurídica (SPE)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-12">
+              <FormField
+                control={form.control}
+                name="cnpj"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-4">
+                    <FormLabel>CNPJ</FormLabel>
+                    <FormControl>
+                      <CNPJInput value={field.value || ''} onChange={field.onChange} />
+                    </FormControl>
+                    <FormDescription>Quando vazio, herda os dados da organização</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="legal_name"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-8">
+                    <FormLabel>Razão Social</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        maxLength={PROJECT_TEXT_LIMITS.LEGAL_NAME}
+                      />
+                    </FormControl>
+                    <FormDescription>Quando vazio, herda os dados da organização</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-12">
+              <FormField
+                control={form.control}
+                name="trade_name"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-6">
+                    <FormLabel>Nome Fantasia</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        maxLength={PROJECT_TEXT_LIMITS.TRADE_NAME}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Registros e Alvarás */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Registros e Alvarás</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-12">
+              <FormField
+                control={form.control}
+                name="incorporation_registry_number"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-6">
+                    <FormLabel>Registro de Incorporação (R.I.)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        maxLength={PROJECT_TEXT_LIMITS.INCORPORATION_REGISTRY_NUMBER}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="mother_property_registration"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-6">
+                    <FormLabel>Matrícula Mãe</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        maxLength={PROJECT_TEXT_LIMITS.MOTHER_PROPERTY_REGISTRATION}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-12">
+              <FormField
+                control={form.control}
+                name="cno"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-4">
+                    <FormLabel>CNO (Cadastro Nacional de Obras)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        inputMode="numeric"
+                        maxLength={12}
+                        placeholder="000000000000"
+                      />
+                    </FormControl>
+                    <FormDescription>Exatamente 12 dígitos</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="construction_permit_number"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-4">
+                    <FormLabel>Alvará de Construção</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        maxLength={PROJECT_TEXT_LIMITS.CONSTRUCTION_PERMIT_NUMBER}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="occupancy_permit_number"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-4">
+                    <FormLabel>Habite-se</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        maxLength={PROJECT_TEXT_LIMITS.OCCUPANCY_PERMIT_NUMBER}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Inscrições */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Inscrições</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-12">
+              <FormField
+                control={form.control}
+                name="state_registration"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-6">
+                    <FormLabel>Inscrição Estadual (IE)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        maxLength={PROJECT_TEXT_LIMITS.STATE_REGISTRATION}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="municipal_registration"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-6">
+                    <FormLabel>Inscrição Municipal (IM)</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        value={field.value || ''}
+                        maxLength={PROJECT_TEXT_LIMITS.MUNICIPAL_REGISTRATION}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 

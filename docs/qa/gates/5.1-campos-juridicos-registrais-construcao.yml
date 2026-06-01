@@ -1,0 +1,16 @@
+schema: 1
+story: "5.1"
+gate: CONCERNS
+status_reason: "Implementação correta em project-form.tsx e project.schema.ts; porém a page de edição (editar/+Page.tsx) não inclui os 11 novos campos em initialData — projetos com esses campos preenchidos perderão os valores ao editar. Fix trivial e deve ser aplicado antes do primeiro uso real."
+reviewer: Quinn
+updated: "2026-06-01T13:05:00Z"
+top_issues:
+  - id: "REQ-001"
+    severity: high
+    finding: "pages/empreendimentos/@id/editar/+Page.tsx — initialData não mapeia os 11 novos campos (total_area, cnpj, legal_name, trade_name, state_registration, municipal_registration, incorporation_registry_number, mother_property_registration, cno, construction_permit_number, occupancy_permit_number). O objeto project retornado pela API já inclui esses campos, mas eles são omitidos do mapeamento manual. Resultado: form de edição sempre exibe os novos campos vazios; ao salvar, sobrescreve os valores existentes com string vazia/null."
+    suggested_action: "Adicionar os 11 campos ao objeto initialData na editar page. Cada campo segue o mesmo padrão dos existentes: campo: project.campo (o tipo da API já os inclui como opcionais). Fix de ~11 linhas."
+  - id: "TEST-001"
+    severity: low
+    finding: "Smoke tests 6.3–6.6 não executados (pendentes de execução manual). Não há evidência de teste real do fluxo de criação/edição com os novos campos."
+    suggested_action: "Executar smoke tests manualmente antes de PR para produção. Especialmente 6.6 (que ficará verde somente após fix do REQ-001)."
+waiver: { active: false }
