@@ -47,6 +47,13 @@ export const tenantConfigSchema = z
       .nullable()
       .optional(),
 
+    // --- Parcelas por mês ---
+    max_installments_per_month: z
+      .number()
+      .int('Deve ser inteiro')
+      .min(1, 'Mínimo de 1')
+      .max(5, 'Máximo de 5'),
+
     // --- Correção monetária ---
     correction_basis: z.enum(['outstanding_balance', 'total_contract_value']),
     apply_index_on_overdue_installments: z.boolean(),

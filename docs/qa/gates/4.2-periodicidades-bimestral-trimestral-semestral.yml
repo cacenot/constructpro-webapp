@@ -1,0 +1,56 @@
+schema: 1
+story: "4.2"
+story_title: "Periodicidades Bimestral/Trimestral/Semestral"
+gate: PASS
+status_reason: "Todos os 8 ACs verificados. 248 testes passando, lint limpo, build limpo. Um bug pré-existente em computeDefaultStartDate (November/December) documentado como recomendação futura — não introduzido por esta story."
+reviewer: "Quinn (Test Architect)"
+updated: "2026-05-31T15:55:00-03:00"
+
+top_issues: []
+waiver:
+  active: false
+
+quality_score: 90
+expires: "2026-06-14T15:55:00-03:00"
+
+evidence:
+  tests_reviewed: 248
+  risks_identified: 1
+  coderabbit_scan: "not_available — CLI não instalado"
+  smoke_test: "débito técnico — verificado via code review; Playwright não disponível"
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Sem operações sensíveis. Apenas lógica de cálculo de datas e schema Zod."
+  performance:
+    status: PASS
+    notes: "computeAllowedDates gera ~360 datas por chamada (30 anos × 12 meses). Dentro do esperado para date pickers."
+  reliability:
+    status: PASS
+    notes: "addMonthsClamped corrige overflow JS pré-existente em monthly. Testes cobrem clamp nos 6 casos de borda exigidos."
+  maintainability:
+    status: PASS
+    notes: "Código limpo, padrões consistentes com codebase. BiomeJS sem warnings."
+
+recommendations:
+  immediate: []
+  future:
+    - action: >
+        Corrigir bug pré-existente em computeDefaultStartDate para edge cases de novembro/dezembro.
+        Quando currentMonth=10 (novembro) e o dia já passou, a função retorna janeiro do próximo
+        ano em vez de dezembro do ano corrente. Quando currentMonth=11 (dezembro) e o dia já
+        passou, retorna formatDateISO(year, 13, ...) que é uma data inválida.
+        Fix: usar new Date(year, currentMonth + 1, 1) para calcular nextMonth corretamente.
+      refs:
+        - "src/lib/installment-utils.ts:47-54"
+    - action: >
+        Executar smoke test manual (Task 6.4) quando Playwright estiver disponível.
+        Verificar: formulário de nova proposta, adicionar parcela bimestral, validar que
+        date picker só habilita após informar dia e que data sugerida está correta.
+      refs:
+        - "src/components/vendas/sale-form-step2.tsx"
+        - "src/components/vendas/sale-edit-form.tsx"

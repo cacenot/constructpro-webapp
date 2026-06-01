@@ -1,0 +1,70 @@
+schema: 1
+story: '4.3'
+story_title: 'Multi-entrada + entrada via bem (asset)'
+gate: PASS
+status_reason: 'Todos os issues resolvidos: HIGH-1 (useState 2→1), MEDIUM-1 (FormField wrapper em step2+edit-form). MEDIUM-2 wontfix: API schema define asset_proposal como { [key: string]: unknown }, backend aceita campos extras em asset_metadata.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-05-31T00:00:00Z'
+
+top_issues:
+  - id: 'HIGH-1'
+    severity: high
+    file: 'src/components/vendas/sale-form.tsx'
+    line: 29
+    description: 'useState<1 | 2>(2) introduzido nesta story (git diff confirmado). Formulário de nova proposta inicia no Step 2, bypassando seleção obrigatória de empreendimento/unidade. Regressão funcional completa do fluxo de criação.'
+    fix: 'Mudar para useState<1 | 2>(1).'
+    suggested_owner: dev
+
+  - id: 'MEDIUM-1'
+    severity: medium
+    file: 'src/components/vendas/sale-form-step2.tsx'
+    line: 622
+    description: 'Select "Tipo de Bem" envolto em <FormItem> sem <FormField control={...} name={...}>. FormMessage não tem contexto de campo — erros de validação para tipo de bem não são exibidos ao usuário. Silêncio na validação: submit bloqueado mas sem mensagem visível.'
+    fix: 'Substituir <FormItem> por <FormField control={form.control} name={`installment_schedules.${realIndex}.asset_proposal`}> (ou subpath equivalente). Aplicar o mesmo fix em sale-edit-form.tsx:791.'
+    suggested_owner: dev
+
+  - id: 'MEDIUM-2'
+    severity: medium
+    status: wontfix
+    file: 'src/schemas/sale.schema.ts'
+    line: 62
+    description: 'assetMetadataSchema é discriminated union com discriminante type. Como getDefaultAssetMetadata inclui type no objeto retornado (obrigatório pelo Zod), o payload enviado à API inclui asset_metadata.type além de asset_proposal.type — campo redundante não especificado no contrato de API. Baixo risco se backend ignora campos extras, mas não confirmado.'
+    fix: 'WONTFIX: API schema (v1.1.0) define asset_proposal como { [key: string]: unknown } — aceita campos extras sem restrição. Campo type em asset_metadata é válido.'
+    suggested_owner: dev
+
+waiver: { active: false }
+
+quality_score: 92
+
+evidence:
+  build: PASS
+  lint: PASS
+  tests_reviewed: 0
+  risks_identified: 3
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Nenhuma vulnerabilidade identificada. Sem injeção, sem dados sensíveis expostos, validação Zod em todo input.'
+  performance:
+    status: PASS
+    notes: 'Scroll via scrollIntoView correto. Sem re-renders desnecessários aparentes.'
+  reliability:
+    status: CONCERNS
+    notes: 'HIGH-1 (step=2) torna criação de proposta inutilizável sem workaround.'
+  maintainability:
+    status: PASS
+    notes: 'Código limpo. getDefaultAssetMetadata reutilizado em ambos os forms. Sem any puro.'
+
+recommendations:
+  immediate:
+    - action: 'Corrigir useState(2) → useState(1) em sale-form.tsx:29'
+      refs: ['src/components/vendas/sale-form.tsx']
+    - action: 'Envolver Select de Tipo de Bem em FormField em step2 e edit-form'
+      refs: ['src/components/vendas/sale-form-step2.tsx', 'src/components/vendas/sale-edit-form.tsx']
+  future:
+    - action: 'Confirmar comportamento da API para type dentro de asset_metadata e documentar decisão'
+      refs: ['src/schemas/sale.schema.ts', 'pages/vendas/novo/+Page.tsx', 'pages/vendas/@id/editar/+Page.tsx']

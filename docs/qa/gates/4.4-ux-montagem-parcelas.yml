@@ -1,0 +1,58 @@
+schema: 1
+story: '4.4'
+story_title: 'UX de montagem de parcelas'
+gate: PASS
+status_reason: >
+  Todos os 9 ACs implementados. ISS-1 (recurrence_day/recurrence_month derivado
+  de start_date) e ISS-2 (cache de módulo para disabledDates) corretamente
+  resolvidos. Build + lint limpos. AC6 agora completamente satisfeito.
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-06-01T12:00:00Z'
+
+quality_score: 95
+
+top_issues: []
+
+waiver: { active: false }
+
+expires: '2026-06-15T00:00:00Z'
+
+evidence:
+  tests_reviewed: 0
+  risks_identified: 0
+  build: PASS
+  lint: PASS
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Sem operações inseguras; form usa react-hook-form + Zod. Sem injeção, sem XSS.'
+  performance:
+    status: PASS
+    notes: >
+      ISS-2 resolvido: getDisabledDates() com cache de módulo. O(1) amortizado
+      após primeiro hit por combinação (recurrenceType × recurrenceDay × recurrenceMonth).
+  reliability:
+    status: PASS
+    notes: >
+      ISS-1 resolvido: recurrence_day e recurrence_month derivados de start_date
+      na inicialização do form. Campo "Dia Vcto." carrega populado. T12:00:00
+      evita timezone-related day shift. AC6 completamente satisfeito.
+  maintainability:
+    status: PASS
+    notes: >
+      Tech debt futuro: 3 cópias do mapa de labels de grupo (GROUP_LABELS,
+      SIDEBAR_GROUP_LABELS, EDIT_GROUP_LABELS). Não são idênticos — aceitável.
+      Centralização recomendada mas não bloqueante.
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Centralizar mapa de labels de grupo em sale.schema.ts (eliminar cópias duplicadas)'
+      refs:
+        - 'src/components/vendas/installment-schedule-builder.tsx:45'
+        - 'src/components/vendas/sale-form.tsx:24'
+        - 'src/components/vendas/sale-edit-form.tsx:55'

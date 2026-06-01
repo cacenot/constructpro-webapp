@@ -1,17 +1,9 @@
-import { ArrowLeft, Check, Loader2, Plus, Save, Trash2 } from 'lucide-react'
-import * as React from 'react'
-import type {
-  FieldArrayWithId,
-  UseFieldArrayAppend,
-  UseFieldArrayRemove,
-  UseFormReturn,
-} from 'react-hook-form'
-import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import type * as React from 'react'
+import type { UseFormReturn } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CurrencyInput, formatCentsToDisplay } from '@/components/ui/currency-input'
-import { CustomerAutocomplete, type SelectedCustomer } from '@/components/ui/customer-autocomplete'
-import { DatePicker } from '@/components/ui/date-picker'
+import { formatCentsToDisplay } from '@/components/ui/currency-input'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import type { SelectedProject } from '@/components/ui/project-autocomplete'
@@ -22,15 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SelectedUnit } from '@/components/ui/unit-autocomplete'
-import { computeAllowedDates, computeDefaultStartDate } from '@/lib/installment-utils'
-import {
-  INSTALLMENT_KIND_LABELS,
-  PAYMENT_METHOD_LABELS,
-  type SaleFormData,
-} from '@/schemas/sale.schema'
+import type { SaleFormData } from '@/schemas/sale.schema'
 
 interface Broker {
   id: number
@@ -43,29 +28,21 @@ interface Agency {
   legal_name: string
 }
 
-interface IndexType {
-  code: string
-}
-
 interface SaleFormStep2Props {
   form: UseFormReturn<SaleFormData>
   selectedUnit: SelectedUnit | null
   selectedProject: SelectedProject | null
   onBack: () => void
-  isSubmitting: boolean
+  onNext: () => void
   brokers: Broker[]
   brokersLoading: boolean
   brokersError: boolean
   agencies: Agency[]
   agenciesLoading: boolean
   agenciesError: boolean
-  indexTypes: IndexType[]
   watchedBrokerId: number | null | undefined
   watchedAgencyId: number | null | undefined
-  watchedSchedules: SaleFormData['installment_schedules'] | undefined
-  fields: FieldArrayWithId<SaleFormData, 'installment_schedules', 'id'>[]
-  append: UseFieldArrayAppend<SaleFormData, 'installment_schedules'>
-  remove: UseFieldArrayRemove
+  onBackToStep1: () => void
 }
 
 export function SaleFormStep2({
@@ -73,74 +50,17 @@ export function SaleFormStep2({
   selectedUnit,
   selectedProject,
   onBack,
-  isSubmitting,
+  onNext,
   brokers,
   brokersLoading,
   brokersError,
   agencies,
   agenciesLoading,
   agenciesError,
-  indexTypes,
   watchedBrokerId,
   watchedAgencyId,
-  watchedSchedules,
-  fields,
-  append,
-  remove,
+  onBackToStep1,
 }: SaleFormStep2Props) {
-  const quantityInputRefs = React.useRef<(HTMLInputElement | null)[]>([])
-
-  const handleCustomerChange = React.useCallback(
-    (customer: SelectedCustomer | null) => {
-      form.setValue('customer_id', customer?.id ?? (undefined as unknown as number), {
-        shouldValidate: true,
-      })
-    },
-    [form]
-  )
-
-  const addMonthlySchedule = React.useCallback(() => {
-    const recurrenceDay = 10
-    const startDate = computeDefaultStartDate('monthly', recurrenceDay, null)
-    append({
-      kind: 'regular',
-      payment_method: 'boleto',
-      quantity: 1,
-      amount: 0,
-      specific_date: null,
-      recurrence_type: 'monthly',
-      recurrence_day: recurrenceDay,
-      recurrence_month: null,
-      start_date: startDate || null,
-    })
-  }, [append])
-
-  const addYearlySchedule = React.useCallback(() => {
-    const recurrenceDay = 15
-    const recurrenceMonth = 12
-    const startDate = computeDefaultStartDate('yearly', recurrenceDay, recurrenceMonth)
-    append({
-      kind: 'regular',
-      payment_method: 'boleto',
-      quantity: 1,
-      amount: 0,
-      specific_date: null,
-      recurrence_type: 'yearly',
-      recurrence_day: recurrenceDay,
-      recurrence_month: recurrenceMonth,
-      start_date: startDate || null,
-    })
-  }, [append])
-
-  React.useEffect(() => {
-    const lastIndex = fields.length - 1
-    if (lastIndex > 0) {
-      setTimeout(() => {
-        quantityInputRefs.current[lastIndex]?.focus()
-      }, 0)
-    }
-  }, [fields.length])
-
   return (
     <div className="space-y-6">
       {/* Chip read-only: empreendimento + unidade selecionados */}
@@ -163,7 +83,7 @@ export function SaleFormStep2({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={onBack}
+              onClick={onBackToStep1}
               aria-label="Alterar seleção de empreendimento e unidade"
             >
               Alterar
@@ -171,57 +91,6 @@ export function SaleFormStep2({
           </CardContent>
         </Card>
       )}
-
-      {/* Card Dados da Venda (sem unit_id — gerenciado pelo Step 1) */}
-      <Card>
-        <CardHeader>
-          <CardTitle aria-live="polite">Dados da Venda</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-12">
-            <FormField
-              control={form.control}
-              name="customer_id"
-              render={({ field }) => (
-                <FormItem className="sm:col-span-6">
-                  <FormLabel>Cliente *</FormLabel>
-                  <FormControl>
-                    <CustomerAutocomplete value={field.value} onChange={handleCustomerChange} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-12">
-            <FormField
-              control={form.control}
-              name="index_type_code"
-              render={({ field }) => (
-                <FormItem className="sm:col-span-4">
-                  <FormLabel>Índice de Correção *</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {indexTypes.map((indexType) => (
-                        <SelectItem key={indexType.code} value={indexType.code}>
-                          {indexType.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Card Comissão */}
       <Card>
@@ -378,337 +247,15 @@ export function SaleFormStep2({
         </CardContent>
       </Card>
 
-      {/* Card Pagamento */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pagamento</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Entrada */}
-          <div>
-            <p className="mb-3 text-sm font-medium">Entrada</p>
-            <div className="grid gap-4 sm:grid-cols-12">
-              <FormField
-                control={form.control}
-                name="installment_schedules.0.amount"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-4">
-                    <FormLabel>Valor da Entrada *</FormLabel>
-                    <FormControl>
-                      <CurrencyInput value={field.value} onChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="installment_schedules.0.specific_date"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-4">
-                    <FormLabel>Data de Pagamento *</FormLabel>
-                    <FormControl>
-                      <DatePicker value={field.value} onChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="installment_schedules.0.payment_method"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-4">
-                    <FormLabel>Forma de Pagamento *</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(PAYMENT_METHOD_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Parcelas */}
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <p className="text-sm font-medium">Parcelas</p>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={addMonthlySchedule}>
-                  <Plus className="mr-2 size-4" />
-                  Mensais
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={addYearlySchedule}>
-                  <Plus className="mr-2 size-4" />
-                  Anuais
-                </Button>
-              </div>
-            </div>
-
-            {fields.length <= 1 && (
-              <p className="mb-3 text-sm text-muted-foreground">
-                Clique em "Mensais" ou "Anuais" para adicionar parcelas.
-              </p>
-            )}
-
-            <div className="space-y-4">
-              {fields.map((field, index) => {
-                if (index === 0) return null
-                const schedule = watchedSchedules?.[index]
-                const recurrenceType = schedule?.recurrence_type as 'monthly' | 'yearly' | undefined
-                const recurrenceDay = schedule?.recurrence_day
-                const recurrenceMonth = schedule?.recurrence_month
-
-                const isDateDisabled =
-                  recurrenceType === 'yearly' ? !recurrenceDay || !recurrenceMonth : !recurrenceDay
-
-                const allowedDates =
-                  recurrenceType && !isDateDisabled
-                    ? computeAllowedDates(recurrenceType, recurrenceDay, recurrenceMonth)
-                    : []
-
-                const disabledDates = Array.from({ length: 10957 }, (_, i) => {
-                  const d = new Date()
-                  d.setDate(d.getDate() + i)
-                  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-                  return allowedDates.includes(iso) ? '' : iso
-                }).filter(Boolean)
-
-                return (
-                  <div key={field.id} className="space-y-4 rounded-lg border border-border p-4">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary">
-                        {schedule?.kind ? INSTALLMENT_KIND_LABELS[schedule.kind] : '—'}
-                      </Badge>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => remove(index)}
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Remover parcela</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-12">
-                      <FormField
-                        control={form.control}
-                        name={`installment_schedules.${index}.quantity`}
-                        render={({ field: f }) => (
-                          <FormItem className="sm:col-span-2">
-                            <FormLabel>Quantidade *</FormLabel>
-                            <FormControl>
-                              <Input
-                                ref={(el) => {
-                                  quantityInputRefs.current[index] = el
-                                }}
-                                type="number"
-                                min="1"
-                                value={f.value ?? ''}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                  f.onChange(
-                                    e.target.value ? Number.parseInt(e.target.value, 10) : 1
-                                  )
-                                }
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`installment_schedules.${index}.amount`}
-                        render={({ field: f }) => (
-                          <FormItem className="sm:col-span-3">
-                            <FormLabel>Valor da Parcela *</FormLabel>
-                            <FormControl>
-                              <CurrencyInput value={f.value} onChange={f.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`installment_schedules.${index}.payment_method`}
-                        render={({ field: f }) => (
-                          <FormItem className="sm:col-span-3">
-                            <FormLabel>Pagamento *</FormLabel>
-                            <Select value={f.value} onValueChange={f.onChange}>
-                              <FormControl>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Selecione" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {Object.entries(PAYMENT_METHOD_LABELS).map(([v, label]) => (
-                                  <SelectItem key={v} value={v}>
-                                    {label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name={`installment_schedules.${index}.recurrence_day`}
-                        render={({ field: f }) => (
-                          <FormItem className="sm:col-span-2">
-                            <FormLabel>Dia Vcto. *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="31"
-                                value={f.value ?? ''}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                  const val = e.target.value
-                                    ? Number.parseInt(e.target.value, 10)
-                                    : null
-                                  f.onChange(val)
-                                  if (
-                                    recurrenceType &&
-                                    (recurrenceType === 'monthly' || recurrenceType === 'yearly')
-                                  ) {
-                                    const newStartDate = computeDefaultStartDate(
-                                      recurrenceType,
-                                      val,
-                                      recurrenceMonth
-                                    )
-                                    form.setValue(
-                                      `installment_schedules.${index}.start_date`,
-                                      newStartDate || null
-                                    )
-                                  }
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {recurrenceType === 'yearly' && (
-                        <FormField
-                          control={form.control}
-                          name={`installment_schedules.${index}.recurrence_month`}
-                          render={({ field: f }) => (
-                            <FormItem className="sm:col-span-2">
-                              <FormLabel>Mês *</FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max="12"
-                                  value={f.value ?? ''}
-                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                    const val = e.target.value
-                                      ? Number.parseInt(e.target.value, 10)
-                                      : null
-                                    f.onChange(val)
-                                    if (recurrenceType === 'yearly') {
-                                      const newStartDate = computeDefaultStartDate(
-                                        recurrenceType,
-                                        recurrenceDay,
-                                        val
-                                      )
-                                      form.setValue(
-                                        `installment_schedules.${index}.start_date`,
-                                        newStartDate || null
-                                      )
-                                    }
-                                  }}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-12">
-                      <FormField
-                        control={form.control}
-                        name={`installment_schedules.${index}.start_date`}
-                        render={({ field: f }) => (
-                          <FormItem className="sm:col-span-4">
-                            <FormLabel>Data de Início *</FormLabel>
-                            <FormControl>
-                              <DatePicker
-                                value={f.value}
-                                onChange={f.onChange}
-                                disabled={isDateDisabled}
-                                disabledDates={disabledDates}
-                              />
-                            </FormControl>
-                            {isDateDisabled && (
-                              <p className="text-xs text-muted-foreground">
-                                Preencha o dia{recurrenceType === 'yearly' ? ' e mês' : ''} de
-                                vencimento primeiro
-                              </p>
-                            )}
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Ações do Step 2 */}
       <div className="flex items-center justify-between gap-3">
-        <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
+        <Button type="button" variant="outline" onClick={onBack}>
           <ArrowLeft className="mr-2 size-4" />
-          Voltar ao Step 1
+          Voltar
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Criando proposta...
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 size-4" />
-              Criar Proposta
-            </>
-          )}
+        <Button type="button" onClick={onNext}>
+          Avançar
+          <ArrowRight className="ml-2 size-4" />
         </Button>
       </div>
     </div>

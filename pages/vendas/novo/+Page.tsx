@@ -29,6 +29,15 @@ export default function SaleNewPage() {
             recurrence_day: schedule.recurrence_day ?? undefined,
             recurrence_month: schedule.recurrence_month ?? undefined,
             start_date: schedule.start_date ?? undefined,
+            // asset_proposal para entradas via bem; API aceita asset_proposal; client não reflete ainda
+            ...(schedule.payment_method === 'asset' && schedule.asset_proposal
+              ? {
+                  asset_proposal: schedule.asset_proposal as {
+                    type: string
+                    asset_metadata: Record<string, unknown>
+                  },
+                }
+              : {}),
           })),
           broker_id: data.broker_id ?? undefined,
           commission_broker_rate: data.commission_broker_rate

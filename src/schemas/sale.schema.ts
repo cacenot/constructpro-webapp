@@ -7,8 +7,14 @@ export const installmentKindValues = [
   'key_delivery',
   'extra',
 ] as const
-export const paymentMethodValues = ['boleto', 'pix', 'cash', 'transfer', 'card'] as const
-export const recurrenceTypeValues = ['monthly', 'yearly'] as const
+export const paymentMethodValues = ['boleto', 'pix', 'cash', 'transfer', 'card', 'asset'] as const
+export const recurrenceTypeValues = [
+  'monthly',
+  'bimonthly',
+  'quarterly',
+  'semestral',
+  'yearly',
+] as const
 
 export type InstallmentKind = (typeof installmentKindValues)[number]
 export type InstallmentPeriodicity =
@@ -18,6 +24,7 @@ export type InstallmentPeriodicity =
   | 'quarterly'
   | 'semestral'
   | 'yearly'
+export type AssetType = 'vehicle' | 'real_estate' | 'land' | 'boat'
 
 export const INSTALLMENT_KIND_LABELS: Record<InstallmentKind, string> = {
   entry: 'Entrada',
@@ -42,7 +49,57 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash: 'Dinheiro',
   transfer: 'Transferência',
   card: 'Cartão',
+  asset: 'Bem',
 }
+
+export const ASSET_TYPE_LABELS: Record<string, string> = {
+  vehicle: 'Veículo',
+  real_estate: 'Imóvel',
+  land: 'Terreno',
+  boat: 'Barco',
+}
+
+const assetMetadataSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('vehicle'),
+    plate: z.string().min(1, 'Placa é obrigatória'),
+    renavam: z.string().min(1, 'RENAVAM é obrigatório'),
+    brand: z.string().min(1, 'Marca é obrigatória'),
+    model: z.string().min(1, 'Modelo é obrigatório'),
+    year: z
+      .number({ error: 'Ano inválido' })
+      .int()
+      .min(1900, 'Ano mínimo é 1900')
+      .max(2030, 'Ano máximo é 2030'),
+  }),
+  z.object({
+    type: z.literal('real_estate'),
+    address: z.string().min(1, 'Endereço é obrigatório'),
+    property_type: z.string().min(1, 'Tipo de imóvel é obrigatório'),
+    area_sqm: z.number({ error: 'Área inválida' }).positive('Área deve ser maior que zero'),
+    registration_number: z.string().min(1, 'Nº de registro é obrigatório'),
+  }),
+  z.object({
+    type: z.literal('land'),
+    address: z.string().min(1, 'Endereço é obrigatório'),
+    area_sqm: z.number({ error: 'Área inválida' }).positive('Área deve ser maior que zero'),
+    registration_number: z.string().min(1, 'Nº de registro é obrigatório'),
+  }),
+  z.object({
+    type: z.literal('boat'),
+    registration: z.string().min(1, 'Registro é obrigatório'),
+    length_meters: z
+      .number({ error: 'Comprimento inválido' })
+      .positive('Comprimento deve ser maior que zero'),
+    brand: z.string().min(1, 'Marca é obrigatória'),
+    model: z.string().min(1, 'Modelo é obrigatório'),
+    year: z
+      .number({ error: 'Ano inválido' })
+      .int()
+      .min(1900, 'Ano mínimo é 1900')
+      .max(2030, 'Ano máximo é 2030'),
+  }),
+])
 
 const installmentScheduleSchema = z
   .object({
@@ -59,6 +116,13 @@ const installmentScheduleSchema = z
     recurrence_day: z.number().min(1).max(31).nullable().optional(),
     recurrence_month: z.number().min(1).max(12).nullable().optional(),
     start_date: z.string().nullable().optional(),
+    asset_proposal: z
+      .object({
+        type: z.enum(['vehicle', 'real_estate', 'land', 'boat'] as const),
+        asset_metadata: assetMetadataSchema,
+      })
+      .nullable()
+      .optional(),
   })
   .superRefine((data, ctx) => {
     if (data.kind === 'entry') {
@@ -71,7 +135,7 @@ const installmentScheduleSchema = z
       }
     }
 
-    if (data.kind === 'regular' || data.kind === 'balloon') {
+    if (data.kind === 'regular' || data.kind === 'balloon' || data.kind === 'extra') {
       if (!data.recurrence_day) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -88,11 +152,37 @@ const installmentScheduleSchema = z
       }
     }
 
+    if (data.kind === 'key_delivery') {
+      if (!data.specific_date) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Data de entrega é obrigatória para Entrega das Chaves',
+          path: ['specific_date'],
+        })
+      }
+    }
+
     if (data.recurrence_type === 'yearly' && !data.recurrence_month) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Mês de vencimento é obrigatório para parcelas anuais',
         path: ['recurrence_month'],
+      })
+    }
+
+    if (data.payment_method === 'asset') {
+      if (!data.asset_proposal) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Dados do bem são obrigatórios',
+          path: ['asset_proposal'],
+        })
+      }
+    } else if (data.asset_proposal != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Bem não permitido para esta forma de pagamento',
+        path: ['asset_proposal'],
       })
     }
   })

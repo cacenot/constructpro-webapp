@@ -1,0 +1,42 @@
+schema: 1
+story: '4.6'
+story_title: 'Wizard 3 steps: Dados da Venda → Comissão → Pagamento com resumo financeiro persistente'
+gate: PASS
+status_reason: 'Todos os 11 ACs implementados e verificados. Lint e build limpos. Refactoring aplicado durante review: dead prop removida, wrapper desnecessário eliminado, ternário redundante corrigido.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-06-01T00:00:00Z'
+
+top_issues: []
+waiver: { active: false }
+
+quality_score: 92
+expires: '2026-06-15T00:00:00Z'
+
+evidence:
+  tests_reviewed: { count: 0 }
+  risks_identified: { count: 1 }
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Refatoração pura de UI — sem auth, sem dados sensíveis, sem novas rotas. Zod schema inalterado.'
+  performance:
+    status: PASS
+    notes: 'totalFinanced e contractEnd derivados via useMemo. SaleFormSummary recebe valores pré-computados, sem cálculo redundante no componente filho.'
+  reliability:
+    status: PASS
+    notes: 'Estado do formulário vive no SaleForm pai — navigação entre steps não causa reset. useFieldArray e useWatch estáveis.'
+  maintainability:
+    status: PASS
+    notes: 'Separação clara por responsabilidade (step1/2/3/summary). Dead prop fields removida durante review. Interface SaleFormSummaryProps enxuta e coerente.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Smoke test 5.3 e 5.4 pendentes de execução manual (navegar 3 steps + submit + verificar regressão de asset/multi-entrada)'
+      refs: ['src/components/vendas/sale-form.tsx']
+    - action: 'Step 3 indicator nunca exibe check (pós-submit redireciona, comportamento aceitável mas pode ser melhorado com estado Done)'
+      refs: ['src/components/vendas/sale-form.tsx']

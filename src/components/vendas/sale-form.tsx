@@ -1,22 +1,22 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarClock, Check, Equal } from 'lucide-react'
+import { ArrowLeft, Check } from 'lucide-react'
 import * as React from 'react'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatCentsToDisplay } from '@/components/ui/currency-input'
 import { Form } from '@/components/ui/form'
 import type { SelectedProject } from '@/components/ui/project-autocomplete'
-import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SelectedUnit } from '@/components/ui/unit-autocomplete'
-import { computeContractEndDate, formatBRDate } from '@/lib/installment-utils'
+import { useTenantConfig } from '@/hooks/use-tenant-config'
+import { computeContractEndDate } from '@/lib/installment-utils'
 import { cn } from '@/lib/utils'
-import { INSTALLMENT_KIND_LABELS, type SaleFormData, saleFormSchema } from '@/schemas/sale.schema'
+import { type SaleFormData, saleFormSchema } from '@/schemas/sale.schema'
 import { SaleFormStep1 } from './sale-form-step1'
 import { SaleFormStep2 } from './sale-form-step2'
+import { SaleFormStep3 } from './sale-form-step3'
+import { SaleFormSummary } from './sale-form-summary'
 
 interface SaleFormProps {
   onSubmit: (data: SaleFormData) => Promise<void>
@@ -26,7 +26,11 @@ interface SaleFormProps {
 
 export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormProps) {
   const { client } = useApiClient()
-  const [step, setStep] = React.useState<1 | 2>(1)
+  const [step, setStep] = React.useState<1 | 2 | 3>(1)
+  const { data: tenantConfig } = useTenantConfig()
+  const maxInstallmentsPerMonth =
+    (tenantConfig as { max_installments_per_month?: number } | undefined)
+      ?.max_installments_per_month ?? 2
   const [selectedUnit, setSelectedUnit] = React.useState<SelectedUnit | null>(null)
   const [selectedProject, setSelectedProject] = React.useState<SelectedProject | null>(null)
 
@@ -87,6 +91,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           recurrence_day: null,
           recurrence_month: null,
           start_date: null,
+          asset_proposal: null,
         },
       ],
       broker_id: null,
@@ -149,17 +154,17 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     [form, selectedProject]
   )
 
-  const handleSubmit = async (data: SaleFormData) => {
-    await onSubmit(data)
+  const summaryProps = {
+    selectedUnit,
+    watchedSchedules,
+    totalFinanced,
+    contractEnd,
+    currentStep: step,
   }
-
-  const unitPriceCents = selectedUnit?.price_cents ?? 0
-  const diff = totalFinanced - unitPriceCents
-  const diffPercent = unitPriceCents > 0 ? (diff / unitPriceCents) * 100 : 0
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Tooltip>
@@ -182,192 +187,111 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
 
         {/* Step indicator */}
         <ol className="flex items-center">
+          {/* Step 1 */}
           <li className="flex items-center" aria-current={step === 1 ? 'step' : undefined}>
-            <div
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
-                'bg-primary text-primary-foreground'
-              )}
-            >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
               {step > 1 ? <Check className="size-4" /> : '1'}
             </div>
-            <span className="ml-2 text-sm">
-              <span className="hidden sm:inline">Empreendimento e </span>Unidade
-            </span>
+            <span className="ml-2 text-sm">Dados da Venda</span>
           </li>
+
           <li className="mx-4 h-px flex-1 bg-border" aria-hidden="true" />
+
+          {/* Step 2 */}
           <li className="flex items-center" aria-current={step === 2 ? 'step' : undefined}>
             <div
               className={cn(
                 'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
-                step === 2
+                step > 2
+                  ? 'bg-primary text-primary-foreground'
+                  : step === 2
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border-2 border-muted-foreground text-muted-foreground'
+              )}
+            >
+              {step > 2 ? <Check className="size-4" /> : '2'}
+            </div>
+            <span className={cn('ml-2 text-sm', step < 2 && 'text-muted-foreground')}>
+              Comissão
+            </span>
+          </li>
+
+          <li className="mx-4 h-px flex-1 bg-border" aria-hidden="true" />
+
+          {/* Step 3 */}
+          <li className="flex items-center" aria-current={step === 3 ? 'step' : undefined}>
+            <div
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
+                step === 3
                   ? 'bg-primary text-primary-foreground'
                   : 'border-2 border-muted-foreground text-muted-foreground'
               )}
             >
-              2
+              3
             </div>
-            <span className={cn('ml-2 text-sm', step < 2 && 'text-muted-foreground')}>
-              Financeiro
+            <span className={cn('ml-2 text-sm', step < 3 && 'text-muted-foreground')}>
+              Pagamento
             </span>
           </li>
         </ol>
 
-        {/* Steps */}
-        {step === 1 ? (
-          <SaleFormStep1
-            form={form}
-            selectedProject={selectedProject}
-            onProjectChange={handleProjectChange}
-            selectedUnit={selectedUnit}
-            onUnitChange={handleUnitChange}
-            onNext={() => setStep(2)}
-          />
-        ) : (
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_340px]">
-            <SaleFormStep2
-              form={form}
-              selectedUnit={selectedUnit}
-              selectedProject={selectedProject}
-              onBack={() => setStep(1)}
-              isSubmitting={isSubmitting}
-              brokers={brokers}
-              brokersLoading={brokersQuery.isLoading}
-              brokersError={brokersQuery.isError}
-              agencies={agencies}
-              agenciesLoading={agenciesQuery.isLoading}
-              agenciesError={agenciesQuery.isError}
-              indexTypes={indexTypes}
-              watchedBrokerId={watchedBrokerId}
-              watchedAgencyId={watchedAgencyId}
-              watchedSchedules={watchedSchedules}
-              fields={fields}
-              append={append}
-              remove={remove}
-            />
+        {/* Steps — grid com sidebar em todos os steps */}
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_340px]">
+          <div>
+            {step === 1 && (
+              <SaleFormStep1
+                form={form}
+                selectedProject={selectedProject}
+                onProjectChange={handleProjectChange}
+                selectedUnit={selectedUnit}
+                onUnitChange={handleUnitChange}
+                onNext={() => setStep(2)}
+              />
+            )}
 
-            {/* Resumo Financeiro (sticky sidebar) */}
-            <div className="lg:sticky lg:top-24">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resumo Financeiro</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Valor Financiado</p>
-                      <p className="text-2xl font-bold tabular-nums">
-                        R$ {formatCentsToDisplay(totalFinanced) || '0,00'}
-                      </p>
-                    </div>
+            {step === 2 && (
+              <SaleFormStep2
+                form={form}
+                selectedUnit={selectedUnit}
+                selectedProject={selectedProject}
+                onBack={() => setStep(1)}
+                onNext={() => setStep(3)}
+                onBackToStep1={() => setStep(1)}
+                brokers={brokers}
+                brokersLoading={brokersQuery.isLoading}
+                brokersError={brokersQuery.isError}
+                agencies={agencies}
+                agenciesLoading={agenciesQuery.isLoading}
+                agenciesError={agenciesQuery.isError}
+                watchedBrokerId={watchedBrokerId}
+                watchedAgencyId={watchedAgencyId}
+              />
+            )}
 
-                    {selectedUnit && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Preço da Unidade</p>
-                        <p className="text-2xl font-bold tabular-nums">
-                          R$ {formatCentsToDisplay(unitPriceCents) || '0,00'}
-                        </p>
-                      </div>
-                    )}
-
-                    {selectedUnit && totalFinanced > 0 && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Diferença</p>
-                        <div className="flex items-center gap-2">
-                          {diff === 0 ? (
-                            <>
-                              <Equal className="size-5 text-success" />
-                              <span className="text-sm font-medium text-success">
-                                Igual ao preço
-                              </span>
-                            </>
-                          ) : diff > 0 ? (
-                            <>
-                              <ArrowUp className="size-5 text-success" />
-                              <div>
-                                <p className="text-lg font-bold tabular-nums text-success">
-                                  + R$ {formatCentsToDisplay(diff)}
-                                </p>
-                                <p className="text-xs tabular-nums text-muted-foreground">
-                                  {diffPercent.toFixed(1)}% acima
-                                </p>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <ArrowDown className="size-5 text-warning" />
-                              <div>
-                                <p className="text-lg font-bold tabular-nums text-warning">
-                                  - R$ {formatCentsToDisplay(Math.abs(diff))}
-                                </p>
-                                <p className="text-xs tabular-nums text-muted-foreground">
-                                  {Math.abs(diffPercent).toFixed(1)}% abaixo
-                                </p>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {contractEnd.endDate && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Previsão de Término</p>
-                        <div className="flex items-center gap-2">
-                          <CalendarClock className="size-5 text-muted-foreground" />
-                          <div>
-                            <p className="text-lg font-bold tabular-nums">
-                              {formatBRDate(contractEnd.endDate)}
-                            </p>
-                            {contractEnd.totalMonths > 0 && (
-                              <p className="text-xs tabular-nums text-muted-foreground">
-                                {contractEnd.totalMonths} meses
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {watchedSchedules && watchedSchedules.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
-                        <div className="space-y-1">
-                          {watchedSchedules.map((schedule, index) => {
-                            const subtotal = (schedule.quantity ?? 0) * (schedule.amount ?? 0)
-                            if (subtotal === 0) return null
-                            return (
-                              <div
-                                key={fields[index]?.id ?? index}
-                                className="flex items-center justify-between text-sm"
-                              >
-                                <span className="text-muted-foreground">
-                                  {INSTALLMENT_KIND_LABELS[schedule.kind] ?? schedule.kind}
-                                  {schedule.quantity > 1 && (
-                                    <span className="ml-1 tabular-nums">
-                                      ({schedule.quantity}x R${' '}
-                                      {formatCentsToDisplay(schedule.amount)})
-                                    </span>
-                                  )}
-                                </span>
-                                <span className={cn('font-medium tabular-nums')}>
-                                  R$ {formatCentsToDisplay(subtotal)}
-                                </span>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            {step === 3 && (
+              <SaleFormStep3
+                form={form}
+                selectedUnit={selectedUnit}
+                selectedProject={selectedProject}
+                onBack={() => setStep(2)}
+                onBackToStep1={() => setStep(1)}
+                isSubmitting={isSubmitting}
+                indexTypes={indexTypes}
+                watchedSchedules={watchedSchedules}
+                fields={fields}
+                append={append}
+                remove={remove}
+                maxInstallmentsPerMonth={maxInstallmentsPerMonth}
+              />
+            )}
           </div>
-        )}
+
+          {/* Resumo Financeiro (sticky sidebar) */}
+          <div className="lg:sticky lg:top-24">
+            <SaleFormSummary {...summaryProps} />
+          </div>
+        </div>
       </form>
     </Form>
   )
