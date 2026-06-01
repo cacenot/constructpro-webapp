@@ -1,7 +1,9 @@
 import { ArrowRight } from 'lucide-react'
+import * as React from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CustomerAutocomplete, type SelectedCustomer } from '@/components/ui/customer-autocomplete'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Label } from '@/components/ui/label'
 import { ProjectAutocomplete, type SelectedProject } from '@/components/ui/project-autocomplete'
@@ -25,13 +27,22 @@ export function SaleFormStep1({
   onUnitChange,
   onNext,
 }: SaleFormStep1Props) {
-  const canProceed = selectedProject !== null && selectedUnit !== null
+  const canProceed = selectedUnit !== null
+
+  const handleCustomerChange = React.useCallback(
+    (customer: SelectedCustomer | null) => {
+      form.setValue('customer_id', customer?.id ?? (undefined as unknown as number), {
+        shouldValidate: true,
+      })
+    },
+    [form]
+  )
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle aria-live="polite">Empreendimento e Unidade</CardTitle>
+          <CardTitle aria-live="polite">Dados da Venda</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-1.5">
@@ -62,12 +73,26 @@ export function SaleFormStep1({
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="customer_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cliente *</FormLabel>
+                <FormControl>
+                  <CustomerAutocomplete value={field.value} onChange={handleCustomerChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
         <Button type="button" disabled={!canProceed} onClick={onNext}>
-          Próximo
+          Avançar
           <ArrowRight className="ml-2 size-4" />
         </Button>
       </div>
