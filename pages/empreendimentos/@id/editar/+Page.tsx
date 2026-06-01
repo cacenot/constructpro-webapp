@@ -22,7 +22,20 @@ export default function ProjectEditPage() {
 
   const handleSubmit = async (data: ProjectCreateFormData) => {
     try {
-      await updateMutation.mutateAsync(data)
+      await updateMutation.mutateAsync({
+        ...data,
+        total_area: data.total_area || null,
+        cnpj: data.cnpj ? data.cnpj.replace(/\D/g, '') || null : null,
+        legal_name: data.legal_name || null,
+        trade_name: data.trade_name || null,
+        state_registration: data.state_registration || null,
+        municipal_registration: data.municipal_registration || null,
+        incorporation_registry_number: data.incorporation_registry_number || null,
+        mother_property_registration: data.mother_property_registration || null,
+        cno: data.cno || null,
+        construction_permit_number: data.construction_permit_number || null,
+        occupancy_permit_number: data.occupancy_permit_number || null,
+      })
       toast.success('Empreendimento atualizado com sucesso!')
       navigate('/empreendimentos')
     } catch (error) {
@@ -67,6 +80,17 @@ export default function ProjectEditPage() {
     floors: project.floors,
     delivery_date: project.delivery_date,
     features: project.features || [],
+    total_area: project.total_area,
+    cnpj: project.cnpj,
+    legal_name: project.legal_name,
+    trade_name: project.trade_name,
+    state_registration: project.state_registration,
+    municipal_registration: project.municipal_registration,
+    incorporation_registry_number: project.incorporation_registry_number,
+    mother_property_registration: project.mother_property_registration,
+    cno: project.cno,
+    construction_permit_number: project.construction_permit_number,
+    occupancy_permit_number: project.occupancy_permit_number,
   }
 
   return (
