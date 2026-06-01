@@ -12,6 +12,7 @@ import type { SelectedProject } from '@/components/ui/project-autocomplete'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SelectedUnit } from '@/components/ui/unit-autocomplete'
+import { useTenantConfig } from '@/hooks/use-tenant-config'
 import { computeContractEndDate, formatBRDate } from '@/lib/installment-utils'
 import { cn } from '@/lib/utils'
 import {
@@ -41,6 +42,10 @@ interface SaleFormProps {
 export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormProps) {
   const { client } = useApiClient()
   const [step, setStep] = React.useState<1 | 2>(2)
+  const { data: tenantConfig } = useTenantConfig()
+  const maxInstallmentsPerMonth =
+    (tenantConfig as { max_installments_per_month?: number } | undefined)
+      ?.max_installments_per_month ?? 2
   const [selectedUnit, setSelectedUnit] = React.useState<SelectedUnit | null>(null)
   const [selectedProject, setSelectedProject] = React.useState<SelectedProject | null>(null)
 
@@ -259,6 +264,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
               fields={fields}
               append={append}
               remove={remove}
+              maxInstallmentsPerMonth={maxInstallmentsPerMonth}
             />
 
             {/* Resumo Financeiro (sticky sidebar) */}

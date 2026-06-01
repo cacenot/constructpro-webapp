@@ -345,6 +345,45 @@ export function TenantConfigForm({
           </CardContent>
         </Card>
 
+        {/* ─── Parcelas por Mês ─────────────────────────────────────── */}
+        <Card className="rounded-2xl border-border/50 shadow-sm">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-base font-semibold">Parcelas por Mês</CardTitle>
+            <CardDescription>
+              Máximo de parcelas com vencimento no mesmo mês-calendário
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="max_installments_per_month"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Limite mensal</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min={1}
+                        max={5}
+                        step={1}
+                        value={field.value}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        className="w-full max-w-[200px] accent-primary"
+                      />
+                      <span className="font-medium tabular-nums text-sm">
+                        {field.value} parcela{field.value > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </FormControl>
+                  <FormDescription>Entre 1 e 5 (padrão: 2)</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+
         {/* ─── Automação Comercial ──────────────────────────────────── */}
         <Card className="rounded-2xl border-border/50 shadow-sm">
           <CardHeader className="space-y-1">

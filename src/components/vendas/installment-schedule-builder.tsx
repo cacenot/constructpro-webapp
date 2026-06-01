@@ -29,7 +29,11 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { computeAllowedDates, computeDefaultStartDate } from '@/lib/installment-utils'
+import {
+  computeAllowedDates,
+  computeDefaultStartDate,
+  computeInstallmentsPerMonth,
+} from '@/lib/installment-utils'
 import {
   ASSET_TYPE_LABELS,
   type AssetType,
@@ -108,6 +112,14 @@ function getScheduleBadgeLabel(kind: InstallmentKind, recurrenceType?: string | 
   return INSTALLMENT_KIND_LABELS[kind] ?? kind
 }
 
+function formatMonthBR(yearMonth: string): string {
+  const [year, month] = yearMonth.split('-')
+  const name = new Date(Number(year), Number(month) - 1).toLocaleString('pt-BR', {
+    month: 'long',
+  })
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)}/${year}`
+}
+
 interface InstallmentScheduleBuilderProps {
   // biome-ignore lint/suspicious/noExplicitAny: builder supports both SaleFormData and SaleEditFormData
   form: UseFormReturn<any>
@@ -118,6 +130,7 @@ interface InstallmentScheduleBuilderProps {
   remove: UseFieldArrayRemove
   watchedSchedules: InstallmentScheduleFormData[] | undefined
   disabled?: boolean
+  maxInstallmentsPerMonth?: number
 }
 
 export function InstallmentScheduleBuilder({
@@ -127,6 +140,7 @@ export function InstallmentScheduleBuilder({
   remove,
   watchedSchedules,
   disabled = false,
+  maxInstallmentsPerMonth,
 }: InstallmentScheduleBuilderProps) {
   const quantityInputRefs = React.useRef<(HTMLInputElement | null)[]>([])
   const lastEntryRef = React.useRef<HTMLDivElement | null>(null)
@@ -160,6 +174,16 @@ export function InstallmentScheduleBuilder({
   }, [fields, watchedSchedules])
 
   const entryIndices = groupedIndices.get('entry') ?? []
+
+  const violatedMonths = React.useMemo(() => {
+    if (!maxInstallmentsPerMonth || maxInstallmentsPerMonth <= 0 || !watchedSchedules) return []
+    const perMonth = computeInstallmentsPerMonth(watchedSchedules)
+    const result: { month: string; count: number }[] = []
+    for (const [month, count] of perMonth) {
+      if (count > maxInstallmentsPerMonth) result.push({ month, count })
+    }
+    return result.sort((a, b) => a.month.localeCompare(b.month))
+  }, [maxInstallmentsPerMonth, watchedSchedules])
 
   function groupSubtotal(kind: InstallmentKind): number {
     const indices = groupedIndices.get(kind) ?? []
@@ -922,6 +946,17 @@ export function InstallmentScheduleBuilder({
             </DropdownMenu>
           )}
         </div>
+
+        {violatedMonths.length > 0 && (
+          <div className="space-y-1 mt-2 mb-3">
+            {violatedMonths.map(({ month, count }) => (
+              <p key={month} className="text-sm text-destructive">
+                ⚠️ <strong>{formatMonthBR(month)}</strong>: {count} parcelas — limite é{' '}
+                {maxInstallmentsPerMonth}. Ajuste as datas ou reduza as quantidades.
+              </p>
+            ))}
+          </div>
+        )}
 
         {!hasNonEntrySchedules && (
           <p className="mb-3 text-sm text-muted-foreground">

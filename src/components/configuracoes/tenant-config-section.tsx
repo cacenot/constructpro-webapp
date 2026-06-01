@@ -62,7 +62,12 @@ export function TenantConfigSection() {
               : null,
           correction_basis: data.correction_basis,
           apply_index_on_overdue_installments: data.apply_index_on_overdue_installments,
-        },
+          // max_installments_per_month may not be in the generated client type yet
+          ...(data.max_installments_per_month !== undefined
+            ? { max_installments_per_month: data.max_installments_per_month }
+            : {}),
+          // biome-ignore lint/suspicious/noExplicitAny: field not yet in generated client type
+        } as any,
       })
       if (!response.data) {
         throw new Error('Erro ao salvar configurações da organização')
@@ -107,6 +112,8 @@ export function TenantConfigSection() {
       (config as { correction_basis?: TenantConfigFormData['correction_basis'] })
         .correction_basis ?? 'outstanding_balance',
     apply_index_on_overdue_installments: config.apply_index_on_overdue_installments ?? true,
+    max_installments_per_month:
+      (config as { max_installments_per_month?: number }).max_installments_per_month ?? 2,
   }
 
   return (

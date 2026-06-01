@@ -4,7 +4,7 @@ type RecurrenceType = 'monthly' | 'bimonthly' | 'quarterly' | 'semestral' | 'yea
 
 // Adds N months to start date, clamping the day if the target month has fewer days.
 // Fixes JS overflow: new Date(2026, 0, 31).setMonth(1) → Mar 3, not Feb 28.
-function addMonthsClamped(start: Date, monthsToAdd: number, dayOfMonth: number): Date {
+export function addMonthsClamped(start: Date, monthsToAdd: number, dayOfMonth: number): Date {
   const baseYear = start.getFullYear()
   const baseMonth = start.getMonth()
   const targetMonthTotal = baseMonth + monthsToAdd
@@ -174,4 +174,51 @@ export function formatBRDate(date: Date): string {
     month: '2-digit',
     year: 'numeric',
   })
+}
+
+const intervalMap: Record<string, number> = {
+  monthly: 1,
+  bimonthly: 2,
+  quarterly: 3,
+  semestral: 6,
+}
+
+/**
+ * Returns a map of YYYY-MM → count of individual installments due in that month,
+ * expanding recurrent schedules using addMonthsClamped.
+ */
+export function computeInstallmentsPerMonth(
+  schedules: SaleFormData['installment_schedules']
+): Map<string, number> {
+  const map = new Map<string, number>()
+
+  const add = (dateStr: string, qty: number) => {
+    if (!dateStr) return
+    const key = dateStr.slice(0, 7)
+    map.set(key, (map.get(key) ?? 0) + qty)
+  }
+
+  for (const s of schedules) {
+    if (s.kind === 'entry' || s.recurrence_type === null) {
+      if (s.specific_date) add(s.specific_date, s.quantity ?? 1)
+    } else if (s.recurrence_type === 'yearly') {
+      if (!s.start_date || !s.recurrence_day) continue
+      const start = new Date(s.start_date)
+      for (let i = 0; i < (s.quantity ?? 1); i++) {
+        const d = new Date(start)
+        d.setFullYear(d.getFullYear() + i)
+        add(formatDateISO(d.getFullYear(), d.getMonth() + 1, d.getDate()), 1)
+      }
+    } else {
+      const interval = (s.recurrence_type ? intervalMap[s.recurrence_type] : undefined) ?? 1
+      if (!s.start_date || !s.recurrence_day) continue
+      const start = new Date(s.start_date)
+      for (let i = 0; i < (s.quantity ?? 1); i++) {
+        const d = addMonthsClamped(start, i * interval, s.recurrence_day)
+        add(formatDateISO(d.getFullYear(), d.getMonth() + 1, d.getDate()), 1)
+      }
+    }
+  }
+
+  return map
 }
