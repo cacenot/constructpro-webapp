@@ -62,6 +62,7 @@ logs/
 # AIOX Local (AIOX)
 .aiox-core/local/
 .claude/settings.local.json
+.claude/projects/
 .aiox/install-log.txt
 
 # Other IDE integrations (not used - Claude Code only)
