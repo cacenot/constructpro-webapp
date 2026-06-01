@@ -22,13 +22,13 @@ export default function UnitNewPage() {
           // UnitCreate.price type in generated schema is wrong (Money object instead of integer)
           // API expects integer cents — cast is required until schema is corrected upstream
           price: data.price_cents as unknown as { cents: number; decimal: string; brl: string },
-          description: data.description ?? undefined,
-          apartment_type: data.apartment_type ?? undefined,
-          bedrooms: data.bedrooms ?? undefined,
-          bathrooms: data.bathrooms ?? undefined,
-          garages: data.garages ?? undefined,
-          floor: data.floor ?? undefined,
-          features: data.features ?? undefined,
+          description: data.description || null,
+          apartment_type: data.apartment_type || null,
+          bedrooms: data.bedrooms ?? null,
+          bathrooms: data.bathrooms ?? null,
+          garages: data.garages ?? null,
+          floor: data.floor ?? null,
+          features: data.features?.length ? data.features : undefined,
         },
       })
 
