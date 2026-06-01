@@ -154,14 +154,9 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     [form, selectedProject]
   )
 
-  const handleSubmit = async (data: SaleFormData) => {
-    await onSubmit(data)
-  }
-
   const summaryProps = {
     selectedUnit,
     watchedSchedules,
-    fields,
     totalFinanced,
     contractEnd,
     currentStep: step,
@@ -169,7 +164,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Tooltip>
@@ -194,12 +189,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
         <ol className="flex items-center">
           {/* Step 1 */}
           <li className="flex items-center" aria-current={step === 1 ? 'step' : undefined}>
-            <div
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
-                'bg-primary text-primary-foreground'
-              )}
-            >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
               {step > 1 ? <Check className="size-4" /> : '1'}
             </div>
             <span className="ml-2 text-sm">Dados da Venda</span>

@@ -1,11 +1,9 @@
 import { ArrowDown, ArrowUp, CalendarClock, Equal, Receipt } from 'lucide-react'
-import type { FieldArrayWithId } from 'react-hook-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCentsToDisplay } from '@/components/ui/currency-input'
 import { Separator } from '@/components/ui/separator'
 import type { SelectedUnit } from '@/components/ui/unit-autocomplete'
 import { formatBRDate } from '@/lib/installment-utils'
-import { cn } from '@/lib/utils'
 import {
   type InstallmentKind,
   installmentKindValues,
@@ -23,7 +21,6 @@ const SIDEBAR_GROUP_LABELS: Record<InstallmentKind, string> = {
 interface SaleFormSummaryProps {
   selectedUnit: SelectedUnit | null
   watchedSchedules: SaleFormData['installment_schedules'] | undefined
-  fields: FieldArrayWithId<SaleFormData, 'installment_schedules', 'id'>[]
   totalFinanced: number
   contractEnd: { endDate: Date | null; totalMonths: number }
   currentStep: 1 | 2 | 3
@@ -153,7 +150,7 @@ export function SaleFormSummary({
                           <span className="text-muted-foreground">
                             {SIDEBAR_GROUP_LABELS[kind]}
                           </span>
-                          <span className={cn('font-medium tabular-nums')}>
+                          <span className="font-medium tabular-nums">
                             R$ {formatCentsToDisplay(subtotal)}
                           </span>
                         </div>
