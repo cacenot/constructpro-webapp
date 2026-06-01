@@ -58,6 +58,7 @@ interface SaleFormStep2Props {
   fields: FieldArrayWithId<SaleFormData, 'installment_schedules', 'id'>[]
   append: UseFieldArrayAppend<SaleFormData, 'installment_schedules'>
   remove: UseFieldArrayRemove
+  maxInstallmentsPerMonth?: number
 }
 
 export function SaleFormStep2({
@@ -79,6 +80,7 @@ export function SaleFormStep2({
   fields,
   append,
   remove,
+  maxInstallmentsPerMonth,
 }: SaleFormStep2Props) {
   const handleCustomerChange = React.useCallback(
     (customer: SelectedCustomer | null) => {
@@ -338,6 +340,7 @@ export function SaleFormStep2({
             append={append}
             remove={remove}
             watchedSchedules={watchedSchedules}
+            maxInstallmentsPerMonth={maxInstallmentsPerMonth}
           />
         </CardContent>
       </Card>
