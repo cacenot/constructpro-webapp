@@ -1,15 +1,9 @@
-import { ArrowLeft, Check, Loader2, Save } from 'lucide-react'
-import * as React from 'react'
-import type {
-  FieldArrayWithId,
-  UseFieldArrayAppend,
-  UseFieldArrayRemove,
-  UseFormReturn,
-} from 'react-hook-form'
+import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import type * as React from 'react'
+import type { UseFormReturn } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCentsToDisplay } from '@/components/ui/currency-input'
-import { CustomerAutocomplete, type SelectedCustomer } from '@/components/ui/customer-autocomplete'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import type { SelectedProject } from '@/components/ui/project-autocomplete'
@@ -22,7 +16,6 @@ import {
 } from '@/components/ui/select'
 import type { SelectedUnit } from '@/components/ui/unit-autocomplete'
 import type { SaleFormData } from '@/schemas/sale.schema'
-import { InstallmentScheduleBuilder } from './installment-schedule-builder'
 
 interface Broker {
   id: number
@@ -35,30 +28,21 @@ interface Agency {
   legal_name: string
 }
 
-interface IndexType {
-  code: string
-}
-
 interface SaleFormStep2Props {
   form: UseFormReturn<SaleFormData>
   selectedUnit: SelectedUnit | null
   selectedProject: SelectedProject | null
   onBack: () => void
-  isSubmitting: boolean
+  onNext: () => void
   brokers: Broker[]
   brokersLoading: boolean
   brokersError: boolean
   agencies: Agency[]
   agenciesLoading: boolean
   agenciesError: boolean
-  indexTypes: IndexType[]
   watchedBrokerId: number | null | undefined
   watchedAgencyId: number | null | undefined
-  watchedSchedules: SaleFormData['installment_schedules'] | undefined
-  fields: FieldArrayWithId<SaleFormData, 'installment_schedules', 'id'>[]
-  append: UseFieldArrayAppend<SaleFormData, 'installment_schedules'>
-  remove: UseFieldArrayRemove
-  maxInstallmentsPerMonth?: number
+  onBackToStep1: () => void
 }
 
 export function SaleFormStep2({
@@ -66,31 +50,17 @@ export function SaleFormStep2({
   selectedUnit,
   selectedProject,
   onBack,
-  isSubmitting,
+  onNext,
   brokers,
   brokersLoading,
   brokersError,
   agencies,
   agenciesLoading,
   agenciesError,
-  indexTypes,
   watchedBrokerId,
   watchedAgencyId,
-  watchedSchedules,
-  fields,
-  append,
-  remove,
-  maxInstallmentsPerMonth,
+  onBackToStep1,
 }: SaleFormStep2Props) {
-  const handleCustomerChange = React.useCallback(
-    (customer: SelectedCustomer | null) => {
-      form.setValue('customer_id', customer?.id ?? (undefined as unknown as number), {
-        shouldValidate: true,
-      })
-    },
-    [form]
-  )
-
   return (
     <div className="space-y-6">
       {/* Chip read-only: empreendimento + unidade selecionados */}
@@ -113,7 +83,7 @@ export function SaleFormStep2({
               type="button"
               variant="ghost"
               size="sm"
-              onClick={onBack}
+              onClick={onBackToStep1}
               aria-label="Alterar seleção de empreendimento e unidade"
             >
               Alterar
@@ -121,57 +91,6 @@ export function SaleFormStep2({
           </CardContent>
         </Card>
       )}
-
-      {/* Card Dados da Venda */}
-      <Card>
-        <CardHeader>
-          <CardTitle aria-live="polite">Dados da Venda</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-12">
-            <FormField
-              control={form.control}
-              name="customer_id"
-              render={({ field }) => (
-                <FormItem className="sm:col-span-6">
-                  <FormLabel>Cliente *</FormLabel>
-                  <FormControl>
-                    <CustomerAutocomplete value={field.value} onChange={handleCustomerChange} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-12">
-            <FormField
-              control={form.control}
-              name="index_type_code"
-              render={({ field }) => (
-                <FormItem className="sm:col-span-4">
-                  <FormLabel>Índice de Correção *</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {indexTypes.map((indexType) => (
-                        <SelectItem key={indexType.code} value={indexType.code}>
-                          {indexType.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Card Comissão */}
       <Card>
@@ -328,41 +247,15 @@ export function SaleFormStep2({
         </CardContent>
       </Card>
 
-      {/* Card Pagamento */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Pagamento</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InstallmentScheduleBuilder
-            form={form}
-            fields={fields}
-            append={append}
-            remove={remove}
-            watchedSchedules={watchedSchedules}
-            maxInstallmentsPerMonth={maxInstallmentsPerMonth}
-          />
-        </CardContent>
-      </Card>
-
       {/* Ações do Step 2 */}
       <div className="flex items-center justify-between gap-3">
-        <Button type="button" variant="outline" onClick={onBack} disabled={isSubmitting}>
+        <Button type="button" variant="outline" onClick={onBack}>
           <ArrowLeft className="mr-2 size-4" />
-          Voltar ao Step 1
+          Voltar
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Criando proposta...
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 size-4" />
-              Criar Proposta
-            </>
-          )}
+        <Button type="button" onClick={onNext}>
+          Avançar
+          <ArrowRight className="ml-2 size-4" />
         </Button>
       </div>
     </div>
