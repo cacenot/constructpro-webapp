@@ -135,7 +135,7 @@ const installmentScheduleSchema = z
       }
     }
 
-    if (data.kind === 'regular' || data.kind === 'balloon') {
+    if (data.kind === 'regular' || data.kind === 'balloon' || data.kind === 'extra') {
       if (!data.recurrence_day) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
@@ -148,6 +148,16 @@ const installmentScheduleSchema = z
           code: z.ZodIssueCode.custom,
           message: 'Data de início é obrigatória',
           path: ['start_date'],
+        })
+      }
+    }
+
+    if (data.kind === 'key_delivery') {
+      if (!data.specific_date) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Data de entrega é obrigatória para Entrega das Chaves',
+          path: ['specific_date'],
         })
       }
     }

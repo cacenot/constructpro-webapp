@@ -14,7 +14,21 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import type { SelectedUnit } from '@/components/ui/unit-autocomplete'
 import { computeContractEndDate, formatBRDate } from '@/lib/installment-utils'
 import { cn } from '@/lib/utils'
-import { INSTALLMENT_KIND_LABELS, type SaleFormData, saleFormSchema } from '@/schemas/sale.schema'
+import {
+  type InstallmentKind,
+  installmentKindValues,
+  type SaleFormData,
+  saleFormSchema,
+} from '@/schemas/sale.schema'
+
+const SIDEBAR_GROUP_LABELS: Record<InstallmentKind, string> = {
+  entry: 'Entradas',
+  regular: 'Parcelas Regulares',
+  balloon: 'Balões / Reforços',
+  key_delivery: 'Entrega das Chaves',
+  extra: 'Extras',
+}
+
 import { SaleFormStep1 } from './sale-form-step1'
 import { SaleFormStep2 } from './sale-form-step2'
 
@@ -26,7 +40,7 @@ interface SaleFormProps {
 
 export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormProps) {
   const { client } = useApiClient()
-  const [step, setStep] = React.useState<1 | 2>(1)
+  const [step, setStep] = React.useState<1 | 2>(2)
   const [selectedUnit, setSelectedUnit] = React.useState<SelectedUnit | null>(null)
   const [selectedProject, setSelectedProject] = React.useState<SelectedProject | null>(null)
 
@@ -331,39 +345,40 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                     )}
                   </div>
 
-                  {watchedSchedules && watchedSchedules.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
-                        <div className="space-y-1">
-                          {watchedSchedules.map((schedule, index) => {
-                            const subtotal = (schedule.quantity ?? 0) * (schedule.amount ?? 0)
-                            if (subtotal === 0) return null
-                            return (
-                              <div
-                                key={fields[index]?.id ?? index}
-                                className="flex items-center justify-between text-sm"
-                              >
+                  {(() => {
+                    if (!watchedSchedules || watchedSchedules.length === 0) return null
+                    const groupTotals = installmentKindValues
+                      .map((kind) => ({
+                        kind,
+                        subtotal: watchedSchedules.reduce(
+                          (sum, s) =>
+                            s.kind === kind ? sum + (s.quantity ?? 0) * (s.amount ?? 0) : sum,
+                          0
+                        ),
+                      }))
+                      .filter(({ subtotal }) => subtotal > 0)
+                    if (groupTotals.length === 0) return null
+                    return (
+                      <>
+                        <Separator />
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-muted-foreground">Detalhamento</p>
+                          <div className="space-y-1">
+                            {groupTotals.map(({ kind, subtotal }) => (
+                              <div key={kind} className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">
-                                  {INSTALLMENT_KIND_LABELS[schedule.kind] ?? schedule.kind}
-                                  {schedule.quantity > 1 && (
-                                    <span className="ml-1 tabular-nums">
-                                      ({schedule.quantity}x R${' '}
-                                      {formatCentsToDisplay(schedule.amount)})
-                                    </span>
-                                  )}
+                                  {SIDEBAR_GROUP_LABELS[kind]}
                                 </span>
                                 <span className={cn('font-medium tabular-nums')}>
                                   R$ {formatCentsToDisplay(subtotal)}
                                 </span>
                               </div>
-                            )
-                          })}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  )}
+                      </>
+                    )
+                  })()}
                 </CardContent>
               </Card>
             </div>
