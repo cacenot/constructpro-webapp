@@ -14,11 +14,18 @@ export default function SaleNewPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: SaleFormData) => {
+      const firstNonEntryIndex = data.same_index_for_all
+        ? undefined
+        : (data.installment_schedules.find((s) => s.kind !== 'entry')?.index_type_code ?? undefined)
+
       const { data: result, error } = await client.POST('/api/v1/sales', {
         body: {
           unit_id: data.unit_id,
           customer_id: data.customer_id,
-          index_type_code: data.index_type_code,
+          // Toggle ON: usa global. Toggle OFF: POST requer field obrigatório — deriva do primeiro grupo não-entry
+          index_type_code: data.same_index_for_all
+            ? (data.index_type_code ?? '')
+            : (firstNonEntryIndex ?? ''),
           installment_schedules: data.installment_schedules.map((schedule) => ({
             kind: schedule.kind,
             payment_method: schedule.payment_method,
@@ -29,6 +36,10 @@ export default function SaleNewPage() {
             recurrence_day: schedule.recurrence_day ?? undefined,
             recurrence_month: schedule.recurrence_month ?? undefined,
             start_date: schedule.start_date ?? undefined,
+            // Per-group index quando toggle OFF, apenas para grupos não-entry
+            ...(!data.same_index_for_all && schedule.kind !== 'entry' && schedule.index_type_code
+              ? { index_type_code: schedule.index_type_code }
+              : {}),
             // asset_proposal para entradas via bem; API aceita asset_proposal; client não reflete ainda
             ...(schedule.payment_method === 'asset' && schedule.asset_proposal
               ? {

@@ -131,6 +131,9 @@ interface InstallmentScheduleBuilderProps {
   watchedSchedules: InstallmentScheduleFormData[] | undefined
   disabled?: boolean
   maxInstallmentsPerMonth?: number
+  sameIndexForAll?: boolean
+  indexTypes?: { code: string }[]
+  indexTypesLoading?: boolean
 }
 
 export function InstallmentScheduleBuilder({
@@ -141,6 +144,9 @@ export function InstallmentScheduleBuilder({
   watchedSchedules,
   disabled = false,
   maxInstallmentsPerMonth,
+  sameIndexForAll = true,
+  indexTypes = [],
+  indexTypesLoading = false,
 }: InstallmentScheduleBuilderProps) {
   const quantityInputRefs = React.useRef<(HTMLInputElement | null)[]>([])
   const lastEntryRef = React.useRef<HTMLDivElement | null>(null)
@@ -1038,6 +1044,47 @@ export function InstallmentScheduleBuilder({
                             </Tooltip>
                           )}
                         </div>
+
+                        {/* Seletor de índice por grupo (Modo B — toggle OFF) */}
+                        {!sameIndexForAll && (
+                          <>
+                            <div className="grid gap-4 sm:grid-cols-12">
+                              <FormField
+                                control={form.control}
+                                name={`installment_schedules.${index}.index_type_code`}
+                                render={({ field: f }) => (
+                                  <FormItem className="sm:col-span-4">
+                                    <FormLabel>Índice de Correção *</FormLabel>
+                                    <Select
+                                      value={f.value ?? ''}
+                                      onValueChange={f.onChange}
+                                      disabled={disabled || indexTypesLoading}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue
+                                            placeholder={
+                                              indexTypesLoading ? 'Carregando...' : 'Selecione'
+                                            }
+                                          />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        {indexTypes.map((t) => (
+                                          <SelectItem key={t.code} value={t.code}>
+                                            {t.code}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <Separator className="my-4" />
+                          </>
+                        )}
 
                         {/* Fields: key_delivery uses specific_date; others use recurrence fields */}
                         {usesSpecificDate ? (

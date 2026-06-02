@@ -40,6 +40,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { computeContractEndDate, formatBRDate } from '@/lib/installment-utils'
 import { cn } from '@/lib/utils'
@@ -72,6 +73,10 @@ interface SaleEditFormProps {
 export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: SaleEditFormProps) {
   const { client } = useApiClient()
   const isEditable = sale.status === SaleStatus.proposal
+
+  const hasPerGroupIndex = sale.installment_schedules?.some(
+    (s) => s.index_type_code != null && s.index_type_code !== ''
+  )
 
   const indexTypesQuery = useQuery({
     queryKey: ['index-types'],
@@ -116,7 +121,8 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
   const form = useForm<SaleEditFormData>({
     resolver: zodResolver(saleEditFormSchema),
     defaultValues: {
-      index_type_code: sale.index_type_code ?? '',
+      same_index_for_all: !hasPerGroupIndex,
+      index_type_code: hasPerGroupIndex ? '' : (sale.index_type_code ?? ''),
       installment_schedules:
         sale.installment_schedules && sale.installment_schedules.length > 0
           ? sale.installment_schedules.map((s) => ({
@@ -124,6 +130,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
               payment_method: s.payment_method,
               quantity: s.quantity,
               amount: s.amount,
+              index_type_code: s.index_type_code ?? null,
               specific_date: s.specific_date ?? null,
               recurrence_type: s.recurrence_type ?? null,
               recurrence_day: s.start_date ? new Date(`${s.start_date}T12:00:00`).getDate() : null,
@@ -141,6 +148,7 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
                 payment_method: 'pix' as const,
                 quantity: 1,
                 amount: 0,
+                index_type_code: null,
                 specific_date: null,
                 recurrence_type: null,
                 recurrence_day: null,
@@ -179,6 +187,33 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
     control: form.control,
     name: 'agency_id',
   })
+
+  const sameIndexForAll =
+    useWatch({
+      control: form.control,
+      name: 'same_index_for_all',
+    }) ?? !hasPerGroupIndex
+
+  const handleToggleChange = React.useCallback(
+    (value: boolean) => {
+      form.setValue('same_index_for_all', value)
+      const schedules = form.getValues('installment_schedules')
+      if (!value) {
+        // ON → OFF: pré-preencher índice global nos grupos existentes
+        const globalIndex = form.getValues('index_type_code')
+        if (globalIndex) {
+          schedules.forEach((_, i) => {
+            form.setValue(`installment_schedules.${i}.index_type_code`, globalIndex)
+          })
+        }
+      } else {
+        // OFF → ON: usar índice do primeiro grupo não-entry como global
+        const firstNonEntry = schedules.find((s) => s.kind !== 'entry')
+        form.setValue('index_type_code', firstNonEntry?.index_type_code ?? '')
+      }
+    },
+    [form]
+  )
 
   const totalFinanced = React.useMemo(() => {
     if (!watchedSchedules) return 0
@@ -261,42 +296,65 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
           </CardContent>
         </Card>
 
-        {/* Card 2: Índice de Correção */}
+        {/* Card 2: Configuração de Índice */}
         <Card>
           <CardHeader>
             <CardTitle>Configuração</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-12">
-              <FormField
-                control={form.control}
-                name="index_type_code"
-                render={({ field }) => (
-                  <FormItem className="sm:col-span-4">
-                    <FormLabel>Índice de Correção *</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={!isEditable}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {indexTypes.map((indexType) => (
-                          <SelectItem key={indexType.code} value={indexType.code}>
-                            {indexType.code}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+          <CardContent className="space-y-4">
+            {/* Toggle: Usar o mesmo índice para toda a proposta */}
+            <div className="flex items-center gap-3 py-1">
+              <Switch
+                id="edit-same-index-for-all"
+                checked={sameIndexForAll}
+                onCheckedChange={handleToggleChange}
+                disabled={!isEditable}
               />
+              <label
+                htmlFor="edit-same-index-for-all"
+                className="cursor-pointer text-sm font-medium leading-none"
+              >
+                Usar o mesmo índice para toda a proposta
+              </label>
             </div>
+
+            {/* Seletor global (Modo A — toggle ON) */}
+            {sameIndexForAll && (
+              <div className="grid gap-4 sm:grid-cols-12">
+                <FormField
+                  control={form.control}
+                  name="index_type_code"
+                  render={({ field }) => (
+                    <FormItem className="sm:col-span-4">
+                      <FormLabel>Índice de Correção *</FormLabel>
+                      <Select
+                        value={field.value ?? ''}
+                        onValueChange={field.onChange}
+                        disabled={!isEditable || indexTypesQuery.isLoading}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue
+                              placeholder={
+                                indexTypesQuery.isLoading ? 'Carregando...' : 'Selecione'
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {indexTypes.map((indexType) => (
+                            <SelectItem key={indexType.code} value={indexType.code}>
+                              {indexType.code}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -507,6 +565,9 @@ export function SaleEditForm({ sale, onSubmit, onBack, isSubmitting = false }: S
               remove={remove}
               watchedSchedules={watchedSchedules}
               disabled={!isEditable}
+              sameIndexForAll={sameIndexForAll}
+              indexTypes={indexTypes}
+              indexTypesLoading={indexTypesQuery.isLoading}
             />
           </CardContent>
         </Card>

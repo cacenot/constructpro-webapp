@@ -79,6 +79,7 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     defaultValues: {
       unit_id: undefined,
       customer_id: undefined,
+      same_index_for_all: true,
       index_type_code: '',
       installment_schedules: [
         {
@@ -110,6 +111,33 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     control: form.control,
     name: 'installment_schedules',
   })
+
+  const sameIndexForAll =
+    useWatch({
+      control: form.control,
+      name: 'same_index_for_all',
+    }) ?? true
+
+  const handleToggleChange = React.useCallback(
+    (value: boolean) => {
+      form.setValue('same_index_for_all', value)
+      const schedules = form.getValues('installment_schedules')
+      if (!value) {
+        // ON → OFF: pré-preencher índice global nos grupos existentes
+        const globalIndex = form.getValues('index_type_code')
+        if (globalIndex) {
+          schedules.forEach((_, i) => {
+            form.setValue(`installment_schedules.${i}.index_type_code`, globalIndex)
+          })
+        }
+      } else {
+        // OFF → ON: usar índice do primeiro grupo não-entry como global
+        const firstNonEntry = schedules.find((s) => s.kind !== 'entry')
+        form.setValue('index_type_code', firstNonEntry?.index_type_code ?? '')
+      }
+    },
+    [form]
+  )
 
   const watchedBrokerId = useWatch({
     control: form.control,
@@ -278,11 +306,14 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
                 onBackToStep1={() => setStep(1)}
                 isSubmitting={isSubmitting}
                 indexTypes={indexTypes}
+                indexTypesLoading={indexTypesQuery.isLoading}
                 watchedSchedules={watchedSchedules}
                 fields={fields}
                 append={append}
                 remove={remove}
                 maxInstallmentsPerMonth={maxInstallmentsPerMonth}
+                sameIndexForAll={sameIndexForAll}
+                onToggleChange={handleToggleChange}
               />
             )}
           </div>
