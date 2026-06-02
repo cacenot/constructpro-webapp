@@ -1,0 +1,24 @@
+handoff:
+  from_agent: "@ux-design-expert (Uma)"
+  to_agent: "@dev (Dex)"
+  story_context:
+    story_id: "6.1"
+    story_path: "docs/stories/6.1.story.md"
+    story_status: "Ready"
+    current_task: "UX Gate completo — pronto para implementação"
+    branch: "task/6.1-listagem-comissoes (a criar via @devops)"
+
+  decisions:
+    - "3 cards totais em grid-cols-1 sm:grid-cols-3 (não 4 como financeiro)"
+    - "Ícones: Handshake (Total Corretor), Building2 (Total Imobiliária), ReceiptText (Total Geral)"
+    - "Combobox broker/agency seguem padrão CustomerFilter (busca por nome)"
+    - "Fallback de totais: somar items[] se summary for null (endpoint #95 a confirmar)"
+    - "Coluna Venda: link /vendas/{sale_id} — exibir ID abreviado (8 chars uppercase)"
+
+  files_produced:
+    - "docs/stories/6.1-ux-spec.md"
+
+  blockers: []
+
+  next_action: "@dev *develop 6.1 — UX Gate desbloqueado. Verificar @cacenot/construct-pro-api-client (Task 1.1) + @devops criar branch task/6.1-listagem-comissoes (Task 1.2) antes de implementar."
+  consumed: true

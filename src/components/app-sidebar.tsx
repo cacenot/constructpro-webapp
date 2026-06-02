@@ -5,6 +5,7 @@ import {
   Landmark,
   Layers,
   LayoutDashboard,
+  ReceiptText,
   Settings,
   ShoppingCart,
   UserCheck,
@@ -36,6 +37,7 @@ const navComercial = [
   { title: 'Contratos', href: '/contratos', icon: FileText },
   { title: 'Corretores', href: '/corretores', icon: UserCheck },
   { title: 'Imobiliárias', href: '/imobiliarias', icon: Landmark },
+  { title: 'Comissões', href: '/comissoes', icon: ReceiptText },
 ]
 
 const navFinanceiro = [{ title: 'Financeiro', href: '/financeiro', icon: Banknote }]
