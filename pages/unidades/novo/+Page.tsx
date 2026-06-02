@@ -13,20 +13,15 @@ export default function UnitNewPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: UnitFormData) => {
+      // API v2 accepts price as integer (cents); client types still expect object — cast until package updates
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: result, error } = await client.POST('/api/v1/units', {
         body: {
           name: data.name,
           category: data.category,
           project_id: data.project_id,
           area: data.area,
-          price: {
-            cents: data.price_cents,
-            decimal: (data.price_cents / 100).toFixed(2),
-            brl: (data.price_cents / 100).toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            }),
-          },
+          price: data.price_cents,
           description: data.description || null,
           apartment_type: data.apartment_type || null,
           bedrooms: data.bedrooms ?? null,
@@ -34,7 +29,7 @@ export default function UnitNewPage() {
           garages: data.garages ?? null,
           floor: data.floor ?? null,
           features: data.features?.length ? data.features : undefined,
-        },
+        } as never,
       })
 
       if (error) throwApiError(error, 'Falha ao cadastrar unidade')
