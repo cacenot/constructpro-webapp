@@ -5,6 +5,7 @@ type UnitSummaryResponse = components['schemas']['UnitSummaryResponse']
 
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreVertical } from 'lucide-react'
+import { useState } from 'react'
 import { navigate } from 'vike/client/router'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -17,7 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatCurrency, formatId } from '@/lib/utils'
+import { formatId } from '@/lib/utils'
+import { UnitDeleteDialog } from './unit-delete-dialog'
 import { UnitStatusBadge } from './unit-status-badge'
 
 function SortIcon({ column, sort }: { column: string; sort: string }) {
@@ -132,9 +134,7 @@ export function createUnitsColumns({
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="text-sm tabular-nums font-medium">
-          {formatCurrency(Number(row.original.price))}
-        </span>
+        <span className="text-sm tabular-nums font-medium">{row.original.price.brl}</span>
       ),
     },
     {
@@ -149,40 +149,63 @@ export function createUnitsColumns({
     {
       id: 'actions',
       header: '',
-      cell: ({ row }) => {
-        const unit = row.original
-        return (
-          <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" className="shrink-0">
-                    <MoreVertical className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Ações</p>
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onRowClick(unit)}>Ver detalhes</DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  navigate(`/empreendimentos/${unit.project_id}/unidades/${unit.id}/editar`)
-                }
-              >
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate(`/vendas/novo?unidade=${unit.id}`)}>
-                Nova venda
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
-      },
+      cell: ({ row }) => <UnitRowActions unit={row.original} onRowClick={onRowClick} />,
     },
   ]
+}
+
+function UnitRowActions({
+  unit,
+  onRowClick,
+}: {
+  unit: UnitSummaryResponse
+  onRowClick: (unit: UnitSummaryResponse) => void
+}) {
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: stop row-level onClick from firing
+    // biome-ignore lint/a11y/useKeyWithClickEvents: stop row-level onClick from firing
+    <div onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" className="shrink-0">
+                <MoreVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Ações</p>
+          </TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => onRowClick(unit)}>Ver detalhes</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => navigate(`/unidades/${unit.id}/editar`)}>
+            Editar
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => navigate(`/vendas/novo?unidade=${unit.id}`)}>
+            Nova venda
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            Excluir
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <UnitDeleteDialog
+        unitId={unit.id}
+        unitName={unit.name}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+      />
+    </div>
+  )
 }

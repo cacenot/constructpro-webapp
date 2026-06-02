@@ -27,7 +27,6 @@ import {
 } from '@/components/ui/drawer'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-import { formatCurrency } from '@/lib/utils'
 import { UnitStatusBadge } from './unit-status-badge'
 
 interface UnitDetailDrawerProps {
@@ -102,18 +101,12 @@ function UnitDetailContent({ unit }: { unit: UnitResponse }) {
           <DetailItem label="Área" value={<span className="tabular-nums">{unit.area} m²</span>} />
           <DetailItem
             label="Preço"
-            value={
-              <span className="tabular-nums text-foreground">
-                {formatCurrency(Number(unit.price))}
-              </span>
-            }
+            value={<span className="tabular-nums text-foreground">{unit.price.brl}</span>}
           />
           <DetailItem
             label="Preço/m²"
             value={
-              <span className="tabular-nums text-muted-foreground">
-                {formatCurrency(Number(unit.price_per_sqm))}
-              </span>
+              <span className="tabular-nums text-muted-foreground">{unit.price_per_sqm.brl}</span>
             }
           />
         </div>
@@ -251,9 +244,7 @@ export function UnitDetailDrawer({ unitId, open, onClose }: UnitDetailDrawerProp
                 variant="outline"
                 size="sm"
                 className="flex-1"
-                onClick={() =>
-                  navigate(`/empreendimentos/${unit.project_id}/unidades/${unitId}/editar`)
-                }
+                onClick={() => navigate(`/unidades/${unitId}/editar`)}
               >
                 <Pencil className="size-3.5 mr-1.5" />
                 Editar
