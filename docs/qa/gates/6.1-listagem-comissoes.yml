@@ -1,0 +1,42 @@
+schema: 1
+story: '6.1'
+story_title: 'Comissões — Listagem por corretor, imobiliária e período'
+gate: PASS
+status_reason: 'Implementação completa e correta. Bug de header responsivo (Imobiliária) corrigido durante review. Smoke test manual pendente (Task 7.3).'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-06-02T00:00:00Z'
+
+top_issues: []
+waiver: { active: false }
+
+quality_score: 93
+expires: '2026-06-16T00:00:00Z'
+
+evidence:
+  tests_reviewed: { count: 0 }
+  risks_identified: { count: 1 }
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: [10]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Sem código de auth próprio. Reutiliza camada existente (Firebase + ApiClientProvider). Sem dados sensíveis expostos.'
+  performance:
+    status: PASS
+    notes: 'Duas queries independentes (listagem + summary) com staleTime 5min. PAGE_SIZE=10 conforme AC. Debounce 300ms em buscas de filtro.'
+  reliability:
+    status: PASS
+    notes: 'Error throwing em queryFn com mensagens em pt-BR. Estado vazio explícito. Skeleton em loading.'
+  maintainability:
+    status: PASS
+    notes: 'Segue Table Pattern canônico do projeto. Código self-documenting. Tipos derivados do client gerado.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Extrair BrokerFilterCombobox e AgencyFilterCombobox em GenericFilterCombobox reutilizável — código duplicado ~180 linhas'
+      refs: ['src/components/comissoes/commission-filters.tsx']
+    - action: 'Smoke test manual (Task 7.3) antes de merge: filtros, paginação, cards de totais, link /vendas/{id}'
+      refs: ['docs/stories/6.1.story.md']

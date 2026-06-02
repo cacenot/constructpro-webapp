@@ -39,8 +39,7 @@ export const commissionColumns: ColumnDef<CommissionItem>[] = [
   },
   {
     accessorKey: 'agency',
-    header: 'Imobiliária',
-    meta: { className: 'hidden md:table-cell' },
+    header: () => <span className="hidden md:table-cell">Imobiliária</span>,
     cell: ({ row }) => {
       const agency = row.original.agency
       const name = agency?.trade_name ?? agency?.legal_name
