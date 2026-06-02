@@ -1,0 +1,42 @@
+schema: 1
+story: '4.7'
+story_title: 'Índice de correção por grupo de parcelas'
+gate: PASS
+status_reason: 'Todos os 10 ACs implementados e verificados. Lint (0 issues) e build (535ms) limpos. Schema Zod correto com superRefine condicional. Payload builder cobre os dois modos (POST/PATCH). Entry groups corretamente excluídos. UX spec seguido fielmente.'
+reviewer: 'Quinn (Test Architect)'
+updated: '2026-06-02T00:00:00Z'
+
+top_issues: []
+waiver: { active: false }
+
+quality_score: 93
+expires: '2026-06-16T00:00:00Z'
+
+evidence:
+  tests_reviewed: { count: 0 }
+  risks_identified: { count: 1 }
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Validação Zod em todos os inputs. Erros via throwApiError/handleApiError. Payload mapeado explicitamente sem spread de objeto bruto.'
+  performance:
+    status: PASS
+    notes: 'indexTypes query com staleTime 10min. useMemo em totalFinanced e contractEnd. useCallback nos toggle handlers.'
+  reliability:
+    status: PASS
+    notes: 'sameIndexForAll elevado para sale-form.tsx via useWatch — estado consistente mesmo sem React state separado. Pre-fill no toggle change preserva dados existentes.'
+  maintainability:
+    status: PASS
+    notes: 'Separação clara: schema (sale.schema.ts), UI Step 3 (step3.tsx), builder (installment-schedule-builder.tsx), payload (+Page.tsx). Lógica toggle duplicada em sale-form e sale-edit-form é aceitável (contextos diferentes).'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Executar smoke tests 6.3–6.5 manualmente no browser antes de merge: toggle ON submit, toggle OFF 2 grupos diferentes, regressão asset/multi-entrada'
+      refs: ['src/components/vendas/sale-form-step3.tsx', 'src/components/vendas/sale-edit-form.tsx']
+    - action: 'Empty state de indexTypes: mostrar placeholder "Nenhum índice disponível" quando lista vazia (atualmente mostra "Selecione")'
+      refs: ['src/components/vendas/sale-form-step3.tsx:133', 'src/components/vendas/installment-schedule-builder.tsx:1068']
