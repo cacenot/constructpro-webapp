@@ -25,7 +25,8 @@ export default function SaleEditPage() {
       const { data: response, error: apiError } = await client.PATCH('/api/v1/sales/{sale_id}', {
         params: { path: { sale_id: saleId } },
         body: {
-          index_type_code: data.index_type_code,
+          // Toggle ON: usa global. Toggle OFF: envia null (PATCH aceita optional)
+          index_type_code: data.same_index_for_all ? (data.index_type_code ?? undefined) : null,
           installment_schedules: data.installment_schedules.map((s) => ({
             kind: s.kind,
             payment_method: s.payment_method,
@@ -36,6 +37,10 @@ export default function SaleEditPage() {
             recurrence_day: s.recurrence_day ?? undefined,
             recurrence_month: s.recurrence_month ?? undefined,
             start_date: s.start_date ?? undefined,
+            // Per-group index quando toggle OFF, apenas para grupos não-entry
+            ...(!data.same_index_for_all && s.kind !== 'entry' && s.index_type_code
+              ? { index_type_code: s.index_type_code }
+              : {}),
             // asset_proposal para entradas via bem; API aceita asset_proposal; client não reflete ainda
             ...(s.payment_method === 'asset' && s.asset_proposal
               ? {

@@ -111,6 +111,7 @@ const installmentScheduleSchema = z
     }),
     quantity: z.number().min(1, 'Quantidade deve ser pelo menos 1'),
     amount: z.number().min(1, 'Valor deve ser maior que zero'),
+    index_type_code: z.string().min(1).nullable().optional(),
     specific_date: z.string().nullable().optional(),
     recurrence_type: z.enum(recurrenceTypeValues).nullable().optional(),
     recurrence_day: z.number().min(1).max(31).nullable().optional(),
@@ -191,7 +192,8 @@ export const saleFormSchema = z
   .object({
     unit_id: z.number({ error: 'Unidade é obrigatória' }).min(1, 'Unidade é obrigatória'),
     customer_id: z.number({ error: 'Cliente é obrigatório' }).min(1, 'Cliente é obrigatório'),
-    index_type_code: z.string().min(1, 'Índice de correção é obrigatório'),
+    same_index_for_all: z.boolean(),
+    index_type_code: z.string().nullable().optional(),
     installment_schedules: z
       .array(installmentScheduleSchema)
       .min(1, 'Pelo menos uma parcela é obrigatória'),
@@ -201,6 +203,25 @@ export const saleFormSchema = z
     commission_agency_rate: z.number().optional().nullable(),
   })
   .superRefine((data, ctx) => {
+    if (data.same_index_for_all) {
+      if (!data.index_type_code || data.index_type_code.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Índice de correção é obrigatório',
+          path: ['index_type_code'],
+        })
+      }
+    } else {
+      data.installment_schedules.forEach((s, i) => {
+        if (s.kind !== 'entry' && (!s.index_type_code || s.index_type_code.length === 0)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Índice de correção é obrigatório',
+            path: ['installment_schedules', i, 'index_type_code'],
+          })
+        }
+      })
+    }
     if (data.broker_id) {
       if (data.commission_broker_rate == null) {
         ctx.addIssue({
@@ -245,7 +266,8 @@ export type InstallmentScheduleFormData = z.infer<typeof installmentScheduleSche
 
 export const saleEditFormSchema = z
   .object({
-    index_type_code: z.string().min(1, 'Índice de correção é obrigatório'),
+    same_index_for_all: z.boolean(),
+    index_type_code: z.string().nullable().optional(),
     installment_schedules: z
       .array(installmentScheduleSchema)
       .min(1, 'Pelo menos uma parcela é obrigatória'),
@@ -255,6 +277,25 @@ export const saleEditFormSchema = z
     commission_agency_rate: z.number().optional().nullable(),
   })
   .superRefine((data, ctx) => {
+    if (data.same_index_for_all) {
+      if (!data.index_type_code || data.index_type_code.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Índice de correção é obrigatório',
+          path: ['index_type_code'],
+        })
+      }
+    } else {
+      data.installment_schedules.forEach((s, i) => {
+        if (s.kind !== 'entry' && (!s.index_type_code || s.index_type_code.length === 0)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Índice de correção é obrigatório',
+            path: ['installment_schedules', i, 'index_type_code'],
+          })
+        }
+      })
+    }
     if (data.broker_id) {
       if (data.commission_broker_rate == null) {
         ctx.addIssue({
