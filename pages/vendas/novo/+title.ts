@@ -1,1 +1,1 @@
-export const title = 'Nova Proposta | ConstructPro'
+export const title = 'Nova Proposta | Costara'

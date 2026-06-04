@@ -1,1 +1,1 @@
-export default 'Painel | ConstructPro'
+export default 'Painel | Costara'

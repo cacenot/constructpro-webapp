@@ -1,1 +1,1 @@
-export default 'Construct Pro - Login'
+export default 'Costara - Login'
