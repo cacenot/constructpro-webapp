@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { AppSidebar } from '@/components/app-sidebar'
-import { TopNavbar } from '@/components/top-navbar'
+import { MobileTopbar } from '@/components/mobile-topbar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
 interface AppLayoutProps {
@@ -12,7 +12,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <TopNavbar />
+        <MobileTopbar />
         <main className="px-6 py-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
