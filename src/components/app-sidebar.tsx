@@ -29,6 +29,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/contexts/auth-context'
 import { useTenantStore } from '@/stores/tenant-store'
@@ -122,10 +123,12 @@ function NavGroup({ label, items }: { label?: string; items: NavItem[] }) {
 
 function FooterMenu() {
   const { user } = useAuth()
+  const { state } = useSidebar()
+  const collapsed = state === 'collapsed'
 
   return (
     <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-1">
-      <AccountMenu side="right" align="end">
+      <AccountMenu side="right" align="end" tooltip={collapsed ? 'Conta' : undefined}>
         <SidebarMenuButton size="lg" className="flex-1 group-data-[collapsible=icon]:flex-none">
           <Avatar className="size-8 rounded-md">
             <AvatarImage src={user?.photoURL || undefined} />
@@ -140,7 +143,7 @@ function FooterMenu() {
         </SidebarMenuButton>
       </AccountMenu>
 
-      <NotificationsMenu side="right" align="end">
+      <NotificationsMenu side="right" align="end" tooltip="Notificações">
         <Button
           variant="ghost"
           size="icon"

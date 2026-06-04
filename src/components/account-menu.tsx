@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/contexts/auth-context'
 import { useTenantStore } from '@/stores/tenant-store'
 
@@ -31,10 +32,12 @@ export function AccountMenu({
   children,
   side = 'top',
   align = 'start',
+  tooltip,
 }: {
   children: ReactNode
   side?: Side
   align?: Align
+  tooltip?: string
 }) {
   const { user, signOut } = useAuth()
   const tenantId = useTenantStore((s) => s.tenantId)
@@ -48,9 +51,18 @@ export function AccountMenu({
     window.location.reload()
   }
 
+  const trigger = <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      {tooltip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+          <TooltipContent side={side}>{tooltip}</TooltipContent>
+        </Tooltip>
+      ) : (
+        trigger
+      )}
       <DropdownMenuContent side={side} align={align} sideOffset={8} className="w-60">
         <div className="flex items-center gap-2 px-2 py-1.5">
           <Avatar className="size-8 rounded-md">

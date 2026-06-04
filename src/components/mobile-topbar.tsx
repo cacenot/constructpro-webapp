@@ -16,14 +16,14 @@ export function MobileTopbar() {
       <SidebarTrigger className="-ml-1" />
 
       <div className="flex flex-1 items-center justify-end gap-1">
-        <NotificationsMenu side="bottom" align="end">
+        <NotificationsMenu side="bottom" align="end" tooltip="Notificações">
           <Button variant="ghost" size="icon" className="rounded-full">
             <Bell className="size-[1.125rem]" />
             <span className="sr-only">Notificações</span>
           </Button>
         </NotificationsMenu>
 
-        <AccountMenu side="bottom" align="end">
+        <AccountMenu side="bottom" align="end" tooltip="Conta">
           <Button variant="ghost" size="icon" className="rounded-full">
             <Avatar className="size-8">
               <AvatarImage src={user?.photoURL || undefined} />
