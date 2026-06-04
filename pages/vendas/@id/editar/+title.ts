@@ -1,1 +1,1 @@
-export default 'Editar Proposta | ConstructPro'
+export default 'Editar Proposta | Costara'

@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-04T00:00:00Z",
+  "title": "Design System: Costara",
+  "extensions": {
+    "colorMeta": {
+      "lime-volt": {
+        "role": "primary",
+        "displayName": "Lime Volt",
+        "canonical": "oklch(0.84 0.190 128)",
+        "tonalRamp": [
+          "oklch(0.20 0.050 128)",
+          "oklch(0.30 0.072 128)",
+          "oklch(0.44 0.105 128)",
+          "oklch(0.54 0.135 128)",
+          "oklch(0.66 0.160 128)",
+          "oklch(0.76 0.180 128)",
+          "oklch(0.84 0.190 128)",
+          "oklch(0.94 0.075 128)"
+        ]
+      },
+      "graphite-canvas": {
+        "role": "neutral",
+        "displayName": "Graphite Canvas",
+        "canonical": "oklch(0.175 0.006 75)",
+        "tonalRamp": [
+          "oklch(0.120 0.005 75)",
+          "oklch(0.150 0.005 75)",
+          "oklch(0.175 0.006 75)",
+          "oklch(0.215 0.007 75)",
+          "oklch(0.255 0.008 75)",
+          "oklch(0.335 0.007 75)",
+          "oklch(0.560 0.008 75)",
+          "oklch(0.950 0.006 80)"
+        ]
+      },
+      "status-proposta": {
+        "role": "tertiary",
+        "displayName": "Proposta Amber",
+        "canonical": "oklch(0.85 0.130 70)",
+        "tonalRamp": [
+          "oklch(0.16 0.040 70)",
+          "oklch(0.26 0.065 70)",
+          "oklch(0.40 0.095 70)",
+          "oklch(0.50 0.120 70)",
+          "oklch(0.62 0.140 70)",
+          "oklch(0.72 0.150 70)",
+          "oklch(0.85 0.130 70)",
+          "oklch(0.93 0.060 70)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Saudação do header e títulos de página." },
+      "value": { "displayName": "Value", "purpose": "KPIs e valores monetários de destaque, sempre tabular." },
+      "label": { "displayName": "Label", "purpose": "Etiquetas de console em maiúsculas espaçadas." },
+      "mono": { "displayName": "Mono", "purpose": "Códigos técnicos: contratos, unidades, frações." }
+    },
+    "shadows": [
+      { "name": "sm-dark", "value": "0 1px 2px oklch(0 0 0 / 0.40)", "purpose": "Cards e painéis em repouso (dark)." },
+      { "name": "md-dark", "value": "0 2px 8px oklch(0 0 0 / 0.45), 0 1px 2px oklch(0 0 0 / 0.35)", "purpose": "Dropdowns e popovers." },
+      { "name": "lg-dark", "value": "0 10px 30px oklch(0 0 0 / 0.50), 0 3px 8px oklch(0 0 0 / 0.40)", "purpose": "Dialogs e sheets." },
+      { "name": "glow-accent", "value": "0 0 8px oklch(0.84 0.190 128 / 0.70)", "purpose": "Halo lima reservado a foco e ao dot de status." }
+    ],
+    "motion": [
+      { "name": "ease-out-quint", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Curva padrão para transições de estado. Sem bounce, sem elastic." },
+      { "name": "duration-fast", "value": "90ms", "purpose": "Hover, foco, mudanças de cor." },
+      { "name": "duration-base", "value": "170ms", "purpose": "Reveal e transições maiores." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação primária. O único elemento de marca cheia na tela.",
+      "html": "<button class=\"ds-btn-primary\">Nova venda</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px; font-family: Inter, sans-serif; font-size: 14px; font-weight: 500; color: oklch(0.20 0.05 128); background: oklch(0.84 0.190 128); border: 1px solid oklch(0.84 0.190 128); border-radius: 7px; cursor: pointer; transition: background 90ms cubic-bezier(0.22,1,0.36,1), transform 90ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-primary:hover { background: oklch(0.87 0.155 128); } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px oklch(0.175 0.006 75), 0 0 0 4px oklch(0.84 0.190 128); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Ações secundárias: exportar, filtrar.",
+      "html": "<button class=\"ds-btn-outline\">Exportar</button>",
+      "css": ".ds-btn-outline { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; font-family: Inter, sans-serif; font-size: 14px; font-weight: 500; color: oklch(0.95 0.006 80); background: transparent; border: 1px solid oklch(1 0 0 / 0.10); border-radius: 7px; cursor: pointer; transition: background 90ms cubic-bezier(0.22,1,0.36,1), border-color 90ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-outline:hover { background: oklch(0.84 0.190 128 / 0.10); border-color: oklch(0.84 0.190 128); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 2px oklch(0.175 0.006 75), 0 0 0 4px oklch(0.84 0.190 128); }"
+    },
+    {
+      "name": "Status Pill (Proposta)",
+      "kind": "chip",
+      "refersTo": "badge-status",
+      "description": "Status do funil como pílula com tinte translúcido e dot com halo. The Status Glow Rule.",
+      "html": "<span class=\"ds-pill-proposta\"><span class=\"ds-dot\"></span>Proposta</span>",
+      "css": ".ds-pill-proposta { display: inline-flex; align-items: center; gap: 6px; font-family: Inter, sans-serif; font-size: 12px; font-weight: 500; line-height: 1; padding: 0.3em 0.7em; color: oklch(0.85 0.130 70); background: oklch(0.80 0.150 70 / 0.16); border: 1px solid oklch(0.80 0.150 70 / 0.30); border-radius: 9999px; } .ds-pill-proposta .ds-dot { width: 6px; height: 6px; border-radius: 9999px; background: oklch(0.80 0.150 70); box-shadow: 0 0 6px oklch(0.80 0.150 70); }"
+    },
+    {
+      "name": "KPI Cell",
+      "kind": "custom",
+      "refersTo": "kpi-value",
+      "description": "Célula da faixa de instrumentos. Label em maiúsculas, valor tabular, delta com seta. Componente de assinatura.",
+      "html": "<div class=\"ds-kpi\"><p class=\"ds-kpi-label\">Recebimentos do mês</p><p class=\"ds-kpi-value\">R$ 342.580</p><p class=\"ds-kpi-delta\">&#8599; +12% vs. anterior</p></div>",
+      "css": ".ds-kpi { background: oklch(0.215 0.007 75); padding: 20px 24px; font-family: Inter, sans-serif; } .ds-kpi-label { margin: 0; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: oklch(0.72 0.008 78); } .ds-kpi-value { margin: 10px 0 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: oklch(0.95 0.006 80); } .ds-kpi-delta { margin: 6px 0 0; font-size: 12px; font-variant-numeric: tabular-nums; color: oklch(0.80 0.130 160); }"
+    },
+    {
+      "name": "Sale Row",
+      "kind": "custom",
+      "refersTo": "card",
+      "description": "Linha densa de venda: nome, código em mono, status, valor tabular. Hover eleva por tom.",
+      "html": "<a class=\"ds-sale-row\"><span class=\"ds-sale-who\"><span class=\"ds-sale-name\">Maria Silva</span><span class=\"ds-sale-meta\"><span class=\"ds-mono\">AP-302</span> &#183; Residencial Aurora</span></span><span class=\"ds-sale-amount\">R$ 485.000</span></a>",
+      "css": ".ds-sale-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; text-decoration: none; border-bottom: 1px solid oklch(1 0 0 / 0.06); transition: background 90ms cubic-bezier(0.22,1,0.36,1); } .ds-sale-row:hover { background: oklch(0.255 0.008 75); } .ds-sale-who { display: flex; flex-direction: column; gap: 2px; } .ds-sale-name { font-family: Inter, sans-serif; font-size: 14px; font-weight: 500; color: oklch(0.95 0.006 80); } .ds-sale-meta { font-family: Inter, sans-serif; font-size: 12px; color: oklch(0.72 0.008 78); } .ds-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: oklch(0.56 0.008 78); } .ds-sale-amount { font-family: Inter, sans-serif; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums; color: oklch(0.95 0.006 80); }"
+    },
+    {
+      "name": "Nav Item (Active)",
+      "kind": "nav",
+      "refersTo": "button-outline",
+      "description": "Item de navegação ativo: fundo tonal e texto lima, sem barra lateral colorida.",
+      "html": "<a class=\"ds-nav-item ds-nav-active\"><span class=\"ds-nav-ico\"></span>Início</a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; font-family: Inter, sans-serif; font-size: 14px; color: oklch(0.78 0.008 78); border-radius: 7px; text-decoration: none; transition: background 90ms cubic-bezier(0.22,1,0.36,1); } .ds-nav-item:hover { background: oklch(0.215 0.007 75); } .ds-nav-active { background: oklch(0.235 0.009 75); color: oklch(0.84 0.190 128); font-weight: 500; } .ds-nav-ico { width: 15px; height: 15px; border: 1.5px solid currentColor; border-radius: 4px; opacity: 0.85; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "A Sala de Controle",
+    "overview": "Costara é um console de operações, não um site institucional nem uma planilha. Corretores e diretores vivem dentro dele o dia inteiro, monitorando funil e caixa. Tema dark por padrão, em grafite quente (hue 75), que reduz fadiga em uso prolongado e dá aos status do funil máximo contraste. Uma só voz cromática: o verde-lima, que carrega ação, foco, seleção e nav ativa, e nada mais. Profundidade vem da luz, não da sombra. O sistema rejeita o azul-tech genérico de dashboard SaaS, os cards idênticos, o template de métrica-herói, o ERP cinza e a planilha sem hierarquia.",
+    "keyCharacteristics": [
+      "Dark-first em grafite quente; light é variante diurna, não o foco.",
+      "Uma só voz: verde-lima em no máximo 10% da tela, sempre ação.",
+      "Status do funil brilham (tinte translúcido + dot com halo).",
+      "Números financeiros tabulares; códigos técnicos em monoespaçada.",
+      "Profundidade por tom; hairlines no lugar de cards."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "O lima aparece em no máximo 10% de qualquer tela, e sempre em ação. Nunca decoração, nunca texto corrido, nunca cor de status. Sua raridade é o que o faz funcionar.", "section": "colors" },
+      { "name": "The Status Glow Rule", "body": "Cor de status nunca é fundo chapado. É um tinte translúcido (12 a 16%) com fg saturado e um dot de 6px com halo. Sobre o grafite, brilha em vez de manchar.", "section": "colors" },
+      { "name": "The Tabular Truth Rule", "body": "Todo valor monetário e coluna numérica usa tabular-nums. Números que mudam de largura entre linhas minam a confiança no caixa.", "section": "typography" },
+      { "name": "The Mono-for-Codes Rule", "body": "Códigos técnicos vão em JetBrains Mono; nomes de pessoas e empreendimentos vão em Inter. Não troque os papéis.", "section": "typography" },
+      { "name": "The Tonal Lift Rule", "body": "Mais claro é mais alto. Para elevar, suba o tom antes de pensar em sombra. Hover de linha vira graphite-elevated, não drop-shadow.", "section": "elevation" },
+      { "name": "The Flat-Until-Focus Rule", "body": "Glow é reservado para estado, não decoração. O único halo lima permitido aparece no foco de ações e no dot de status.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do usar o verde-lima oklch(0.84 0.19 128) apenas em ação: botão primário, foco, seleção, nav ativa.",
+      "Do elevar por tom antes de sombra (sunken, canvas, surface, elevated).",
+      "Do dar tabular-nums a todo valor monetário e numérico.",
+      "Do usar JetBrains Mono em códigos técnicos e Inter em nomes.",
+      "Do renderizar status como pílula com tinte translúcido e dot com halo.",
+      "Do separar por hairline e por tom; reserve cards para agrupamentos reais."
+    ],
+    "donts": [
+      "Don't voltar ao azul-tech genérico de dashboard SaaS.",
+      "Don't usar a grade de cards idênticos nem o template de métrica-herói.",
+      "Don't usar border-left ou border-right acima de 1px como faixa colorida de acento.",
+      "Don't aplicar background-clip: text com gradiente (gradient text).",
+      "Don't usar branco puro nem preto puro; marfim quente e grafite quente.",
+      "Don't espalhar o lima como decoração ou cor de status.",
+      "Don't usar glassmorphism decorativo nem sombras pesadas estilo Material.",
+      "Don't deixar empty states como traço solto."
+    ]
+  }
+}

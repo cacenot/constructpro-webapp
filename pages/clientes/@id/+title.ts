@@ -1,1 +1,1 @@
-export const title = 'Detalhe do Cliente | ConstructPro'
+export const title = 'Detalhe do Cliente | Costara'

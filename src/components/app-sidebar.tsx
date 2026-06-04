@@ -52,12 +52,12 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-3">
-        <a href="/dashboard" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-sm">
-            CP
-          </div>
-          <span className="text-base font-semibold tracking-tight truncate group-data-[collapsible=icon]:hidden">
-            ConstructPro
+        <a href="/dashboard" className="flex h-9 items-center px-1.5">
+          <span className="truncate text-lg font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
+            Costara
+          </span>
+          <span className="hidden text-lg font-semibold tracking-tight group-data-[collapsible=icon]:block">
+            C
           </span>
         </a>
       </SidebarHeader>

@@ -23,12 +23,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <NuqsAdapter>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <ApiClientProvider
             baseUrl={import.meta.env.VITE_API_BASE_URL || '/api'}
             getToken={async () => {

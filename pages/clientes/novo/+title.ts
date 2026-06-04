@@ -1,1 +1,1 @@
-export default 'Novo Cliente | Construct Pro'
+export default 'Novo Cliente | Costara'
