@@ -791,7 +791,7 @@
   --color-secondary-foreground:   var(--color-secondary-fg);
   --color-muted:                  var(--color-bg-sunken);
   --color-muted-foreground:       var(--color-text-secondary);
-  --color-accent:                 var(--color-secondary);
+  --color-accent:                 var(--color-secondary-hover);
   --color-accent-foreground:      var(--color-text-primary);
   --color-destructive:            var(--color-destructive);
   --color-destructive-foreground: var(--color-destructive-fg);
@@ -866,4 +866,16 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* Cursor: o Tailwind v4 removeu o `cursor: pointer` dos <button> no Preflight, e os
+   itens de menu do shadcn vêm com `cursor-default`. Restauramos o feedback esperado
+   em controles interativos. Sem @layer de propósito: assim vence as utilities. */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']),
+[role='menuitem'],
+[role='menuitemcheckbox'],
+[role='menuitemradio'],
+[role='option'] {
+  cursor: pointer;
 }

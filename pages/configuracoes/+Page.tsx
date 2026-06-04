@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
+import { AppearanceToggle } from '@/components/configuracoes/appearance-toggle'
 import { MembersSection } from '@/components/configuracoes/members/members-section'
 import { PasswordForm } from '@/components/configuracoes/password-form'
 import { ProfileForm } from '@/components/configuracoes/profile-form'
@@ -136,6 +137,18 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground">Altere sua senha de acesso</p>
                 </div>
                 <PasswordForm />
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-2xl border-border/50 shadow-sm">
+              <CardContent className="pt-6">
+                <div className="space-y-1 mb-6">
+                  <h2 className="text-lg font-semibold">Aparência</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Escolha como o Costara aparece para você
+                  </p>
+                </div>
+                <AppearanceToggle />
               </CardContent>
             </Card>
           </TabsContent>
