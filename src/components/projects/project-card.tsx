@@ -13,17 +13,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import type { ProjectSummaryItem } from '@/hooks/useProjects'
 
 interface ProjectCardProps {
-  project: {
-    id: number
-    name: string
-    status: 'construction' | 'finished'
-    city?: string
-    state?: string
-    district?: string
-    project_photos?: string[]
-  }
+  project: ProjectSummaryItem
 }
 
 /** Iniciais do empreendimento, ignorando prefixos tipo [SEED] e sufixos #NN. */
@@ -53,22 +46,11 @@ const compactBRL = new Intl.NumberFormat('pt-BR', {
   maximumFractionDigits: 1,
 })
 
-/**
- * ⚠️ PLACEHOLDER — métricas de carteira FAKE, determinísticas por id, só para
- * avaliar o conceito de "card como mini-painel". Nenhum desses campos vem do
- * `/projects/summary` hoje (ver issue de enriquecimento do backend). Trocar
- * pelos dados reais quando o endpoint os expuser.
- */
-function fakeMetrics(id: number, status: ProjectCardProps['project']['status']) {
-  const totalUnits = 20 + ((id * 7) % 101) // 20..120
-  const soldRatio =
-    status === 'finished' ? 0.85 + ((id * 13) % 16) / 100 : 0.1 + ((id * 13) % 80) / 100
-  const soldCount = Math.min(totalUnits, Math.round(totalUnits * soldRatio))
-  const soldPct = Math.round((soldCount / totalUnits) * 100)
-  const vgv = totalUnits * (250_000 + ((id * 9301) % 350_001))
-  const deliveryMonth = String((id % 12) + 1).padStart(2, '0')
-  const deliveryYear = 2026 + (id % 3)
-  return { totalUnits, soldCount, soldPct, vgv, deliveryMonth, deliveryYear }
+/** "MM/AAAA" a partir de um ISO datetime UTC (a `delivery_date` vem em UTC). */
+function formatDeliveryMonthYear(iso: string): string {
+  const d = new Date(iso)
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
+  return `${month}/${d.getUTCFullYear()}`
 }
 
 /** Textura de planta baixa: grid de hairlines de 32px, marca da casa "na planta". */
@@ -82,8 +64,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
   const primaryPhoto = project.project_photos?.[0]
   const location = formatLocation(project)
   const monogram = getMonogram(project.name)
-  // ⚠️ placeholder — ver fakeMetrics
-  const m = fakeMetrics(project.id, project.status)
+  const soldPct = Math.round(Number(project.sold_percentage))
+  const vgvInReais = project.total_vgv.cents / 100
   const [imgFailed, setImgFailed] = useState(false)
   const showPhoto = Boolean(primaryPhoto) && !imgFailed
 
@@ -165,7 +147,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </div>
       </div>
 
-      {/* Conteúdo — ficha + mini-painel de carteira (⚠️ KPIs fake) */}
+      {/* Conteúdo — ficha + mini-painel de carteira */}
       <div className="space-y-2.5 border-t border-border/60 p-4">
         <div className="space-y-1">
           <h3 className="text-lg font-bold tracking-tight">
@@ -191,10 +173,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
               Vendido
             </p>
             <p className="text-base font-bold text-success leading-tight tabular-nums">
-              {m.soldPct}%
+              {soldPct}%
             </p>
             <p className="tabular-nums text-[0.625rem] text-muted-foreground">
-              {m.soldCount}/{m.totalUnits} unid.
+              {project.sold_count}/{project.total_units} unid.
             </p>
           </div>
           <div className="px-3 py-2">
@@ -202,12 +184,14 @@ export function ProjectCard({ project }: ProjectCardProps) {
               VGV
             </p>
             <p className="tabular-nums text-base font-bold leading-tight">
-              {compactBRL.format(m.vgv)}
+              {compactBRL.format(vgvInReais)}
             </p>
             <p className="text-[0.625rem] text-muted-foreground tabular-nums">
               {project.status === 'finished'
                 ? 'entregue'
-                : `entrega ${m.deliveryMonth}/${m.deliveryYear}`}
+                : project.delivery_date
+                  ? `entrega ${formatDeliveryMonthYear(project.delivery_date)}`
+                  : 'entrega a definir'}
             </p>
           </div>
         </div>

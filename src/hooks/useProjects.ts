@@ -8,6 +8,8 @@ type ProjectDetailResponse =
 type ProjectSummaryQuery = paths['/api/v1/projects/summary']['get']['parameters']['query']
 type ProjectSummaryResponse =
   paths['/api/v1/projects/summary']['get']['responses']['200']['content']['application/json']
+/** Item individual da listagem de empreendimentos (com KPIs de carteira). */
+type ProjectSummaryItem = ProjectSummaryResponse['items'][number]
 
 export const projectKeys = {
   all: ['projects'] as const,
@@ -94,4 +96,4 @@ export function useProjectsSummary(params?: ProjectSummaryQuery) {
   })
 }
 
-export type { ProjectDetailResponse, ProjectSummaryResponse }
+export type { ProjectDetailResponse, ProjectSummaryItem, ProjectSummaryResponse }
