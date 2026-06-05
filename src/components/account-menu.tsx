@@ -1,4 +1,4 @@
-import { Building2, Check, LogOut, SlidersHorizontal, User } from 'lucide-react'
+import { Building2, Check, LogOut, User } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -11,16 +11,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/contexts/auth-context'
-import { useIsAdmin } from '@/hooks/use-is-admin'
-import { useProfile } from '@/hooks/use-profile'
 import { getInitials } from '@/lib/utils'
 import { useTenantStore } from '@/stores/tenant-store'
 
 type Side = 'top' | 'bottom' | 'left' | 'right'
 type Align = 'start' | 'center' | 'end'
 
-// Menu da conta: identidade, troca de organização (só com 2+ tenants), Minha conta,
-// Organização (só admin) e sair. Trigger via children (linha da sidebar / avatar no mobile).
+// Menu da conta: identidade, troca de organização (só com 2+ tenants), Minha conta
+// e sair. A administração da organização vive na sidebar (seção Administração).
+// Trigger via children (linha da sidebar / avatar no mobile).
 export function AccountMenu({
   children,
   side = 'top',
@@ -33,8 +32,6 @@ export function AccountMenu({
   tooltip?: string
 }) {
   const { user, signOut } = useAuth()
-  const { data: profile } = useProfile()
-  const isAdmin = useIsAdmin(profile)
   const tenantId = useTenantStore((s) => s.tenantId)
   const tenants = useTenantStore((s) => s.tenants)
   const setTenantId = useTenantStore((s) => s.setTenantId)
@@ -95,14 +92,6 @@ export function AccountMenu({
             Minha conta
           </a>
         </DropdownMenuItem>
-        {isAdmin && (
-          <DropdownMenuItem asChild>
-            <a href="/organizacao">
-              <SlidersHorizontal />
-              Organização
-            </a>
-          </DropdownMenuItem>
-        )}
         <DropdownMenuItem onClick={() => signOut()}>
           <LogOut />
           Sair

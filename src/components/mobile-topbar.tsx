@@ -1,5 +1,5 @@
-import { Bell } from 'lucide-react'
 import { AccountMenu } from '@/components/account-menu'
+import { IcNotificacoes } from '@/components/icons/nav-icons'
 import { NotificationsMenu } from '@/components/notifications-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -19,7 +19,7 @@ export function MobileTopbar() {
       <div className="flex flex-1 items-center justify-end gap-1">
         <NotificationsMenu side="bottom" align="end" tooltip="Notificações">
           <Button variant="ghost" size="icon" className="rounded-full">
-            <Bell className="size-[1.125rem]" />
+            <IcNotificacoes className="size-[1.125rem]" />
             <span className="sr-only">Notificações</span>
           </Button>
         </NotificationsMenu>
