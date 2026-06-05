@@ -14,12 +14,14 @@ export default function UnidadesPage() {
   const {
     data,
     isLoading,
+    isFetching,
+    isError,
+    refetch,
     hasActiveFilters,
     handleClearFilters,
     filters,
     pagination,
     sort,
-    projects,
   } = useUnitsTable()
 
   const [selectedUnitId, setSelectedUnitId] = useState<number | null>(null)
@@ -35,7 +37,7 @@ export default function UnidadesPage() {
       <div className="space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Unidades</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Unidades</h1>
             <p className="mt-2 text-muted-foreground">
               Gerencie as unidades dos seus empreendimentos e controle disponibilidade.
             </p>
@@ -48,7 +50,6 @@ export default function UnidadesPage() {
 
         <UnitsFilters
           filters={filters}
-          projects={projects}
           hasActiveFilters={hasActiveFilters}
           onClearFilters={handleClearFilters}
         />
@@ -57,6 +58,9 @@ export default function UnidadesPage() {
           <UnitsTable
             data={data}
             isLoading={isLoading}
+            isFetching={isFetching}
+            isError={isError}
+            onRetry={refetch}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={handleClearFilters}
             sort={sort}

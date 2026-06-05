@@ -1,5 +1,6 @@
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { Building2 } from 'lucide-react'
+import { Building2, CloudAlert, Plus, RefreshCw } from 'lucide-react'
+import { navigate } from 'vike/client/router'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -11,11 +12,15 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { UnitSummaryResponse, UnitsTableSort } from '@/hooks/use-units-table'
+import { cn } from '@/lib/utils'
 import { createUnitsColumns } from './units-columns'
 
 interface UnitsTableProps {
   data: UnitSummaryResponse[]
   isLoading: boolean
+  isFetching: boolean
+  isError: boolean
+  onRetry: () => void
   hasActiveFilters: boolean
   onClearFilters: () => void
   sort: UnitsTableSort
@@ -27,6 +32,9 @@ const SKELETON_ROWS = 10
 export function UnitsTable({
   data,
   isLoading,
+  isFetching,
+  isError,
+  onRetry,
   hasActiveFilters,
   onClearFilters,
   sort,
@@ -93,20 +101,63 @@ export function UnitsTable({
                 </TableCell>
               </TableRow>
             ))
+          ) : isError ? (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="py-12 text-center">
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                  <CloudAlert className="size-10 text-destructive opacity-80" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">
+                      Não foi possível carregar as unidades
+                    </p>
+                    <p className="text-xs">Verifique sua conexão e tente novamente.</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={isFetching}
+                    onClick={onRetry}
+                  >
+                    <RefreshCw className={cn('size-3.5', isFetching && 'animate-spin')} />
+                    {isFetching ? 'Tentando…' : 'Tentar novamente'}
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
           ) : table.getRowModel().rows.length === 0 ? (
             <TableRow>
               <TableCell colSpan={columns.length} className="py-12 text-center">
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <Building2 className="size-10 opacity-40" />
-                  <p className="text-sm">
-                    {hasActiveFilters
-                      ? 'Nenhuma unidade encontrada com os filtros aplicados.'
-                      : 'Nenhuma unidade cadastrada.'}
-                  </p>
-                  {hasActiveFilters && (
-                    <Button variant="ghost" size="sm" onClick={onClearFilters}>
-                      Limpar filtros
-                    </Button>
+                  {hasActiveFilters ? (
+                    <>
+                      <p className="text-sm">
+                        Nenhuma unidade encontrada com os filtros aplicados.
+                      </p>
+                      <Button variant="ghost" size="sm" onClick={onClearFilters}>
+                        Limpar filtros
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-foreground">
+                          Nenhuma unidade cadastrada
+                        </p>
+                        <p className="text-xs">
+                          Cadastre a primeira unidade para começar a vender.
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => navigate('/unidades/novo')}
+                      >
+                        <Plus className="size-3.5" />
+                        Cadastrar primeira unidade
+                      </Button>
+                    </>
                   )}
                 </div>
               </TableCell>
@@ -115,8 +166,19 @@ export function UnitsTable({
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                className="cursor-pointer"
+                tabIndex={0}
+                aria-label={`Ver detalhes da unidade ${row.original.name}`}
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                 onClick={() => onRowClick(row.original)}
+                onKeyDown={(e) => {
+                  // Só responde quando a própria linha está focada — evita que Enter/Espaço
+                  // no kebab de ações (filho da linha) abra o drawer por bubbling.
+                  if (e.target !== e.currentTarget) return
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onRowClick(row.original)
+                  }
+                }}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id} className="px-6 py-3">

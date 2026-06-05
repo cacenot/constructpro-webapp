@@ -33,21 +33,18 @@ export interface UnitsTableSort {
   setSort: (value: string) => void
 }
 
-export interface ProjectOption {
-  id: number
-  name: string
-}
-
 export interface UseUnitsTableReturn {
   data: UnitSummaryResponse[]
   isLoading: boolean
+  isFetching: boolean
+  isError: boolean
+  refetch: () => void
   total: number
   hasActiveFilters: boolean
   handleClearFilters: () => void
   filters: UnitsTableFilters
   pagination: UnitsTablePagination
   sort: UnitsTableSort
-  projects: ProjectOption[]
 }
 
 const unitsQueryParsers = {
@@ -91,7 +88,7 @@ export function useUnitsTable(): UseUnitsTableReturn {
     return params
   }, [page, debouncedSearch, projectFilter, sort])
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ['units-summary', queryParams],
     queryFn: async () => {
       const { data: result, error } = await client.GET('/api/v1/units/summary', {
@@ -102,25 +99,9 @@ export function useUnitsTable(): UseUnitsTableReturn {
     },
   })
 
-  const { data: projectsData } = useQuery({
-    queryKey: ['projects-summary-all'],
-    queryFn: async () => {
-      const { data: result, error } = await client.GET('/api/v1/projects/summary', {
-        params: { query: { page: 1, page_size: 100 } },
-      })
-      if (error) throw new Error('Falha ao carregar empreendimentos')
-      return result
-    },
-    staleTime: 5 * 60 * 1000,
-  })
-
   const units = data?.items ?? []
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  const projects: ProjectOption[] = (projectsData?.items ?? []).map((p) => ({
-    id: p.id,
-    name: p.name,
-  }))
 
   const hasActiveFilters = !!(debouncedSearch || projectFilter !== 0)
 
@@ -131,6 +112,9 @@ export function useUnitsTable(): UseUnitsTableReturn {
   return {
     data: units,
     isLoading,
+    isFetching,
+    isError,
+    refetch,
     total,
     hasActiveFilters,
     handleClearFilters,
@@ -152,6 +136,5 @@ export function useUnitsTable(): UseUnitsTableReturn {
       sort,
       setSort: (value) => setQueryState({ sort: value, page: 1 }),
     },
-    projects,
   }
 }

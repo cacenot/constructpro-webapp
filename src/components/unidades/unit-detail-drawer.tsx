@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/drawer'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { formatArea } from '@/lib/utils'
 import { UnitStatusBadge } from './unit-status-badge'
 
 interface UnitDetailDrawerProps {
@@ -98,7 +99,10 @@ function UnitDetailContent({ unit }: { unit: UnitResponse }) {
         </p>
         <div className="grid grid-cols-2 gap-4">
           <DetailItem label="Categoria" value={translateUnitCategory(unit.category, 'pt-BR')} />
-          <DetailItem label="Área" value={<span className="tabular-nums">{unit.area} m²</span>} />
+          <DetailItem
+            label="Área"
+            value={<span className="tabular-nums">{formatArea(unit.area)}</span>}
+          />
           <DetailItem
             label="Preço"
             value={<span className="tabular-nums text-foreground">{unit.price.brl}</span>}

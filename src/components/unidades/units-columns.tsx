@@ -7,7 +7,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 import { navigate } from 'vike/client/router'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -18,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatId } from '@/lib/utils'
+import { formatArea, formatId } from '@/lib/utils'
 import { UnitDeleteDialog } from './unit-delete-dialog'
 import { UnitStatusBadge } from './unit-status-badge'
 
@@ -65,9 +64,9 @@ export function createUnitsColumns({
         </Button>
       ),
       cell: ({ row }) => (
-        <Badge variant="secondary" className="tabular-nums font-mono text-xs shrink-0">
+        <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
           {formatId(row.original.id)}
-        </Badge>
+        </span>
       ),
     },
     {
@@ -84,9 +83,9 @@ export function createUnitsColumns({
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5 min-w-0">
+        <div className="flex min-w-0 max-w-[180px] flex-col gap-0.5 lg:max-w-[260px]">
           <span className="truncate text-sm font-medium">{row.original.name}</span>
-          <span className="text-xs text-muted-foreground">
+          <span className="truncate text-xs text-muted-foreground">
             {translateUnitCategory(row.original.category, 'pt-BR')}
           </span>
         </div>
@@ -116,7 +115,7 @@ export function createUnitsColumns({
       ),
       cell: ({ row }) => (
         <span className="hidden md:block text-sm tabular-nums text-muted-foreground">
-          {row.original.area} m²
+          {formatArea(row.original.area)}
         </span>
       ),
     },
@@ -134,7 +133,9 @@ export function createUnitsColumns({
         </Button>
       ),
       cell: ({ row }) => (
-        <span className="text-sm tabular-nums font-medium">{row.original.price.brl}</span>
+        <span className="text-sm font-semibold tabular-nums text-foreground">
+          {row.original.price.brl}
+        </span>
       ),
     },
     {
