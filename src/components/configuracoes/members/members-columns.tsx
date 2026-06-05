@@ -14,17 +14,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { UserResponse } from '@/hooks/use-members-table'
 import { formatDocument, formatPhone } from '@/lib/text-formatters'
+import { getInitials } from '@/lib/utils'
 import { getRoleLabel } from '@/schemas/member.schema'
-
-function getInitials(name: string | null | undefined): string {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
 
 function SortIcon({ column, sort }: { column: string; sort: string }) {
   if (!sort.startsWith(column)) return <ArrowUpDown className="ml-1 size-3 text-muted-foreground" />

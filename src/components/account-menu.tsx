@@ -13,17 +13,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuth } from '@/contexts/auth-context'
 import { useIsAdmin } from '@/hooks/use-is-admin'
 import { useProfile } from '@/hooks/use-profile'
+import { getInitials } from '@/lib/utils'
 import { useTenantStore } from '@/stores/tenant-store'
-
-export function getInitials(name: string | null | undefined): string {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
-}
 
 type Side = 'top' | 'bottom' | 'left' | 'right'
 type Align = 'start' | 'center' | 'end'

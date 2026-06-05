@@ -16,6 +16,7 @@ export function AppearanceToggle() {
 
   return (
     <SegmentedControl
+      aria-label="Tema da aparência"
       options={OPTIONS}
       value={preference}
       onChange={(value) => setTheme(value as 'light' | 'dark' | 'system')}

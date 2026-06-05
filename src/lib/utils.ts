@@ -23,3 +23,14 @@ export function formatArea(area: string | number | null): string {
 export function formatId(id: number): string {
   return `#${id.toString().padStart(5, '0')}`
 }
+
+/** Iniciais (até 2) de um nome, para fallback de avatar. Ex: "Maria Silva" → "MS". */
+export function getInitials(name: string | null | undefined): string {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}

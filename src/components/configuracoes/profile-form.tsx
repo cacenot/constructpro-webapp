@@ -24,6 +24,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuth } from '@/contexts/auth-context'
 import { storage } from '@/lib/firebase'
 import { capitalizeNameBR } from '@/lib/text-formatters'
+import { getInitials } from '@/lib/utils'
 import { type ProfileUpdateFormData, profileUpdateSchema } from '@/schemas/settings.schema'
 
 type UserProfileResponse = components['schemas']['UserProfileResponse']
@@ -35,16 +36,6 @@ interface ProfileFormProps {
   onSubmit: (data: ProfileUpdateFormData) => Promise<void>
   /** Whether the form is submitting */
   isSubmitting?: boolean
-}
-
-function getInitials(name: string | null | undefined): string {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
 }
 
 function formatMemberSince(date: string | null | undefined): string | null {
