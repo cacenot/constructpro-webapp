@@ -1,43 +1,33 @@
-import { type components, useApiClient } from '@cacenot/construct-pro-api-client'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useApiClient } from '@cacenot/construct-pro-api-client'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
 import { AppearanceToggle } from '@/components/configuracoes/appearance-toggle'
-import { MembersSection } from '@/components/configuracoes/members/members-section'
 import { PasswordForm } from '@/components/configuracoes/password-form'
 import { ProfileForm } from '@/components/configuracoes/profile-form'
-import { TenantConfigSection } from '@/components/configuracoes/tenant-config-section'
-import { Card, CardContent } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useIsAdmin } from '@/hooks/use-is-admin'
+import { SettingsLayout, type SettingsNavItem } from '@/components/configuracoes/settings-layout'
+import { SettingsSection } from '@/components/configuracoes/settings-section'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useProfile } from '@/hooks/use-profile'
 import { handleApiError } from '@/lib/api-error'
-import { cn } from '@/lib/utils'
 import type { ProfileUpdateFormData } from '@/schemas/settings.schema'
 
+const SECTIONS: SettingsNavItem[] = [
+  { id: 'perfil', label: 'Perfil' },
+  { id: 'seguranca', label: 'Segurança' },
+  { id: 'aparencia', label: 'Aparência' },
+]
+
 /**
- * Página de configurações — Minha Conta e Organização (admin/superadmin apenas)
+ * Minha conta — configurações pessoais do usuário (perfil, segurança, aparência).
+ * A administração da organização vive em /organizacao (admin).
  */
-export default function SettingsPage() {
+export default function MinhaContaPage() {
   const { client } = useApiClient()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState('conta')
-
-  const {
-    data: profile,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['users', 'me'],
-    queryFn: async (): Promise<components['schemas']['UserProfileResponse']> => {
-      const response = await client.GET('/api/v1/users/me')
-      if (!response.data) {
-        throw new Error('Erro ao carregar perfil')
-      }
-      return response.data as components['schemas']['UserProfileResponse']
-    },
-  })
+  const { data: profile, isLoading, error, refetch } = useProfile()
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileUpdateFormData) => {
@@ -62,13 +52,23 @@ export default function SettingsPage() {
     onError: (error: Error) => handleApiError(error, 'Erro ao atualizar perfil'),
   })
 
-  const isAdmin = useIsAdmin(profile)
-
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="flex h-96 items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        <div className="mx-auto max-w-4xl pb-12">
+          <div className="mb-8 space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <div className="space-y-px">
+            {['perfil', 'seguranca', 'aparencia'].map((key) => (
+              <div key={key} className="space-y-4 border-t border-border/60 py-8">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-64" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            ))}
+          </div>
         </div>
       </AppLayout>
     )
@@ -77,16 +77,17 @@ export default function SettingsPage() {
   if (error) {
     return (
       <AppLayout>
-        <div className="mx-auto max-w-3xl">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">
-                  Erro ao carregar configurações. Tente novamente.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 py-16 text-center">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Não foi possível carregar sua conta</p>
+            <p className="text-sm text-muted-foreground">
+              Verifique sua conexão e tente novamente.
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => refetch()}>
+            <RefreshCw className="mr-2 size-4" />
+            Tentar novamente
+          </Button>
         </div>
       </AppLayout>
     )
@@ -94,79 +95,43 @@ export default function SettingsPage() {
 
   return (
     <AppLayout>
-      <div className={cn('mx-auto pb-12', activeTab === 'membros' ? 'max-w-5xl' : 'max-w-3xl')}>
-        {/* Header */}
-        <div className="space-y-1 mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-          <p className="text-muted-foreground">
-            Gerencie suas informações pessoais e preferências de conta
-          </p>
-        </div>
+      <div className="mx-auto max-w-4xl pb-12">
+        <header className="mb-8 space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight">Minha conta</h1>
+          <p className="text-muted-foreground">Gerencie seu perfil, segurança e preferências</p>
+        </header>
 
-        <Tabs defaultValue="conta" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="conta">Minha Conta</TabsTrigger>
-            {isAdmin && <TabsTrigger value="membros">Membros</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="organizacao">Organização</TabsTrigger>}
-          </TabsList>
+        <SettingsLayout sections={SECTIONS}>
+          <SettingsSection
+            id="perfil"
+            title="Perfil"
+            description="Atualize seus dados pessoais e foto de perfil"
+          >
+            <ProfileForm
+              initialData={profile}
+              onSubmit={async (data) => {
+                await updateProfileMutation.mutateAsync(data)
+              }}
+              isSubmitting={updateProfileMutation.isPending}
+            />
+          </SettingsSection>
 
-          {/* ── Minha Conta ─────────────────────────────────────────── */}
-          <TabsContent value="conta" className="space-y-8">
-            <Card className="rounded-2xl border-border/50 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="space-y-1 mb-6">
-                  <h2 className="text-lg font-semibold">Informações Pessoais</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Atualize seus dados pessoais e foto de perfil
-                  </p>
-                </div>
-                <ProfileForm
-                  initialData={profile}
-                  onSubmit={async (data) => {
-                    await updateProfileMutation.mutateAsync(data)
-                  }}
-                  isSubmitting={updateProfileMutation.isPending}
-                />
-              </CardContent>
-            </Card>
+          <SettingsSection
+            id="seguranca"
+            title="Segurança"
+            description="Altere sua senha de acesso"
+          >
+            <PasswordForm />
+          </SettingsSection>
 
-            <Card className="rounded-2xl border-border/50 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="space-y-1 mb-6">
-                  <h2 className="text-lg font-semibold">Segurança</h2>
-                  <p className="text-sm text-muted-foreground">Altere sua senha de acesso</p>
-                </div>
-                <PasswordForm />
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl border-border/50 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="space-y-1 mb-6">
-                  <h2 className="text-lg font-semibold">Aparência</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Escolha como o Costara aparece para você
-                  </p>
-                </div>
-                <AppearanceToggle />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* ── Membros ─────────────────────────────────────────────── */}
-          {isAdmin && (
-            <TabsContent value="membros">
-              <MembersSection />
-            </TabsContent>
-          )}
-
-          {/* ── Organização ─────────────────────────────────────────── */}
-          {isAdmin && (
-            <TabsContent value="organizacao">
-              <TenantConfigSection />
-            </TabsContent>
-          )}
-        </Tabs>
+          <SettingsSection
+            id="aparencia"
+            title="Aparência"
+            description="Escolha como o Costara aparece para você"
+          >
+            <AppearanceToggle />
+          </SettingsSection>
+        </SettingsLayout>
       </div>
     </AppLayout>
   )

@@ -1,10 +1,11 @@
 import { Bell } from 'lucide-react'
-import { AccountMenu, getInitials } from '@/components/account-menu'
+import { AccountMenu } from '@/components/account-menu'
 import { NotificationsMenu } from '@/components/notifications-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useAuth } from '@/contexts/auth-context'
+import { getInitials } from '@/lib/utils'
 
 // Barra fina só no mobile: lá a sidebar vira sheet, então conta e
 // notificações precisam de um ponto de acesso persistente.

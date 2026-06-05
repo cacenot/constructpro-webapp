@@ -30,6 +30,8 @@ export interface MembersTableSort {
 export interface UseMembersTableReturn {
   data: UserResponse[]
   isLoading: boolean
+  isError: boolean
+  refetch: () => void
   total: number
   hasActiveFilters: boolean
   handleClearFilters: () => void
@@ -76,7 +78,7 @@ export function useMembersTable(): UseMembersTableReturn {
     return params
   }, [page, debouncedSearch, sort])
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['members', queryParams],
     queryFn: async () => {
       const { data: result, error } = await client.GET('/api/v1/users', {
@@ -100,6 +102,8 @@ export function useMembersTable(): UseMembersTableReturn {
   return {
     data: members,
     isLoading,
+    isError,
+    refetch,
     total,
     hasActiveFilters,
     handleClearFilters,

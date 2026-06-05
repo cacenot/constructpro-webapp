@@ -6,12 +6,12 @@ import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CPFInput } from '@/components/ui/document-input'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,6 +24,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuth } from '@/contexts/auth-context'
 import { storage } from '@/lib/firebase'
 import { capitalizeNameBR } from '@/lib/text-formatters'
+import { getInitials } from '@/lib/utils'
 import { type ProfileUpdateFormData, profileUpdateSchema } from '@/schemas/settings.schema'
 
 type UserProfileResponse = components['schemas']['UserProfileResponse']
@@ -37,14 +38,9 @@ interface ProfileFormProps {
   isSubmitting?: boolean
 }
 
-function getInitials(name: string | null | undefined): string {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
+function formatMemberSince(date: string | null | undefined): string | null {
+  if (!date) return null
+  return new Date(date).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
 }
 
 export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: ProfileFormProps) {
@@ -78,6 +74,16 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
     const file = e.target.files?.[0]
     if (!file || !user) return
 
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione um arquivo de imagem.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5 MB.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     const ext = file.name.split('.').pop()
     const storageRef = ref(storage, `users/${user.uid}/profile-photo.${ext}`)
     const uploadTask = uploadBytesResumable(storageRef, file)
@@ -102,7 +108,6 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
         setIsUploading(false)
         setUploadProgress(0)
         toast.success('Foto enviada com sucesso')
-        // Reset file input so the same file can be selected again
         if (fileInputRef.current) fileInputRef.current.value = ''
       }
     )
@@ -110,68 +115,92 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
 
   const photoUrl = form.watch('photo_url')
   const fullName = form.watch('full_name')
+  const memberSince = formatMemberSince(initialData?.created_at)
+  const roles = initialData?.roles ?? []
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        {/* Avatar + Upload */}
-        <div className="flex items-center gap-6 rounded-xl bg-muted/30 p-4 transition-colors hover:bg-muted/40">
-          <div className="relative shrink-0">
-            <Avatar className="h-20 w-20 border-2 border-border/50 shadow-sm">
-              <AvatarImage src={photoUrl || undefined} alt={fullName || 'Usuário'} />
-              <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
-                {isUploading ? <Loader2 className="size-5 animate-spin" /> : getInitials(fullName)}
-              </AvatarFallback>
-            </Avatar>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                  <Camera className="size-3.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Alterar foto</p>
-              </TooltipContent>
-            </Tooltip>
+        {/* Identidade — avatar + nome/email/papéis, sem caixa */}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <Avatar className="size-16 border border-border/60">
+                <AvatarImage src={photoUrl || undefined} alt={fullName || 'Usuário'} />
+                <AvatarFallback className="bg-primary/10 text-lg font-semibold text-primary">
+                  {isUploading ? (
+                    <Loader2 className="size-5 animate-spin" />
+                  ) : (
+                    getInitials(fullName)
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
+                  >
+                    <Camera className="size-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Alterar foto</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
+            <div className="min-w-0 space-y-1.5">
+              <p className="truncate font-semibold leading-tight">{fullName || 'Usuário'}</p>
+              <p className="truncate text-sm text-muted-foreground">{initialData?.email}</p>
+              {roles.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {roles.map((role) => (
+                    <Badge key={role.id} variant="secondary" className="text-xs font-medium">
+                      {role.display_name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <h3 className="font-medium">Foto do Perfil</h3>
-            {isUploading ? (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Enviando... {uploadProgress}%</p>
-                <Progress value={uploadProgress} className="h-1.5" />
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Clique no ícone para enviar uma nova foto
+          {memberSince && (
+            <div className="shrink-0 sm:text-right">
+              <p className="text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground">
+                Membro desde
               </p>
-            )}
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+              <p className="text-sm capitalize">{memberSince}</p>
+            </div>
+          )}
         </div>
 
-        {/* Form Fields */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        {/* Progresso de upload */}
+        {isUploading && (
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Enviando foto... {uploadProgress}%</p>
+            <Progress value={uploadProgress} className="h-1.5" />
+          </div>
+        )}
+
+        {/* Campos — grid alinhado, sem helpers que criam buracos na grade */}
         <div className="space-y-5">
-          {/* Nome Completo */}
           <FormField
             control={form.control}
             name="full_name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome Completo *</FormLabel>
+                <FormLabel>Nome completo *</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -187,22 +216,20 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
             )}
           />
 
-          {/* Grid: Display Name | CPF */}
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="display_name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome de Exibição</FormLabel>
+                  <FormLabel>Nome de exibição</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       value={field.value || ''}
-                      placeholder="Como você gostaria de ser chamado?"
+                      placeholder="Como aparece no menu"
                     />
                   </FormControl>
-                  <FormDescription>Nome mostrado no menu superior</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -223,7 +250,6 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
             />
           </div>
 
-          {/* Grid: Telefone | Email (readonly) */}
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
@@ -243,23 +269,25 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
               <FormLabel>Email</FormLabel>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Input
-                    value={initialData?.email || ''}
-                    disabled
-                    className="bg-muted/50 cursor-not-allowed"
-                  />
+                  <span className="block">
+                    <Input
+                      value={initialData?.email || ''}
+                      disabled
+                      readOnly
+                      className="w-full cursor-not-allowed bg-muted/50"
+                    />
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Email não pode ser alterado</p>
+                  <p>Email de autenticação, não pode ser alterado</p>
                 </TooltipContent>
               </Tooltip>
-              <FormDescription>Email de autenticação (não pode ser alterado)</FormDescription>
             </FormItem>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end pt-2">
+        {/* Ações */}
+        <div className="flex justify-end border-t border-border/60 pt-5">
           <Button type="submit" disabled={isSubmitting || isUploading} className="min-w-40">
             {isSubmitting ? (
               <>
@@ -269,7 +297,7 @@ export function ProfileForm({ initialData, onSubmit, isSubmitting = false }: Pro
             ) : (
               <>
                 <Save className="mr-2 size-4" />
-                Salvar Alterações
+                Salvar alterações
               </>
             )}
           </Button>

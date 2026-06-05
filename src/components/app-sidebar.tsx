@@ -1,6 +1,6 @@
 import { Bell } from 'lucide-react'
 import type { ComponentType, SVGProps } from 'react'
-import { AccountMenu, getInitials } from '@/components/account-menu'
+import { AccountMenu } from '@/components/account-menu'
 import { CostaraMark } from '@/components/costara-mark'
 import {
   IcClientes,
@@ -32,6 +32,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/contexts/auth-context'
+import { getInitials } from '@/lib/utils'
 import { useTenantStore } from '@/stores/tenant-store'
 
 type NavIcon = ComponentType<SVGProps<SVGSVGElement>>
