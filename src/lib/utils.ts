@@ -14,6 +14,17 @@ export function formatCurrency(value: number): string {
   }).format(value)
 }
 
+/**
+ * Converte centavos (inteiro) na string decimal em reais que os endpoints de
+ * entrada esperam (`WireMoney` no backend): 50000000 → "500000.00". A string é
+ * montada a partir de inteiros para não introduzir erro de ponto flutuante.
+ */
+export function centsToReaisString(cents: number): string {
+  const sign = cents < 0 ? '-' : ''
+  const abs = Math.abs(Math.trunc(cents))
+  return `${sign}${Math.trunc(abs / 100)}.${String(abs % 100).padStart(2, '0')}`
+}
+
 export function formatArea(area: string | number | null): string {
   if (!area) return '—'
   const num = typeof area === 'string' ? Number.parseFloat(area) : area
