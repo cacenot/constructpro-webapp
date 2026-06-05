@@ -1,7 +1,7 @@
 import { Search } from 'lucide-react'
+import { ProjectFilter } from '@/components/filters/project-filter'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ProjectFilter } from '@/components/ui/project-filter'
 import type { UnitsTableFilters } from '@/hooks/use-units-table'
 
 interface UnitsFiltersProps {
@@ -23,10 +23,7 @@ export function UnitsFilters({ filters, hasActiveFilters, onClearFilters }: Unit
           maxLength={120}
         />
       </div>
-      <ProjectFilter
-        value={filters.projectFilter || null}
-        onChange={(id) => filters.setProjectFilter(id ?? 0)}
-      />
+      <ProjectFilter value={filters.projectFilter} onChange={filters.setProjectFilter} />
       {hasActiveFilters && (
         <Button variant="ghost" size="sm" onClick={onClearFilters}>
           Limpar filtros

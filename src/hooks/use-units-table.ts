@@ -14,9 +14,9 @@ const DEFAULT_SORT = 'id:desc'
 
 export interface UnitsTableFilters {
   search: string
-  projectFilter: number
+  projectFilter: number | null
   setSearch: (value: string) => void
-  setProjectFilter: (value: number) => void
+  setProjectFilter: (value: number | null) => void
 }
 
 export interface UnitsTablePagination {
@@ -60,7 +60,8 @@ export function useUnitsTable(): UseUnitsTableReturn {
     history: 'push',
   })
 
-  const { search, project: projectFilter, sort, page } = queryState
+  const { search, project: projectFilterRaw, sort, page } = queryState
+  const projectFilter = projectFilterRaw === 0 ? null : projectFilterRaw
 
   const [debouncedSearch, setDebouncedSearch] = useState(search)
 
@@ -82,7 +83,7 @@ export function useUnitsTable(): UseUnitsTableReturn {
     } = { page, page_size: PAGE_SIZE }
 
     if (debouncedSearch) params.search = debouncedSearch
-    if (projectFilter !== 0) params.project_id = projectFilter
+    if (projectFilter !== null) params.project_id = projectFilter
     if (sort) params.sort_by = [sort]
 
     return params
@@ -103,7 +104,7 @@ export function useUnitsTable(): UseUnitsTableReturn {
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  const hasActiveFilters = !!(debouncedSearch || projectFilter !== 0)
+  const hasActiveFilters = !!(debouncedSearch || projectFilter !== null)
 
   const handleClearFilters = () => {
     setQueryState({ search: '', project: 0, sort: DEFAULT_SORT, page: 1 })
@@ -122,7 +123,7 @@ export function useUnitsTable(): UseUnitsTableReturn {
       search,
       projectFilter,
       setSearch: (value) => setQueryState({ search: value }),
-      setProjectFilter: (value) => setQueryState({ project: value, page: 1 }),
+      setProjectFilter: (value) => setQueryState({ project: value ?? 0, page: 1 }),
     },
     pagination: {
       page,

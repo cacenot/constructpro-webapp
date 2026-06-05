@@ -8,17 +8,16 @@ import { cn } from '@/lib/utils'
 
 type UnitStatus = NonNullable<UnitResponse['status']>
 
-// Glow-pill consistente com os demais status do app (venda, contrato, empreendimento):
-// tinte translúcido + texto saturado + hairline da cor, via tokens --color-pipeline-*.
-// Paleta "semáforo imobiliário": disponível=verde, reservado=âmbar, vendido=azul, indisponível=coral.
+// Glow-pill — semáforo imobiliário: disponível=verde, reservado=âmbar, vendido=azul, indisponível=coral.
+// Usa tokens --color-unit-* (definidos em globals.css) para semântica independente do pipeline de vendas.
 const statusStyles: Record<UnitStatus, string> = {
   available:
-    'rounded-full border bg-pipeline-fechado text-pipeline-fechado-fg border-pipeline-fechado-dot/30',
+    'rounded-full border bg-unit-available text-unit-available-fg border-unit-available-dot/30',
   reserved:
-    'rounded-full border bg-pipeline-proposta text-pipeline-proposta-fg border-pipeline-proposta-dot/30',
-  sold: 'rounded-full border bg-pipeline-reservado text-pipeline-reservado-fg border-pipeline-reservado-dot/30',
+    'rounded-full border bg-unit-reserved text-unit-reserved-fg border-unit-reserved-dot/30',
+  sold: 'rounded-full border bg-unit-sold text-unit-sold-fg border-unit-sold-dot/30',
   unavailable:
-    'rounded-full border bg-pipeline-perdido text-pipeline-perdido-fg border-pipeline-perdido-dot/30',
+    'rounded-full border bg-unit-unavailable text-unit-unavailable-fg border-unit-unavailable-dot/30',
 }
 
 export function UnitStatusBadge({ status }: { status: UnitStatus }) {

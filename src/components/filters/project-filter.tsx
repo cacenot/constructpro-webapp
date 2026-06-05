@@ -23,11 +23,6 @@ interface ProjectFilterProps {
   disabled?: boolean
 }
 
-/**
- * Filtro de empreendimento com busca server-side — sem cap de resultados.
- * Resolve o nome a partir do id (deep-link: a URL guarda só o id).
- * Espelha CustomerFilter (shape de filtro) + ProjectAutocomplete (resolução por id).
- */
 export function ProjectFilter({
   value,
   onChange,
@@ -44,7 +39,7 @@ export function ProjectFilter({
     return () => clearTimeout(timer)
   }, [search])
 
-  // Nome do empreendimento selecionado, resolvido pelo id (para deep-links).
+  // Resolve o nome pelo id para suportar deep-links (URL guarda só o id).
   const selectedQuery = useQuery({
     queryKey: ['project', value],
     queryFn: async () => {
@@ -58,7 +53,7 @@ export function ProjectFilter({
     staleTime: 5 * 60 * 1000,
   })
 
-  // Busca server-side (page_size 20, paginada na origem) — substitui o cap de 100.
+  // Busca server-side — page_size 20 por página, sem cap fixo.
   const searchQuery = useQuery({
     queryKey: ['projects-filter-search', debouncedSearch],
     queryFn: async () => {
@@ -73,6 +68,8 @@ export function ProjectFilter({
   })
 
   const projects = searchQuery.data?.items ?? []
+  const total = searchQuery.data?.total ?? 0
+  const hasMore = !debouncedSearch && total > projects.length
   const selectedName = selectedQuery.data?.name
 
   const handleSelect = (project: (typeof projects)[number]) => {
@@ -154,6 +151,11 @@ export function ProjectFilter({
                 </CommandGroup>
               )}
             </CommandList>
+            {hasMore && (
+              <p className="border-t px-3 py-2 text-center text-xs text-muted-foreground">
+                Mostrando os primeiros {projects.length} de {total} — busque para refinar.
+              </p>
+            )}
           </Command>
         </PopoverContent>
       </Popover>
@@ -163,7 +165,8 @@ export function ProjectFilter({
             <button
               onClick={handleClear}
               type="button"
-              className="inline-flex shrink-0 items-center justify-center"
+              aria-label="Limpar filtro de empreendimento"
+              className="inline-flex shrink-0 items-center justify-center rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="size-3.5 opacity-60 hover:opacity-100" />
             </button>
