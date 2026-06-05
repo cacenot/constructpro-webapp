@@ -55,7 +55,6 @@ export const tenantConfigSchema = z
       .max(5, 'Máximo de 5'),
 
     // --- Correção monetária ---
-    correction_basis: z.enum(['outstanding_balance', 'total_contract_value']),
     apply_index_on_overdue_installments: z.boolean(),
   })
   .superRefine((data, ctx) => {

@@ -1,11 +1,14 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTenantConfig } from '@/hooks/use-tenant-config'
 import { handleApiError } from '@/lib/api-error'
 import type { TenantConfigFormData } from '@/schemas/tenant-config.schema'
-import { TenantConfigForm } from './tenant-config-form'
+import { useActiveSection } from './settings-layout'
+import { CONFIG_IDS, TenantConfigForm } from './tenant-config-form'
 
 /** Converte basis points → percentual (ex: 500 → 5.00) */
 function bpsToPercent(bps: number | null | undefined, fallback: number): number {
@@ -19,14 +22,10 @@ function percentToBps(pct: number): number {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-6">
-      {(['indices', 'boletos', 'pagamentos', 'automacao', 'correcao'] as const).map((section) => (
-        <div key={section} className="rounded-2xl border border-border/50 p-6 space-y-4">
-          <Skeleton className="h-5 w-40" />
-          <Skeleton className="h-4 w-64" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-      ))}
+    <div className="space-y-4">
+      <Skeleton className="h-5 w-44" />
+      <Skeleton className="h-4 w-72" />
+      <Skeleton className="h-32 w-full" />
     </div>
   )
 }
@@ -38,7 +37,10 @@ function LoadingSkeleton() {
 export function TenantConfigSection() {
   const { client } = useApiClient()
   const queryClient = useQueryClient()
-  const { data: config, isLoading, error } = useTenantConfig()
+  const { data: config, isLoading, error, refetch } = useTenantConfig()
+  // Skeleton/erro só fazem sentido quando uma seção de config está ativa
+  // (no master-detail, com "Membros" ativo o config fica oculto).
+  const isConfigActive = CONFIG_IDS.includes(useActiveSection())
 
   const updateMutation = useMutation({
     mutationFn: async (data: TenantConfigFormData) => {
@@ -60,7 +62,6 @@ export function TenantConfigSection() {
             data.sale_lost_rule === 'days_in_pending_signature'
               ? data.sale_lost_days_threshold
               : null,
-          correction_basis: data.correction_basis,
           apply_index_on_overdue_installments: data.apply_index_on_overdue_installments,
           // max_installments_per_month may not be in the generated client type yet
           ...(data.max_installments_per_month !== undefined
@@ -82,15 +83,23 @@ export function TenantConfigSection() {
   })
 
   if (isLoading) {
-    return <LoadingSkeleton />
+    return isConfigActive ? <LoadingSkeleton /> : null
   }
 
   if (error || !config) {
+    if (!isConfigActive) return null
     return (
-      <div className="rounded-2xl border border-border/50 p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          Erro ao carregar configurações da organização. Tente novamente.
-        </p>
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <div className="space-y-1">
+          <p className="text-sm font-medium">
+            Não foi possível carregar as configurações da organização
+          </p>
+          <p className="text-sm text-muted-foreground">Verifique sua conexão e tente novamente.</p>
+        </div>
+        <Button variant="outline" onClick={() => refetch()}>
+          <RefreshCw className="mr-2 size-4" />
+          Tentar novamente
+        </Button>
       </div>
     )
   }
@@ -108,9 +117,6 @@ export function TenantConfigSection() {
     require_entry_payment_for_close: config.require_entry_payment_for_close ?? false,
     sale_lost_rule: config.sale_lost_rule ?? 'disabled',
     sale_lost_days_threshold: config.sale_lost_days_threshold ?? null,
-    correction_basis:
-      (config as { correction_basis?: TenantConfigFormData['correction_basis'] })
-        .correction_basis ?? 'outstanding_balance',
     apply_index_on_overdue_installments: config.apply_index_on_overdue_installments ?? true,
     max_installments_per_month:
       (config as { max_installments_per_month?: number }).max_installments_per_month ?? 2,

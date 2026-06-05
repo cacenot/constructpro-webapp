@@ -217,7 +217,8 @@ export function PasswordForm() {
                   </div>
                   <Progress
                     value={passwordStrength}
-                    className={getStrengthColor(passwordStrength)}
+                    className="bg-muted"
+                    indicatorClassName={getStrengthColor(passwordStrength)}
                   />
                 </div>
               )}

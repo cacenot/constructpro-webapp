@@ -56,7 +56,7 @@ export function MembersTable({
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="px-6">
+                <TableHead key={header.id} className="px-4">
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
@@ -70,25 +70,25 @@ export function MembersTable({
             Array.from({ length: SKELETON_ROWS }).map((_, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows
               <TableRow key={i}>
-                <TableCell className="px-6 py-3">
+                <TableCell className="px-4 py-3">
                   <div className="flex flex-col gap-1.5">
                     <Skeleton className="h-4 w-36" />
                     <Skeleton className="h-3 w-44" />
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell px-6 py-3">
+                <TableCell className="hidden md:table-cell px-4 py-3">
                   <Skeleton className="h-4 w-28" />
                 </TableCell>
-                <TableCell className="hidden lg:table-cell px-6 py-3">
+                <TableCell className="hidden lg:table-cell px-4 py-3">
                   <Skeleton className="h-4 w-28" />
                 </TableCell>
-                <TableCell className="px-6 py-3">
+                <TableCell className="px-4 py-3">
                   <Skeleton className="h-5 w-20 rounded-full" />
                 </TableCell>
-                <TableCell className="hidden lg:table-cell px-6 py-3">
+                <TableCell className="hidden lg:table-cell px-4 py-3">
                   <Skeleton className="h-4 w-20" />
                 </TableCell>
-                <TableCell className="px-6 py-3">
+                <TableCell className="px-4 py-3">
                   <Skeleton className="h-7 w-7 rounded-md" />
                 </TableCell>
               </TableRow>
@@ -115,7 +115,7 @@ export function MembersTable({
             table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="px-6 py-3">
+                  <TableCell key={cell.id} className="px-4 py-3">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}

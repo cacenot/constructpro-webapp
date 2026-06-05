@@ -1,5 +1,6 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreVertical } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +15,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import type { UserResponse } from '@/hooks/use-members-table'
 import { formatDocument, formatPhone } from '@/lib/text-formatters'
 import { getRoleLabel } from '@/schemas/member.schema'
+
+function getInitials(name: string | null | undefined): string {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+}
 
 function SortIcon({ column, sort }: { column: string; sort: string }) {
   if (!sort.startsWith(column)) return <ArrowUpDown className="ml-1 size-3 text-muted-foreground" />
@@ -60,9 +71,17 @@ export function createMembersColumns({
         </Button>
       ),
       cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="truncate text-sm font-medium">{row.original.full_name}</span>
-          <span className="truncate text-xs text-muted-foreground">{row.original.email}</span>
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar className="size-8 shrink-0">
+            <AvatarImage src={row.original.photo_url || undefined} alt={row.original.full_name} />
+            <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+              {getInitials(row.original.full_name)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="truncate text-sm font-medium">{row.original.full_name}</span>
+            <span className="truncate text-xs text-muted-foreground">{row.original.email}</span>
+          </div>
         </div>
       ),
     },
