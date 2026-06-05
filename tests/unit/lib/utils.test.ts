@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cn, formatArea, formatCurrency, formatId } from '@/lib/utils'
+import { cn, formatArea, formatCurrency, formatId, getInitials } from '@/lib/utils'
 
 describe('cn()', () => {
   it('retorna classe simples', () => {
@@ -74,5 +74,39 @@ describe('formatId()', () => {
 
   it('formata id intermediário', () => {
     expect(formatId(342)).toBe('#00342')
+  })
+})
+
+describe('getInitials()', () => {
+  it('retorna "?" para null', () => {
+    expect(getInitials(null)).toBe('?')
+  })
+
+  it('retorna "?" para undefined', () => {
+    expect(getInitials(undefined)).toBe('?')
+  })
+
+  it('retorna "?" para string vazia', () => {
+    expect(getInitials('')).toBe('?')
+  })
+
+  it('retorna inicial única para nome simples', () => {
+    expect(getInitials('Maria')).toBe('M')
+  })
+
+  it('retorna duas iniciais para nome completo', () => {
+    expect(getInitials('Maria Silva')).toBe('MS')
+  })
+
+  it('retorna no máximo duas iniciais para três ou mais nomes', () => {
+    expect(getInitials('Maria Silva Santos')).toBe('MS')
+  })
+
+  it('converte para maiúsculas quando o nome está em minúsculas', () => {
+    expect(getInitials('joão silva')).toBe('JS')
+  })
+
+  it('mantém maiúsculas quando o nome já está em maiúsculas', () => {
+    expect(getInitials('ANA')).toBe('A')
   })
 })
