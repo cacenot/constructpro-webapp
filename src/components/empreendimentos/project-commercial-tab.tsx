@@ -74,7 +74,7 @@ function SalesMonetaryCard({ data }: { data: ProjectSalesSummary }) {
         </div>
         <Separator />
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Preco Medio</span>
+          <span className="text-sm text-muted-foreground">Preço Médio</span>
           <span className="tabular-nums text-sm font-medium">
             {formatCurrency(data.avg_sale_price.cents / 100)}
           </span>
@@ -83,7 +83,7 @@ function SalesMonetaryCard({ data }: { data: ProjectSalesSummary }) {
           <>
             <Separator />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Desconto Medio</span>
+              <span className="text-sm text-muted-foreground">Desconto Médio</span>
               <span className="tabular-nums text-sm font-medium">
                 {Number(data.avg_discount_percentage).toFixed(2)}%
               </span>

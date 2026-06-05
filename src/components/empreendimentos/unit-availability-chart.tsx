@@ -49,7 +49,7 @@ export function UnitAvailabilityChart({ data }: UnitAvailabilityChartProps) {
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center space-y-4">
         <StatusBar
-          label="Disponivel"
+          label="Disponível"
           value={data.available_count}
           total={data.total_units}
           colorClass="bg-success"

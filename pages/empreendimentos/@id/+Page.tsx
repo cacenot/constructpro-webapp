@@ -53,7 +53,7 @@ export default function ProjectDetailPage() {
     return (
       <AppLayout>
         <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
-          <p className="text-lg text-muted-foreground">Empreendimento nao encontrado</p>
+          <p className="text-lg text-muted-foreground">Empreendimento não encontrado</p>
           <Button variant="link" onClick={() => navigate('/empreendimentos')}>
             Voltar para lista
           </Button>
@@ -71,7 +71,7 @@ export default function ProjectDetailPage() {
           <TabsList variant="line">
             <TabsTrigger value="visao-geral">
               <LayoutDashboard className="size-4" />
-              Visao Geral
+              Visão Geral
             </TabsTrigger>
             <TabsTrigger value="unidades">
               <Building2 className="size-4" />

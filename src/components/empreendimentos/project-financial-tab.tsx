@@ -72,7 +72,7 @@ function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
               data.total_correction.cents > 0 ? 'text-warning' : 'text-muted-foreground'
             )}
           >
-            Correcoes
+            Correções
           </p>
           <p
             className={cn(

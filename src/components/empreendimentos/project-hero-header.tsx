@@ -60,7 +60,7 @@ export function ProjectHeroHeader({ project }: ProjectHeroHeaderProps) {
             {project.delivery_date && (
               <div className="flex items-center gap-1.5">
                 <Calendar className="size-4 shrink-0" />
-                Previsao de entrega:{' '}
+                Previsão de entrega:{' '}
                 {new Date(project.delivery_date as string).toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: '2-digit',
@@ -92,7 +92,7 @@ export function ProjectHeroHeader({ project }: ProjectHeroHeaderProps) {
                   variant="outline"
                   size="sm"
                   className="gap-1.5"
-                  onClick={() => navigate(`/empreendimentos/${project.id}/unidades`)}
+                  onClick={() => navigate(`/unidades?project=${project.id}`)}
                 >
                   <Building2 className="size-4" />
                   Ver Unidades

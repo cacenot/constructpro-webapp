@@ -18,7 +18,7 @@ export function ProjectUnitsTab({ project }: ProjectUnitsTabProps) {
       <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-lg border border-dashed">
         <p className="text-muted-foreground">Nenhuma unidade cadastrada neste empreendimento.</p>
         <p className="text-sm text-muted-foreground">
-          Cadastre unidades para visualizar o inventario.
+          Cadastre unidades para visualizar o inventário.
         </p>
       </div>
     )
@@ -37,7 +37,7 @@ export function ProjectUnitsTab({ project }: ProjectUnitsTabProps) {
           variant="ghost"
           size="sm"
           className="gap-1.5 text-muted-foreground"
-          onClick={() => navigate(`/empreendimentos/${project.id}/unidades`)}
+          onClick={() => navigate(`/unidades?project=${project.id}`)}
         >
           Ver todas as unidades
           <ArrowRight className="size-4" />

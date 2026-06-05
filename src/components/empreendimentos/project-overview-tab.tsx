@@ -22,7 +22,7 @@ export function ProjectOverviewTab({ project }: ProjectOverviewTabProps) {
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-lg border border-dashed">
         <p className="text-muted-foreground">
-          Este empreendimento ainda nao possui dados analiticos.
+          Este empreendimento ainda não possui dados analíticos.
         </p>
         <p className="text-sm text-muted-foreground">
           Cadastre unidades e registre vendas para visualizar os indicadores.
