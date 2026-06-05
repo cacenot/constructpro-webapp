@@ -4,11 +4,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 export function ProjectCardSkeleton() {
   return (
     <Card className="overflow-hidden">
-      <Skeleton className="aspect-[4/3] w-full" />
-      <div className="space-y-3 p-4">
+      <Skeleton className="aspect-[2/1] w-full rounded-none" />
+      <div className="space-y-2.5 p-4">
         <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-5 w-16" />
-        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-3.5 w-1/2" />
+        <Skeleton className="h-14 w-full rounded-md" />
       </div>
     </Card>
   )

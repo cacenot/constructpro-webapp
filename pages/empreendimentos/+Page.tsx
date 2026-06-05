@@ -4,13 +4,26 @@ import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { ProjectCard } from '@/components/projects/project-card'
 import { ProjectCardSkeleton } from '@/components/projects/project-card-skeleton'
+import { ProjectsPagination } from '@/components/projects/projects-pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useProjectsSummary } from '@/hooks/useProjects'
+
+type StatusFilter = 'all' | 'construction' | 'finished'
+
+const GRID_COLS = 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
 
 export default function ProjectsPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [page, setPage] = useState(1)
 
   useEffect(() => {
@@ -23,22 +36,22 @@ export default function ProjectsPage() {
 
   const pageSize = Number.parseInt(import.meta.env.VITE_PROJECTS_PAGE_SIZE ?? '', 10) || 20
 
-  const { data, isLoading, error } = useProjectsSummary({
+  const { data, isLoading, error, refetch } = useProjectsSummary({
     page,
     page_size: pageSize,
     search: debouncedSearch || undefined,
+    status: statusFilter === 'all' ? undefined : [statusFilter],
   })
 
   const projects = data?.items ?? []
   const total = data?.total ?? 0
+  const hasActiveFilters = Boolean(debouncedSearch) || statusFilter !== 'all'
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
-  const maxPagesToShow = 5
-  const startPage = Math.max(
-    1,
-    Math.min(page - Math.floor(maxPagesToShow / 2), totalPages - maxPagesToShow + 1)
-  )
-  const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1)
-  const visiblePages = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i)
+
+  function handleStatusChange(value: StatusFilter) {
+    setStatusFilter(value)
+    setPage(1)
+  }
 
   return (
     <AppLayout>
@@ -57,29 +70,49 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, localização..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        {/* Filtros */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, localização..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="construction">Em Construção</SelectItem>
+              <SelectItem value="finished">Finalizado</SelectItem>
+            </SelectContent>
+          </Select>
+          {!isLoading && !error && (
+            <span className="text-sm text-muted-foreground tabular-nums sm:ml-auto">
+              {total} {total === 1 ? 'empreendimento' : 'empreendimentos'}
+            </span>
+          )}
         </div>
 
         {/* Content */}
         {error ? (
-          <div className="flex flex-col items-center justify-center py-16">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
             <Building2 className="mb-4 size-16 text-destructive" />
             <h3 className="mb-1 text-lg font-semibold">Erro ao carregar</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="mb-6 text-sm text-muted-foreground">
               Falha ao carregar empreendimentos. Tente novamente.
             </p>
+            <Button variant="outline" onClick={() => refetch()}>
+              Tentar novamente
+            </Button>
           </div>
         ) : isLoading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => (
+          <div className={GRID_COLS}>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
               <ProjectCardSkeleton key={n} />
             ))}
           </div>
@@ -88,11 +121,11 @@ export default function ProjectsPage() {
             <Building2 className="mb-4 size-16 text-muted-foreground opacity-20" />
             <h3 className="mb-1 text-lg font-semibold">Nenhum empreendimento encontrado</h3>
             <p className="max-w-md text-sm text-muted-foreground">
-              {search
-                ? `Não encontramos resultados para "${search}". Tente outro termo.`
+              {hasActiveFilters
+                ? 'Nenhum resultado para os filtros aplicados. Ajuste a busca ou o status.'
                 : 'Adicione seu primeiro empreendimento para começar.'}
             </p>
-            {!search && (
+            {!hasActiveFilters && (
               <Button className="mt-6 gap-2" onClick={() => navigate('/empreendimentos/novo')}>
                 <Plus className="size-4" />
                 Novo Empreendimento
@@ -102,67 +135,21 @@ export default function ProjectsPage() {
         ) : (
           <>
             {/* Grid de cards */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className={GRID_COLS}>
               {projects.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))}
             </div>
 
             {/* Paginação */}
-            {totalPages > 1 && (
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Página {page} de {totalPages}
-                </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page === 1 || isLoading}
-                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                  >
-                    Anterior
-                  </Button>
-                  {startPage > 1 && (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => setPage(1)}>
-                        1
-                      </Button>
-                      {startPage > 2 && <span className="px-1 text-muted-foreground">…</span>}
-                    </>
-                  )}
-                  {visiblePages.map((pageNumber) => (
-                    <Button
-                      key={pageNumber}
-                      variant={pageNumber === page ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setPage(pageNumber)}
-                      disabled={isLoading}
-                    >
-                      {pageNumber}
-                    </Button>
-                  ))}
-                  {endPage < totalPages && (
-                    <>
-                      {endPage < totalPages - 1 && (
-                        <span className="px-1 text-muted-foreground">…</span>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => setPage(totalPages)}>
-                        {totalPages}
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page === totalPages || isLoading}
-                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                  >
-                    Próxima
-                  </Button>
-                </div>
-              </div>
-            )}
+            <ProjectsPagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              isLoading={isLoading}
+              setPage={setPage}
+            />
           </>
         )}
       </div>
