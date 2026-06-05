@@ -272,6 +272,9 @@
   --color-pipeline-perdido-bg:    oklch(0.58 0.215 22 / 0.12);
   --color-pipeline-perdido-fg:    var(--red-700);
   --color-pipeline-perdido-dot:   var(--red-500);
+  --color-pipeline-assinatura-bg:  var(--teal-100);
+  --color-pipeline-assinatura-fg:  var(--teal-700);
+  --color-pipeline-assinatura-dot: var(--teal-500);
 
   /* --- Charts ------------------------------------------------------------- */
   --color-chart-1: var(--lime-600);    /* marca */
@@ -437,6 +440,9 @@
   --color-pipeline-perdido-bg:    oklch(0.68 0.190 22 / 0.16);
   --color-pipeline-perdido-fg:    var(--red-300);
   --color-pipeline-perdido-dot:   var(--red-400);
+  --color-pipeline-assinatura-bg:  var(--teal-950);
+  --color-pipeline-assinatura-fg:  var(--teal-300);
+  --color-pipeline-assinatura-dot: var(--teal-400);
 
   /* --- Charts dark -------------------------------------------------------- */
   --color-chart-1: var(--lime-400);
@@ -837,9 +843,12 @@
   --color-pipeline-fechado:           var(--color-pipeline-fechado-bg);
   --color-pipeline-fechado-fg:        var(--color-pipeline-fechado-fg);
   --color-pipeline-fechado-dot:       var(--color-pipeline-fechado-dot);
-  --color-pipeline-perdido:           var(--color-pipeline-perdido-bg);
-  --color-pipeline-perdido-fg:        var(--color-pipeline-perdido-fg);
-  --color-pipeline-perdido-dot:       var(--color-pipeline-perdido-dot);
+  --color-pipeline-perdido:            var(--color-pipeline-perdido-bg);
+  --color-pipeline-perdido-fg:         var(--color-pipeline-perdido-fg);
+  --color-pipeline-perdido-dot:        var(--color-pipeline-perdido-dot);
+  --color-pipeline-assinatura:         var(--color-pipeline-assinatura-bg);
+  --color-pipeline-assinatura-fg:      var(--color-pipeline-assinatura-fg);
+  --color-pipeline-assinatura-dot:     var(--color-pipeline-assinatura-dot);
 
   /* --- Extras semânticos ----------------------------------------------------- */
   --color-success:            var(--color-success);

@@ -1,6 +1,7 @@
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { TrendingUp } from 'lucide-react'
 import { useState } from 'react'
+import { navigate } from 'vike/client/router'
 import { PayInstallmentDialog } from '@/components/financeiro/pay-installment-dialog'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -78,12 +79,6 @@ export function SalesTable({ data, isLoading, hasActiveFilters, onClearFilters }
                   <TableCell className="hidden md:table-cell px-6 py-3">
                     <Skeleton className="h-4 w-36" />
                   </TableCell>
-                  <TableCell className="hidden lg:table-cell px-6 py-3">
-                    <Skeleton className="h-4 w-28" />
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell px-6 py-3">
-                    <Skeleton className="h-4 w-32" />
-                  </TableCell>
                   <TableCell className="px-6 py-3">
                     <Skeleton className="h-5 w-20 rounded-full" />
                   </TableCell>
@@ -105,9 +100,13 @@ export function SalesTable({ data, isLoading, hasActiveFilters, onClearFilters }
                         ? 'Nenhuma venda encontrada com os filtros aplicados.'
                         : 'Nenhuma venda cadastrada.'}
                     </p>
-                    {hasActiveFilters && (
+                    {hasActiveFilters ? (
                       <Button variant="ghost" size="sm" onClick={onClearFilters}>
                         Limpar filtros
+                      </Button>
+                    ) : (
+                      <Button size="sm" onClick={() => navigate('/vendas/novo')}>
+                        Cadastrar primeira proposta
                       </Button>
                     )}
                   </div>
@@ -115,9 +114,19 @@ export function SalesTable({ data, isLoading, hasActiveFilters, onClearFilters }
               </TableRow>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate(`/vendas/${row.original.id}`)}
+                >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-6 py-3">
+                    <TableCell
+                      key={cell.id}
+                      className="px-6 py-3"
+                      onClick={
+                        cell.column.id === 'actions' ? (e) => e.stopPropagation() : undefined
+                      }
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

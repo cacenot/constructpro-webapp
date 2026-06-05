@@ -53,18 +53,12 @@ function formatMonthYear(dateStr: string | null | undefined): string {
 }
 
 const CONTRACT_STATUS_COLORS: Record<string, string> = {
-  pending:
-    'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-300',
-  active:
-    'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-300',
-  in_default:
-    'border-red-500/30 bg-red-500/10 text-red-700 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-300',
-  settled:
-    'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:border-blue-400/30 dark:bg-blue-400/10 dark:text-blue-300',
-  canceled:
-    'border-zinc-500/30 bg-zinc-500/10 text-zinc-600 dark:border-zinc-400/30 dark:bg-zinc-400/10 dark:text-zinc-400',
-  terminated:
-    'border-zinc-500/30 bg-zinc-500/10 text-zinc-600 dark:border-zinc-400/30 dark:bg-zinc-400/10 dark:text-zinc-400',
+  pending: 'border-pipeline-proposta-dot/30    bg-pipeline-proposta    text-pipeline-proposta-fg',
+  active: 'border-pipeline-fechado-dot/30     bg-pipeline-fechado     text-pipeline-fechado-fg',
+  in_default: 'border-pipeline-perdido-dot/30     bg-pipeline-perdido     text-pipeline-perdido-fg',
+  settled: 'border-pipeline-reservado-dot/30   bg-pipeline-reservado   text-pipeline-reservado-fg',
+  canceled: 'border-border bg-muted text-muted-foreground',
+  terminated: 'border-border bg-muted text-muted-foreground',
 }
 
 export default function SaleDetailPage() {
@@ -414,7 +408,7 @@ export default function SaleDetailPage() {
             <CardContent className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Corretor</span>
-                <span className="tabular-nums text-sm">{sale.broker?.full_name ?? '—'}</span>
+                <span className="text-sm">{sale.broker?.full_name ?? '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Taxa do corretor</span>
@@ -428,7 +422,7 @@ export default function SaleDetailPage() {
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Imobiliária</span>
-                    <span className="tabular-nums text-sm">
+                    <span className="text-sm">
                       {sale.agency?.trade_name ?? sale.agency?.legal_name ?? '—'}
                     </span>
                   </div>

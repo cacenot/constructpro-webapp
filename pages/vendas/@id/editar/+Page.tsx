@@ -1,11 +1,11 @@
 import { useApiClient, useSale } from '@cacenot/construct-pro-api-client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { navigate } from 'vike/client/router'
 import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { SaleEditForm } from '@/components/vendas/sale-edit-form'
 import { handleApiError, throwApiError } from '@/lib/api-error'
 import { buildCommissionRate } from '@/lib/commission-utils'
@@ -87,8 +87,32 @@ export default function SaleEditPage() {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="flex h-[50vh] items-center justify-center">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+          <Skeleton className="h-px w-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-36" />
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-9" />
+              <Skeleton className="h-9" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-9" />
+              <Skeleton className="h-9" />
+            </div>
+          </div>
+          <Skeleton className="h-px w-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-44" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
         </div>
       </AppLayout>
     )

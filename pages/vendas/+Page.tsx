@@ -1,4 +1,4 @@
-import { Plus, TrendingUp } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
@@ -35,9 +35,8 @@ export default function VendasPage() {
         {/* Table */}
         <Card className="rounded-xl shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <TrendingUp className="size-4" />
-              {isLoading ? 'Carregando...' : `${total} vendas`}
+            <CardTitle className="text-base font-semibold">
+              {isLoading ? 'Carregando...' : `${total} ${total === 1 ? 'venda' : 'vendas'}`}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">

@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ThemeProvider } from 'next-themes'
 import { NuqsAdapter } from 'nuqs/adapters/react'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { AuthGuard } from '@/components/auth-guard'
 import { TenantLoader } from '@/components/tenant-loader'
 import { Toaster } from '@/components/ui/sonner'
@@ -19,6 +19,15 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const tenantId = useTenantStore((s) => s.tenantId)
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    if (document.querySelector('script[data-impeccable-live]')) return
+    const s = document.createElement('script')
+    s.src = 'http://localhost:8400/live.js'
+    s.setAttribute('data-impeccable-live', 'true')
+    document.head.appendChild(s)
+  }, [])
 
   return (
     <NuqsAdapter>

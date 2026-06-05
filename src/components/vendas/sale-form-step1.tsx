@@ -7,6 +7,7 @@ import { CustomerAutocomplete, type SelectedCustomer } from '@/components/ui/cus
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Label } from '@/components/ui/label'
 import { ProjectAutocomplete, type SelectedProject } from '@/components/ui/project-autocomplete'
+import { Separator } from '@/components/ui/separator'
 import { type SelectedUnit, UnitAutocomplete } from '@/components/ui/unit-autocomplete'
 import type { SaleFormData } from '@/schemas/sale.schema'
 
@@ -39,54 +40,62 @@ export function SaleFormStep1({
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <Card>
-        <CardHeader>
+        <CardHeader className="border-b border-border pb-4">
           <CardTitle aria-live="polite">Dados da Venda</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-1.5">
-            <Label>Empreendimento *</Label>
-            <ProjectAutocomplete value={selectedProject?.id ?? null} onChange={onProjectChange} />
+        <CardContent className="space-y-0 p-0">
+          {/* Empreendimento e Unidade */}
+          <div className="space-y-4 p-6">
+            <div className="flex flex-col gap-1.5">
+              <Label>Empreendimento *</Label>
+              <ProjectAutocomplete value={selectedProject?.id ?? null} onChange={onProjectChange} />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="unit_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unidade *</FormLabel>
+                  <FormControl>
+                    <UnitAutocomplete
+                      value={field.value}
+                      onChange={onUnitChange}
+                      projectId={selectedProject?.id}
+                      disabled={!selectedProject}
+                      placeholder={
+                        selectedProject
+                          ? 'Selecione uma unidade...'
+                          : 'Selecione um empreendimento primeiro'
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
-          <FormField
-            control={form.control}
-            name="unit_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unidade *</FormLabel>
-                <FormControl>
-                  <UnitAutocomplete
-                    value={field.value}
-                    onChange={onUnitChange}
-                    projectId={selectedProject?.id}
-                    disabled={!selectedProject}
-                    placeholder={
-                      selectedProject
-                        ? 'Selecione uma unidade...'
-                        : 'Selecione um empreendimento primeiro'
-                    }
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <Separator />
 
-          <FormField
-            control={form.control}
-            name="customer_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cliente *</FormLabel>
-                <FormControl>
-                  <CustomerAutocomplete value={field.value} onChange={handleCustomerChange} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Cliente */}
+          <div className="p-6">
+            <FormField
+              control={form.control}
+              name="customer_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente *</FormLabel>
+                  <FormControl>
+                    <CustomerAutocomplete value={field.value} onChange={handleCustomerChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         </CardContent>
       </Card>
 

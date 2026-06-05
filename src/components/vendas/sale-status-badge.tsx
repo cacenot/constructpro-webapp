@@ -6,7 +6,7 @@ const statusStyles: Record<(typeof SaleStatus)[keyof typeof SaleStatus], string>
   proposal:
     'rounded-full border bg-pipeline-proposta  text-pipeline-proposta-fg  border-pipeline-proposta-dot/30',
   pending_signature:
-    'rounded-full border bg-pipeline-proposta  text-pipeline-proposta-fg  border-pipeline-proposta-dot/30',
+    'rounded-full border bg-pipeline-assinatura text-pipeline-assinatura-fg border-pipeline-assinatura-dot/30',
   pending_payment:
     'rounded-full border bg-pipeline-reservado text-pipeline-reservado-fg border-pipeline-reservado-dot/30',
   closed:

@@ -24,6 +24,12 @@ interface SaleFormProps {
   isSubmitting?: boolean
 }
 
+const STEPS = [
+  { num: 1 as const, label: 'Dados da Venda' },
+  { num: 2 as const, label: 'Comissão' },
+  { num: 3 as const, label: 'Pagamento' },
+]
+
 export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormProps) {
   const { client } = useApiClient()
   const [step, setStep] = React.useState<1 | 2 | 3>(1)
@@ -123,7 +129,6 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
       form.setValue('same_index_for_all', value)
       const schedules = form.getValues('installment_schedules')
       if (!value) {
-        // ON → OFF: pré-preencher índice global nos grupos existentes
         const globalIndex = form.getValues('index_type_code')
         if (globalIndex) {
           schedules.forEach((_, i) => {
@@ -131,7 +136,6 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
           })
         }
       } else {
-        // OFF → ON: usar índice do primeiro grupo não-entry como global
         const firstNonEntry = schedules.find((s) => s.kind !== 'entry')
         form.setValue('index_type_code', firstNonEntry?.index_type_code ?? '')
       }
@@ -194,79 +198,90 @@ export function SaleForm({ onSubmit, onBack, isSubmitting = false }: SaleFormPro
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onBack}
+                className="-ml-2 shrink-0"
+              >
                 <ArrowLeft className="size-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Voltar</p>
+              <p>Voltar para Vendas</p>
             </TooltipContent>
           </Tooltip>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">Nova Proposta</h2>
-            <p className="mt-1 text-muted-foreground">
-              Preencha os dados para cadastrar uma nova proposta de venda
-            </p>
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">Vendas</p>
+            <h1 className="text-xl font-semibold tracking-tight">Nova Proposta</h1>
           </div>
         </div>
 
         {/* Step indicator */}
-        <ol className="flex items-center">
-          {/* Step 1 */}
-          <li className="flex items-center" aria-current={step === 1 ? 'step' : undefined}>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-              {step > 1 ? <Check className="size-4" /> : '1'}
-            </div>
-            <span className="ml-2 text-sm">Dados da Venda</span>
-          </li>
+        <nav aria-label="Passos do formulário">
+          <ol className="flex items-start">
+            {STEPS.map((s, i) => {
+              const isCompleted = step > s.num
+              const isActive = step === s.num
 
-          <li className="mx-4 h-px flex-1 bg-border" aria-hidden="true" />
+              return (
+                <React.Fragment key={s.num}>
+                  <li className="flex flex-col items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => isCompleted && setStep(s.num)}
+                      disabled={!isCompleted}
+                      aria-current={isActive ? 'step' : undefined}
+                      aria-label={isCompleted ? `Voltar para ${s.label}` : s.label}
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        isCompleted &&
+                          'cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90',
+                        isActive &&
+                          'cursor-default bg-primary text-primary-foreground ring-4 ring-primary/20',
+                        !isCompleted &&
+                          !isActive &&
+                          'cursor-default border-2 border-muted-foreground/30 text-muted-foreground'
+                      )}
+                    >
+                      {isCompleted ? <Check className="size-4" /> : s.num}
+                    </button>
+                    <span
+                      className={cn(
+                        'whitespace-nowrap text-xs font-medium',
+                        isActive || isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                      )}
+                    >
+                      {s.label}
+                    </span>
+                  </li>
 
-          {/* Step 2 */}
-          <li className="flex items-center" aria-current={step === 2 ? 'step' : undefined}>
-            <div
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
-                step > 2
-                  ? 'bg-primary text-primary-foreground'
-                  : step === 2
-                    ? 'bg-primary text-primary-foreground'
-                    : 'border-2 border-muted-foreground text-muted-foreground'
-              )}
-            >
-              {step > 2 ? <Check className="size-4" /> : '2'}
-            </div>
-            <span className={cn('ml-2 text-sm', step < 2 && 'text-muted-foreground')}>
-              Comissão
-            </span>
-          </li>
+                  {i < STEPS.length - 1 && (
+                    <li aria-hidden="true" className="mx-3 flex-1 pt-4">
+                      <div className="relative h-0.5 overflow-hidden rounded-full bg-border">
+                        <div
+                          className="absolute inset-y-0 left-0 bg-primary"
+                          style={{
+                            width: step > s.num ? '100%' : '0%',
+                            transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+                          }}
+                        />
+                      </div>
+                    </li>
+                  )}
+                </React.Fragment>
+              )
+            })}
+          </ol>
+        </nav>
 
-          <li className="mx-4 h-px flex-1 bg-border" aria-hidden="true" />
-
-          {/* Step 3 */}
-          <li className="flex items-center" aria-current={step === 3 ? 'step' : undefined}>
-            <div
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
-                step === 3
-                  ? 'bg-primary text-primary-foreground'
-                  : 'border-2 border-muted-foreground text-muted-foreground'
-              )}
-            >
-              3
-            </div>
-            <span className={cn('ml-2 text-sm', step < 3 && 'text-muted-foreground')}>
-              Pagamento
-            </span>
-          </li>
-        </ol>
-
-        {/* Steps — grid com sidebar em todos os steps */}
+        {/* Steps — grid com sidebar */}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1fr_340px]">
-          <div>
+          <div key={step} className="animate-in fade-in-0 slide-in-from-bottom-1 duration-150">
             {step === 1 && (
               <SaleFormStep1
                 form={form}
