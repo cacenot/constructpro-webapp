@@ -1,4 +1,4 @@
-import { Bell } from 'lucide-react'
+import { ChevronsLeft, ChevronsRight } from 'lucide-react'
 import type { ComponentType, SVGProps } from 'react'
 import { AccountMenu } from '@/components/account-menu'
 import { CostaraMark } from '@/components/costara-mark'
@@ -11,6 +11,8 @@ import {
   IcFinanceiro,
   IcImobiliarias,
   IcInicio,
+  IcNotificacoes,
+  IcOrganizacao,
   IcUnidades,
   IcVendas,
 } from '@/components/icons/nav-icons'
@@ -28,10 +30,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useAuth } from '@/contexts/auth-context'
+import { useIsAdmin } from '@/hooks/use-is-admin'
+import { useProfile } from '@/hooks/use-profile'
 import { getInitials } from '@/lib/utils'
 import { useTenantStore } from '@/stores/tenant-store'
 
@@ -45,21 +49,26 @@ const navButtonClass =
 
 const navMain: NavItem[] = [{ title: 'Início', href: '/dashboard', icon: IcInicio }]
 
-const navOperacoes: NavItem[] = [
+const navDiretorio: NavItem[] = [
   { title: 'Clientes', href: '/clientes', icon: IcClientes },
   { title: 'Empreendimentos', href: '/empreendimentos', icon: IcEmpreendimentos },
   { title: 'Unidades', href: '/unidades', icon: IcUnidades },
+  { title: 'Corretores', href: '/corretores', icon: IcCorretores },
+  { title: 'Imobiliárias', href: '/imobiliarias', icon: IcImobiliarias },
 ]
 
 const navComercial: NavItem[] = [
   { title: 'Vendas', href: '/vendas', icon: IcVendas },
   { title: 'Contratos', href: '/contratos', icon: IcContratos },
-  { title: 'Corretores', href: '/corretores', icon: IcCorretores },
-  { title: 'Imobiliárias', href: '/imobiliarias', icon: IcImobiliarias },
   { title: 'Comissões', href: '/comissoes', icon: IcComissoes },
 ]
 
 const navFinanceiro: NavItem[] = [{ title: 'Financeiro', href: '/financeiro', icon: IcFinanceiro }]
+
+// Só admin (a página /organizacao é restrita); gateado em AppSidebar.
+const navAdministracao: NavItem[] = [
+  { title: 'Organização', href: '/organizacao', icon: IcOrganizacao },
+]
 
 function isActive(href: string): boolean {
   if (typeof window === 'undefined') return false
@@ -71,23 +80,69 @@ function WorkspaceHeader() {
   const tenantId = useTenantStore((s) => s.tenantId)
   const tenants = useTenantStore((s) => s.tenants)
   const company = tenants.find((t) => t.id === tenantId)?.name?.trim()
+  const { state } = useSidebar()
+
+  // Colapsada: só a marca, centralizada, ainda como link para o dashboard.
+  // O recolher/expandir fica a cargo do botão flutuante na borda.
+  if (state === 'collapsed') {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <a
+            href="/dashboard"
+            aria-label={company ? `Costara, ${company}` : 'Costara'}
+            className="ring-sidebar-ring hover:bg-sidebar-accent flex h-9 w-full items-center justify-center rounded-md outline-hidden transition-colors focus-visible:ring-2"
+          >
+            <CostaraMark className="h-7 w-auto text-primary" />
+          </a>
+        </TooltipTrigger>
+        <TooltipContent side="right">{company ? `Costara · ${company}` : 'Costara'}</TooltipContent>
+      </Tooltip>
+    )
+  }
 
   return (
     <a
       href="/dashboard"
       aria-label={company ? `Costara, ${company}` : 'Costara'}
-      className="flex min-h-9 items-center gap-2 rounded-md px-1.5 outline-hidden ring-sidebar-ring transition-colors hover:bg-sidebar-accent focus-visible:ring-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0"
+      className="ring-sidebar-ring hover:bg-sidebar-accent flex min-h-9 items-center gap-3 rounded-md px-1.5 outline-hidden transition-colors focus-visible:ring-2"
     >
-      <CostaraMark className="h-6 w-auto shrink-0 text-primary" />
-      <span className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
-        <span className="text-sm font-bold leading-tight tracking-tight">Costara</span>
+      <CostaraMark className="h-8 w-auto shrink-0 text-primary" />
+      <span className="flex min-w-0 flex-col">
+        <span className="text-base font-bold leading-tight tracking-tight">Costara</span>
         {company ? (
-          <span className="text-sidebar-foreground/55 truncate text-xs leading-tight">
+          <span className="text-sidebar-foreground/55 truncate text-sm leading-tight">
             {company}
           </span>
         ) : null}
       </span>
     </a>
+  )
+}
+
+// Chip circular que flutua sobre a divisa sidebar↔conteúdo, alinhado ao header.
+// Único gatilho visível de recolher/expandir (substitui a rail invisível).
+function SidebarEdgeToggle() {
+  const { state, toggleSidebar } = useSidebar()
+  const collapsed = state === 'collapsed'
+  const Icon = collapsed ? ChevronsRight : ChevronsLeft
+  const label = collapsed ? 'Expandir menu' : 'Recolher menu'
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label={label}
+          className="bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground hover:border-sidebar-foreground/25 border-sidebar-border ring-sidebar-ring absolute top-16 right-0 z-20 hidden size-6 translate-x-1/2 items-center justify-center rounded-full border shadow-sm transition duration-150 ease-out after:absolute after:-inset-2 hover:scale-125 focus-visible:ring-2 focus-visible:outline-hidden motion-reduce:transition-none motion-reduce:hover:scale-100 md:flex"
+        >
+          <Icon className="size-3.5" />
+          <span className="sr-only">{label}</span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -150,7 +205,7 @@ function FooterMenu() {
           size="icon"
           className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground size-9 shrink-0 [&_svg]:size-5"
         >
-          <Bell />
+          <IcNotificacoes />
           <span className="sr-only">Notificações</span>
         </Button>
       </NotificationsMenu>
@@ -159,24 +214,27 @@ function FooterMenu() {
 }
 
 export function AppSidebar() {
+  const { data: profile } = useProfile()
+  const isAdmin = useIsAdmin(profile)
+
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="p-3">
+      <SidebarHeader className="relative px-3 pt-6 pb-3">
         <WorkspaceHeader />
+        <SidebarEdgeToggle />
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="pt-3">
         <NavGroup items={navMain} />
-        <NavGroup label="Operações" items={navOperacoes} />
+        <NavGroup label="Diretório" items={navDiretorio} />
         <NavGroup label="Comercial" items={navComercial} />
         <NavGroup label="Financeiro" items={navFinanceiro} />
+        {isAdmin && <NavGroup label="Administração" items={navAdministracao} />}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
         <FooterMenu />
       </SidebarFooter>
-
-      <SidebarRail />
     </Sidebar>
   )
 }

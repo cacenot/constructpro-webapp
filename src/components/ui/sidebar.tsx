@@ -65,7 +65,13 @@ function SidebarProvider({
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen)
+  // Lazy init: restaura o estado persistido no cookie (SPA sem SSR, então não há
+  // risco de mismatch de hidratação), caindo para defaultOpen na primeira visita.
+  const [_open, _setOpen] = React.useState(() => {
+    if (typeof document === 'undefined') return defaultOpen
+    const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${SIDEBAR_COOKIE_NAME}=([^;]*)`))
+    return match ? match[1] === 'true' : defaultOpen
+  })
   const open = openProp ?? _open
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
