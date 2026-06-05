@@ -50,16 +50,21 @@ describe('formatArea()', () => {
     expect(formatArea(0)).toBe('—')
   })
 
-  it('formata número com vírgula e m²', () => {
-    expect(formatArea(72.5)).toBe('72,50m²')
+  it('retorna "—" para string não numérica (NaN guard)', () => {
+    expect(formatArea('abc')).toBe('—')
   })
 
-  it('formata string numérica', () => {
-    expect(formatArea('120')).toBe('120,00m²')
+  it('formata número sem casas decimais falsas e com espaço inquebrável', () => {
+    // 72.5 → "72,5 m²" (sem zero desnecessário; espaço  )
+    expect(formatArea(72.5)).toBe('72,5 m²')
   })
 
-  it('formata string decimal', () => {
-    expect(formatArea('48.75')).toBe('48,75m²')
+  it('formata inteiro sem decimais', () => {
+    expect(formatArea('120')).toBe('120 m²')
+  })
+
+  it('formata string decimal preservando casas significativas', () => {
+    expect(formatArea('48.75')).toBe('48,75 m²')
   })
 })
 

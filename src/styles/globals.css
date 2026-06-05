@@ -850,6 +850,21 @@
   --color-pipeline-assinatura-fg:      var(--color-pipeline-assinatura-fg);
   --color-pipeline-assinatura-dot:     var(--color-pipeline-assinatura-dot);
 
+  /* --- Unit status — semáforo imobiliário (aliasa pipeline pelo visual, não pelo nome) --
+     disponível=verde, reservado=âmbar, vendido=azul, indisponível=coral.              */
+  --color-unit-available:             var(--color-pipeline-fechado-bg);
+  --color-unit-available-fg:          var(--color-pipeline-fechado-fg);
+  --color-unit-available-dot:         var(--color-pipeline-fechado-dot);
+  --color-unit-reserved:              var(--color-pipeline-proposta-bg);
+  --color-unit-reserved-fg:           var(--color-pipeline-proposta-fg);
+  --color-unit-reserved-dot:          var(--color-pipeline-proposta-dot);
+  --color-unit-sold:                  var(--color-pipeline-reservado-bg);
+  --color-unit-sold-fg:               var(--color-pipeline-reservado-fg);
+  --color-unit-sold-dot:              var(--color-pipeline-reservado-dot);
+  --color-unit-unavailable:           var(--color-pipeline-perdido-bg);
+  --color-unit-unavailable-fg:        var(--color-pipeline-perdido-fg);
+  --color-unit-unavailable-dot:       var(--color-pipeline-perdido-dot);
+
   /* --- Extras semânticos ----------------------------------------------------- */
   --color-success:            var(--color-success);
   --color-success-foreground: var(--color-success-fg);
