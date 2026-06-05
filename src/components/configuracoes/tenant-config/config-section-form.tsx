@@ -41,15 +41,17 @@ export function ConfigSectionForm<T extends FieldValues>({
   onPersist,
   children,
 }: ConfigSectionFormProps<T>) {
-  const [confirmOpen, setConfirmOpen] = useState(false)
+  // pendingData !== null indica que o diálogo de confirmação está aberto.
+  // Os dados vêm do handleSubmit (já validados pelo resolver), não de getValues().
+  const [pendingData, setPendingData] = useState<T | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const isDirty = form.formState.isDirty
 
-  // Persiste e re-baseia o form (novo "limpo"). Retorna se gravou com sucesso.
-  const persist = async (): Promise<boolean> => {
+  // Persiste dados pré-validados e re-baseia o form (novo "limpo").
+  // Retorna true se gravou com sucesso.
+  const persist = async (data: T): Promise<boolean> => {
     setIsSaving(true)
     try {
-      const data = form.getValues()
       await onPersist(data)
       form.reset(data)
       return true
@@ -61,25 +63,27 @@ export function ConfigSectionForm<T extends FieldValues>({
     }
   }
 
-  // Guard de navegação: valida e salva direto (o diálogo do guard já confirma a
+  // Guard de navegação: valida antes de persistir (o diálogo do guard já confirma a
   // saída da seção, evitando dois diálogos encadeados).
   useSectionGuard(id, {
     isDirty,
     save: async () => {
       const valid = await form.trigger()
-      return valid ? persist() : false
+      return valid ? persist(form.getValues()) : false
     },
     discard: () => form.reset(),
   })
 
   const handleConfirmedSubmit = async () => {
-    if (await persist()) setConfirmOpen(false)
+    if (!pendingData) return
+    if (await persist(pendingData)) setPendingData(null)
   }
 
   return (
     <SettingsSection id={id} title={title} description={description}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(() => setConfirmOpen(true))} className="max-w-3xl">
+        {/* handleSubmit valida via resolver e entrega dados coercidos para setPendingData */}
+        <form onSubmit={form.handleSubmit(setPendingData)} className="max-w-3xl">
           {children}
 
           {isDirty && (
@@ -114,10 +118,15 @@ export function ConfigSectionForm<T extends FieldValues>({
       </Form>
 
       {/* Confirmação — estas regras afetam contratos e carteira (mantida em todas as seções) */}
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialog
+        open={pendingData !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingData(null)
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Salvar “{title}”?</AlertDialogTitle>
+            <AlertDialogTitle>Salvar "{title}"?</AlertDialogTitle>
             <AlertDialogDescription>
               Estas regras afetam novos contratos, a geração de boletos e o cálculo da carteira.
               Confirme que os valores estão corretos antes de aplicar.

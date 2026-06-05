@@ -159,7 +159,7 @@ export function SettingsLayout({ sections, children }: SettingsLayoutProps) {
                   <button
                     type="button"
                     onClick={() => selectSection(section.id)}
-                    aria-current={isActive ? 'true' : undefined}
+                    aria-current={isActive ? 'location' : undefined}
                     className={cn(
                       'w-full whitespace-nowrap rounded-md px-3 py-1.5 text-left text-sm transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',

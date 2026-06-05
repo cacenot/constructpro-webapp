@@ -1,7 +1,23 @@
 import type { KeyboardEvent } from 'react'
+import type { SettingsNavItem } from '../settings-layout'
 
-/** Ids das seções de configuração (a sub-navegação da Organização inclui também "membros"). */
-export const CONFIG_IDS = ['indices', 'boletos', 'pagamentos', 'parcelas', 'automacao', 'correcao']
+/**
+ * Seções de navegação da página /organizacao. Fonte única compartilhada pela
+ * página e por TenantConfigSection — CONFIG_IDS é derivado daqui, então nunca
+ * fica dessincronizado com a sub-navegação real.
+ */
+export const ORGANIZACAO_SECTIONS: SettingsNavItem[] = [
+  { id: 'membros', label: 'Membros' },
+  { id: 'indices', label: 'Índices Econômicos' },
+  { id: 'boletos', label: 'Emissão de Boletos' },
+  { id: 'pagamentos', label: 'Pagamentos' },
+  { id: 'parcelas', label: 'Parcelas por Mês' },
+  { id: 'automacao', label: 'Automação Comercial' },
+  { id: 'correcao', label: 'Correção Monetária' },
+]
+
+/** Ids das seções de config (exclui "membros", que não tem formulário de config). */
+export const CONFIG_IDS = ORGANIZACAO_SECTIONS.filter((s) => s.id !== 'membros').map((s) => s.id)
 
 /** Opções dos controles em PT (os helpers da API retornam rótulos em inglês). */
 export const INVOICE_TIMING_OPTIONS = [

@@ -1,23 +1,14 @@
 import { Lock, RefreshCw } from 'lucide-react'
 import { AppLayout } from '@/components/app-layout'
 import { MembersSection } from '@/components/configuracoes/members/members-section'
-import { SettingsLayout, type SettingsNavItem } from '@/components/configuracoes/settings-layout'
+import { SettingsLayout } from '@/components/configuracoes/settings-layout'
 import { SettingsSection } from '@/components/configuracoes/settings-section'
+import { ORGANIZACAO_SECTIONS } from '@/components/configuracoes/tenant-config/helpers'
 import { TenantConfigSection } from '@/components/configuracoes/tenant-config-section'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useIsAdmin } from '@/hooks/use-is-admin'
 import { useProfile } from '@/hooks/use-profile'
-
-const SECTIONS: SettingsNavItem[] = [
-  { id: 'membros', label: 'Membros' },
-  { id: 'indices', label: 'Índices Econômicos' },
-  { id: 'boletos', label: 'Emissão de Boletos' },
-  { id: 'pagamentos', label: 'Pagamentos' },
-  { id: 'parcelas', label: 'Parcelas por Mês' },
-  { id: 'automacao', label: 'Automação Comercial' },
-  { id: 'correcao', label: 'Correção Monetária' },
-]
 
 /**
  * Organização — administração do tenant (membros e regras de financiamento,
@@ -97,7 +88,7 @@ export default function OrganizacaoPage() {
           </p>
         </header>
 
-        <SettingsLayout sections={SECTIONS}>
+        <SettingsLayout sections={ORGANIZACAO_SECTIONS}>
           <SettingsSection
             id="membros"
             title="Membros"
