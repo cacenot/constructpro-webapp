@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { navigate } from 'vike/client/router'
 import { UnitCategoriesChart } from '@/components/empreendimentos/unit-categories-chart'
-import { UnitSummaryCards } from '@/components/empreendimentos/unit-summary-cards'
+import { UnitInventorySection } from '@/components/empreendimentos/unit-inventory-section'
 import { Button } from '@/components/ui/button'
 import type { ProjectDetailResponse } from '@/hooks/useProjects'
 
@@ -26,7 +26,7 @@ export function ProjectUnitsTab({ project }: ProjectUnitsTabProps) {
 
   return (
     <div className="space-y-6">
-      {project.unit_summary && <UnitSummaryCards data={project.unit_summary} />}
+      {project.unit_summary && <UnitInventorySection data={project.unit_summary} />}
 
       {project.unit_categories && project.unit_categories.length > 0 && (
         <UnitCategoriesChart data={project.unit_categories} />

@@ -1,8 +1,6 @@
 import type { components } from '@cacenot/construct-pro-api-client'
-import { Building2, DollarSign, Receipt, ShoppingCart, TrendingUp } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
-import { cn, formatCurrency } from '@/lib/utils'
+import { type Vital, VitalsStrip } from '@/components/empreendimentos/vitals-strip'
+import { formatCurrency } from '@/lib/utils'
 
 type ProjectUnitSummary = components['schemas']['ProjectUnitSummary']
 type ProjectFinancialSummary = components['schemas']['ProjectFinancialSummary']
@@ -12,89 +10,59 @@ interface ProjectVitalsStripProps {
   financialSummary?: ProjectFinancialSummary | null
 }
 
+/** Percentual pt-BR sem casas falsas: 62 → "62", 62.5 → "62,5". */
+function pct(value: number): string {
+  return value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+}
+
+/**
+ * Painel de instrumentos do empreendimento: saúde lida em segundos, persistente
+ * acima das abas. Inadimplência salta em coral — é o gargalo que o diretor não
+ * pode perder. Adapta-se aos summaries disponíveis.
+ */
 export function ProjectVitalsStrip({ unitSummary, financialSummary }: ProjectVitalsStripProps) {
-  const soldPct =
-    unitSummary && unitSummary.total_units > 0
-      ? ((unitSummary.sold_count / unitSummary.total_units) * 100).toFixed(1)
-      : null
+  const vitals: Vital[] = []
 
-  const paymentProgress = financialSummary
-    ? Number(financialSummary.payment_progress_percentage)
-    : null
+  if (unitSummary) {
+    const soldPct =
+      unitSummary.total_units > 0 ? (unitSummary.sold_count / unitSummary.total_units) * 100 : 0
 
-  return (
-    <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-      {/* Total Unidades */}
-      <Card>
-        <CardContent className="flex items-start justify-between pt-5 pb-4">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Total Unidades</p>
-            <p className="tabular-nums text-2xl font-bold">{unitSummary?.total_units ?? '—'}</p>
-          </div>
-          <Building2 className="size-4 text-muted-foreground/50" />
-        </CardContent>
-      </Card>
+    vitals.push({
+      label: 'Unidades',
+      value: unitSummary.total_units,
+      sub: `${unitSummary.sold_count} vendidas · ${unitSummary.available_count} disponíveis`,
+    })
+    vitals.push({
+      label: 'Vendido',
+      value: `${pct(soldPct)}%`,
+      sub: `${unitSummary.sold_count} de ${unitSummary.total_units} unidades`,
+    })
+    vitals.push({
+      label: 'VGV',
+      value: formatCurrency(unitSummary.total_vgv.cents / 100),
+      sub: `vendido ${formatCurrency(unitSummary.sold_vgv.cents / 100)}`,
+    })
+  }
 
-      {/* Unidades Vendidas */}
-      <Card>
-        <CardContent className="flex items-start justify-between pt-5 pb-4">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Vendidas</p>
-            <p className="tabular-nums text-2xl font-bold text-success">
-              {unitSummary?.sold_count ?? '—'}
-            </p>
-            {soldPct && (
-              <p className="tabular-nums text-xs text-muted-foreground">{soldPct}% do total</p>
-            )}
-          </div>
-          <ShoppingCart className="size-4 text-muted-foreground/50" />
-        </CardContent>
-      </Card>
+  if (financialSummary) {
+    const paid = financialSummary.total_paid.cents > 0
+    vitals.push({
+      label: 'Recebido',
+      value: formatCurrency(financialSummary.total_paid.cents / 100),
+      sub: `${pct(Number(financialSummary.payment_progress_percentage))}% do principal`,
+      tone: paid ? 'success' : 'default',
+    })
 
-      {/* VGV Total */}
-      <Card>
-        <CardContent className="flex items-start justify-between pt-5 pb-4">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">VGV Total</p>
-            <p className="tabular-nums text-2xl font-bold">
-              {unitSummary ? formatCurrency(unitSummary.total_vgv.cents / 100) : '—'}
-            </p>
-          </div>
-          <DollarSign className="size-4 text-muted-foreground/50" />
-        </CardContent>
-      </Card>
+    const defaulting = financialSummary.defaulting_contracts
+    vitals.push({
+      label: 'Inadimplência',
+      value: defaulting,
+      sub: defaulting > 0 ? `de ${financialSummary.total_contracts} contratos` : 'carteira em dia',
+      tone: defaulting > 0 ? 'destructive' : 'default',
+    })
+  }
 
-      {/* Receita Recebida */}
-      <Card>
-        <CardContent className="flex items-start justify-between pt-5 pb-4">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Receita Recebida</p>
-            <p
-              className={cn(
-                'tabular-nums text-2xl font-bold',
-                financialSummary && financialSummary.total_paid.cents > 0 ? 'text-success' : ''
-              )}
-            >
-              {financialSummary ? formatCurrency(financialSummary.total_paid.cents / 100) : '—'}
-            </p>
-          </div>
-          <Receipt className="size-4 text-muted-foreground/50" />
-        </CardContent>
-      </Card>
+  if (vitals.length === 0) return null
 
-      {/* Progresso de Pagamento */}
-      <Card className="col-span-2 lg:col-span-1">
-        <CardContent className="flex items-start justify-between pt-5 pb-4">
-          <div className="w-full space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Progresso Pagamento</p>
-            <p className="tabular-nums text-2xl font-bold">
-              {paymentProgress != null ? `${paymentProgress.toFixed(1)}%` : '—'}
-            </p>
-            {paymentProgress != null && <Progress value={paymentProgress} className="h-1.5" />}
-          </div>
-          <TrendingUp className="size-4 shrink-0 text-muted-foreground/50" />
-        </CardContent>
-      </Card>
-    </div>
-  )
+  return <VitalsStrip vitals={vitals} />
 }

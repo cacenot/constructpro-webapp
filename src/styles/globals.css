@@ -903,3 +903,17 @@ button:not(:disabled),
 [role='option'] {
   cursor: pointer;
 }
+
+/* Acessibilidade: respeita prefers-reduced-motion. Neutraliza animações e
+   transições para quem pede menos movimento (WCAG 2.3.3). Top-level + !important
+   para vencer as utilities do tw-animate-css. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
