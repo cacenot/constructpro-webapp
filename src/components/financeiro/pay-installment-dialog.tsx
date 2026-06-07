@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { contractDetailKeys } from '@/hooks/use-contract-detail'
 import type { InstallmentResponse } from '@/hooks/use-installments'
 import { installmentKeys, useInstallments } from '@/hooks/use-installments'
 import { useTenantConfig } from '@/hooks/use-tenant-config'
@@ -162,6 +163,9 @@ export function PayInstallmentDialog({
       )
       queryClient.invalidateQueries({ queryKey: installmentKeys.lists() })
       queryClient.invalidateQueries({ queryKey: installmentKeys.summaries() })
+      // Atualiza a saúde financeira ao vivo do deal console (['contracts','detail',id])
+      // — o prefixo invalida o detalhe do contrato afetado pelo pagamento.
+      queryClient.invalidateQueries({ queryKey: contractDetailKeys.details() })
       if (isEntryMode) {
         queryClient.invalidateQueries({ queryKey: ['sales'] })
       }

@@ -15,6 +15,19 @@ export function formatCurrency(value: number): string {
 }
 
 /**
+ * Valor monetário compacto para eixos e rótulos de gráfico: `R$1.2M`, `R$12k`,
+ * `R$340`. Aproximação para densidade visual — use `formatCurrency` quando o
+ * valor exato importa. `kDecimals` controla as casas na faixa dos milhares
+ * (0 → `R$12k` para saldos grandes; 1 → `R$1.5k` para correções pequenas).
+ */
+export function formatCompactCurrency(value: number, kDecimals = 0): string {
+  const abs = Math.abs(value)
+  if (abs >= 1_000_000) return `R$${(value / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `R$${(value / 1_000).toFixed(kDecimals)}k`
+  return `R$${value.toFixed(0)}`
+}
+
+/**
  * Converte centavos (inteiro) na string decimal em reais que os endpoints de
  * entrada esperam (`WireMoney` no backend): 50000000 → "500000.00". A string é
  * montada a partir de inteiros para não introduzir erro de ponto flutuante.

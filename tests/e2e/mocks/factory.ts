@@ -9,6 +9,22 @@
 let seq = 1
 const nextId = () => seq++
 
+// ─── WireMoney ──────────────────────────────────────────────────────────────
+// Formato Money das respostas da API (`{ cents, decimal, brl }`). Os componentes
+// (ex.: deal console) leem `.cents` direto; o mock precisa entregar o objeto, não
+// o inteiro flat — senão `sale.amount.cents` quebra a página. Ver wire-money-rate.
+export interface Money {
+  cents: number
+  decimal: string
+  brl: string
+}
+
+const money = (cents: number): Money => ({
+  cents,
+  decimal: (cents / 100).toFixed(2),
+  brl: (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+})
+
 // ─── Customer ─────────────────────────────────────────────────────────────────
 
 export interface CustomerFactory {
@@ -136,8 +152,8 @@ export interface SaleFactory {
   unit_id: number
   customer_id: number
   user_id: string
-  amount_cents: number
-  unit_price_cents: number
+  amount: Money
+  unit_price: Money
   status: 'proposal' | 'pending_signature' | 'pending_payment' | 'closed' | 'lost'
   index_type_code: string
   created_at: string
@@ -151,8 +167,8 @@ export function sale(overrides: Partial<SaleFactory> = {}): SaleFactory {
     unit_id: 1,
     customer_id: 1,
     user_id: 'test-user-uid-001',
-    amount_cents: 50000000,
-    unit_price_cents: 50000000,
+    amount: money(50000000),
+    unit_price: money(50000000),
     status: 'proposal',
     index_type_code: 'IGPM',
     created_at: '2026-02-01T10:00:00Z',
