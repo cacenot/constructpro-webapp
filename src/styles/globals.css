@@ -903,3 +903,16 @@ button:not(:disabled),
 [role='option'] {
   cursor: pointer;
 }
+
+/* Acessibilidade: respeita quem prefere menos movimento. Anula entradas, transições
+   e scroll suave para usuários com `prefers-reduced-motion: reduce`. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
