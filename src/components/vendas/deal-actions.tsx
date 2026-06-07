@@ -69,6 +69,24 @@ export function DealActions({
 
   const hasOverflow = !!documentUrl || renegociarInOverflow
 
+  const hasAnyAction = canApprove || canSign || canPayEntry || inDefault || canEdit || hasOverflow
+  if (!hasAnyAction) {
+    // Estado anômalo: aguardando assinatura/pagamento mas o contrato ainda não
+    // materializou (atraso pós-aprovação). Caso contrário, é um estágio terminal
+    // sem próximo passo (perdido, quitado/encerrado sem documento).
+    const awaitingContract =
+      (sale.status === SaleStatus.pending_signature ||
+        sale.status === SaleStatus.pending_payment) &&
+      !hasContract
+    return (
+      <p className="text-sm text-muted-foreground">
+        {awaitingContract
+          ? 'Contrato ainda não disponível. Atualize a página em instantes.'
+          : 'Nenhuma ação disponível neste estágio.'}
+      </p>
+    )
+  }
+
   return (
     <div className="space-y-2">
       {/* Ação primária — o próximo passo do estado */}

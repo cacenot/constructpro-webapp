@@ -17,6 +17,7 @@ interface DealCockpitProps {
   sale: Sale
   contractDetail?: ContractDetailResponse
   isContractLoading?: boolean
+  isContractError?: boolean
   actions: ReactNode
 }
 
@@ -39,6 +40,7 @@ export function DealCockpit({
   sale,
   contractDetail,
   isContractLoading,
+  isContractError,
   actions,
 }: DealCockpitProps) {
   const metrics = sale.metrics
@@ -46,9 +48,14 @@ export function DealCockpit({
   const fin = contractDetail?.financial_summary
   const inst = contractDetail?.installment_summary
   const financialMode = !!fin
+  const stageClosed = getDealStage(sale) === 'closed'
   // Vendas fechadas esperam dados financeiros ao vivo; mostre skeleton em vez de
   // piscar os vitais do plano enquanto o contrato carrega.
-  const awaitingFinancial = getDealStage(sale) === 'closed' && !!isContractLoading && !fin
+  const awaitingFinancial = stageClosed && !!isContractLoading && !fin
+  // Falhou a saúde financeira ao vivo: não regredir para os vitais da proposta
+  // (rótulo "Valor da proposta" num negócio fechado confunde). O corpo ao lado
+  // já mostra o estado de erro com "Tentar novamente".
+  const financialUnavailable = stageClosed && !!isContractError && !fin
   const contractStatus = contractDetail?.status
   const isActiveContract = contractStatus === 'active' || contractStatus === 'in_default'
 
@@ -173,6 +180,11 @@ export function DealCockpit({
       {/* Vitais adaptativos */}
       {awaitingFinancial ? (
         <Skeleton className="h-44 w-full rounded-lg" />
+      ) : financialUnavailable ? (
+        <div className="space-y-1 rounded-lg border bg-card p-4">
+          <StatLabel>Saúde financeira</StatLabel>
+          <p className="text-sm text-muted-foreground">Dados ao vivo indisponíveis no momento.</p>
+        </div>
       ) : (
         <div className="overflow-hidden rounded-lg border bg-card">
           <div className="space-y-1.5 p-4">

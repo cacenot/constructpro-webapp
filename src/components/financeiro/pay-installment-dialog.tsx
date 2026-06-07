@@ -162,6 +162,9 @@ export function PayInstallmentDialog({
       )
       queryClient.invalidateQueries({ queryKey: installmentKeys.lists() })
       queryClient.invalidateQueries({ queryKey: installmentKeys.summaries() })
+      // Atualiza a saúde financeira ao vivo do deal console (['contracts','detail',id])
+      // — o prefixo invalida o detalhe do contrato afetado pelo pagamento.
+      queryClient.invalidateQueries({ queryKey: ['contracts'] })
       if (isEntryMode) {
         queryClient.invalidateQueries({ queryKey: ['sales'] })
       }

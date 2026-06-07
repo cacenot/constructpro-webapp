@@ -257,6 +257,7 @@ export default function SaleDetailPage() {
             sale={sale}
             contractDetail={contractDetail}
             isContractLoading={isContractLoading}
+            isContractError={isContractError}
             actions={
               <DealActions
                 sale={sale}
