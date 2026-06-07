@@ -11,7 +11,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { InstallmentSummaryItemResponse } from '@/hooks/use-installments'
-import { type InstallmentsTableMeta, installmentsColumns } from './installments-columns'
+import { cn } from '@/lib/utils'
+import {
+  type InstallmentsTableMeta,
+  installmentsColumns,
+  isInstallmentOverdue,
+} from './installments-columns'
 
 interface InstallmentsTableProps {
   data: InstallmentSummaryItemResponse[]
@@ -59,7 +64,10 @@ export function InstallmentsTable({
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
             {headerGroup.headers.map((header) => (
-              <TableHead key={header.id} className="px-6">
+              <TableHead
+                key={header.id}
+                className="px-6 text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground"
+              >
                 {header.isPlaceholder
                   ? null
                   : flexRender(header.column.columnDef.header, header.getContext())}
@@ -127,19 +135,27 @@ export function InstallmentsTable({
             </TableCell>
           </TableRow>
         ) : (
-          table.getRowModel().rows.map((row) => (
-            <TableRow
-              key={row.id}
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => onViewDetails(row.original)}
-            >
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id} className="px-6 py-3">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))
+          table.getRowModel().rows.map((row) => {
+            const overdue = isInstallmentOverdue(row.original)
+            return (
+              <TableRow
+                key={row.id}
+                className={cn(
+                  'cursor-pointer',
+                  overdue
+                    ? 'bg-destructive/[0.04] hover:bg-destructive/[0.08]'
+                    : 'hover:bg-muted/50'
+                )}
+                onClick={() => onViewDetails(row.original)}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id} className="px-6 py-3">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            )
+          })
         )}
       </TableBody>
     </Table>

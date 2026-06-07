@@ -16,7 +16,10 @@ interface InstallmentsQuery {
   payment_method?: components['schemas']['PaymentMethod'][] | null
   'due_date[min]'?: string | null
   'due_date[max]'?: string | null
+  'paid_at[min]'?: string | null
+  'paid_at[max]'?: string | null
   customer_id?: number | null
+  project_id?: number | null
   sort_by?: string[]
 }
 

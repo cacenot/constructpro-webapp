@@ -37,6 +37,16 @@ type Payment = NonNullable<InstallmentSummaryItemResponse['payments']>[number]
 
 type MoneyObject = { cents: number; decimal: string; brl: string }
 
+/** Parcela vencida e ainda aberta: o gargalo da carteira. Fonte única usada
+ * tanto na célula de vencimento quanto no realce da linha. */
+export function isInstallmentOverdue(installment: InstallmentSummaryItemResponse): boolean {
+  return (
+    isPast(parseISO(installment.due_date)) &&
+    installment.status !== 'paid' &&
+    installment.status !== 'canceled'
+  )
+}
+
 function PaymentsHoverContent({
   payments,
   paid_amount,
@@ -120,7 +130,12 @@ function SortableHeader({
   }
 
   return (
-    <Button variant="ghost" size="sm" className="-ml-3 h-8 gap-1" onClick={handleClick}>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="-ml-3 h-8 gap-1 text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
+      onClick={handleClick}
+    >
       {label}
       {isActive ? (
         currentDir === 'asc' ? (
@@ -261,8 +276,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
     },
     cell: ({ row }) => {
       const dueDate = parseISO(row.original.due_date)
-      const isOverdue =
-        isPast(dueDate) && row.original.status !== 'paid' && row.original.status !== 'canceled'
+      const isOverdue = isInstallmentOverdue(row.original)
       return (
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-sm tabular-nums">{format(dueDate, 'dd/MM/yyyy')}</span>
@@ -354,6 +368,16 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
                 }}
               >
                 Emitir boleto
+              </DropdownMenuItem>
+            )}
+            {installment.boleto?.boleto_url && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.open(installment.boleto?.boleto_url ?? '', '_blank', 'noopener')
+                }}
+              >
+                Abrir boleto
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

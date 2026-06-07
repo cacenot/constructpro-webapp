@@ -168,13 +168,13 @@ function InstallmentDetailContent({
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Pago</span>
             <span className="text-sm font-medium tabular-nums text-success">
-              {formatCurrency(Number(installment.paid_amount))}
+              {formatCurrency(installment.paid_amount.cents / 100)}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Restante</span>
             <span className="text-sm font-medium tabular-nums">
-              {formatCurrency(Number(installment.remaining_amount))}
+              {formatCurrency(installment.remaining_amount.cents / 100)}
             </span>
           </div>
         </div>
@@ -442,6 +442,15 @@ function InstallmentDetailContent({
           )}
         </div>
       </div>
+
+      <Separator />
+
+      {/* Aprofundar no contrato sem sair do financeiro */}
+      <div className="px-4 py-4">
+        <Button variant="outline" size="sm" className="w-full" asChild>
+          <a href={`/contratos/${installment.contract_id}`}>Ver contrato completo</a>
+        </Button>
+      </div>
     </div>
   )
 }
@@ -457,7 +466,7 @@ export function InstallmentDetailDrawer({
 
   return (
     <Drawer open={open} onOpenChange={(value) => !value && onClose()} direction="right">
-      <DrawerContent className="sm:max-w-md flex flex-col" aria-describedby={undefined}>
+      <DrawerContent className="sm:max-w-xl flex flex-col" aria-describedby={undefined}>
         <DrawerHeader className="border-b pb-4">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-col gap-1.5 min-w-0">

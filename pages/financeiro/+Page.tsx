@@ -6,8 +6,8 @@ import { AppLayout } from '@/components/app-layout'
 import { InstallmentDetailDrawer } from '@/components/financeiro/installment-detail-drawer'
 import { InstallmentsFilters } from '@/components/financeiro/installments-filters'
 import { InstallmentsPagination } from '@/components/financeiro/installments-pagination'
-import { InstallmentsSummaryCards } from '@/components/financeiro/installments-summary-cards'
 import { InstallmentsTable } from '@/components/financeiro/installments-table'
+import { InstallmentsVitalsStrip } from '@/components/financeiro/installments-vitals-strip'
 import { PayInstallmentDialog } from '@/components/financeiro/pay-installment-dialog'
 import { Card, CardContent } from '@/components/ui/card'
 import type {
@@ -83,13 +83,17 @@ export default function FinanceiroPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Financeiro</h1>
           <p className="mt-2 text-muted-foreground">
-            Acompanhe parcelas, recebimentos e vencimentos.
+            Acompanhe parcelas, recebimentos e vencimentos da carteira.
           </p>
         </div>
 
-        <InstallmentsSummaryCards summary={summary} isLoading={isLoading} />
+        <InstallmentsVitalsStrip summary={summary} isLoading={isLoading} />
 
-        <InstallmentsFilters {...filters} />
+        <InstallmentsFilters
+          {...filters}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={handleClearFilters}
+        />
 
         <Card className="rounded-xl shadow-sm">
           <CardContent className="p-0">
