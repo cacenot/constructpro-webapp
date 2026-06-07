@@ -131,13 +131,26 @@ export function unit(overrides: Partial<UnitFactory> = {}): UnitFactory {
 
 // ─── Sale ─────────────────────────────────────────────────────────────────────
 
+interface WireMoney {
+  cents: number
+  decimal: string
+  brl: string
+}
+
+const money = (cents: number): WireMoney => ({
+  cents,
+  decimal: (cents / 100).toFixed(2),
+  brl: (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+})
+
 export interface SaleFactory {
   id: number
   unit_id: number
   customer_id: number
   user_id: string
-  amount_cents: number
-  unit_price_cents: number
+  // Pós-migração WireMoney: valores monetários são objetos { cents, decimal, brl }.
+  amount: WireMoney
+  unit_price: WireMoney
   status: 'proposal' | 'pending_signature' | 'pending_payment' | 'closed' | 'lost'
   index_type_code: string
   created_at: string
@@ -151,8 +164,8 @@ export function sale(overrides: Partial<SaleFactory> = {}): SaleFactory {
     unit_id: 1,
     customer_id: 1,
     user_id: 'test-user-uid-001',
-    amount_cents: 50000000,
-    unit_price_cents: 50000000,
+    amount: money(50000000),
+    unit_price: money(50000000),
     status: 'proposal',
     index_type_code: 'IGPM',
     created_at: '2026-02-01T10:00:00Z',
