@@ -6,7 +6,7 @@ import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SaleEditForm } from '@/components/vendas/sale-edit-form'
+import { SaleEditWorkbench } from '@/components/vendas/proposal/sale-edit-workbench'
 import { handleApiError, throwApiError } from '@/lib/api-error'
 import { rateToWireString } from '@/lib/utils'
 import type { SaleEditFormData } from '@/schemas/sale.schema'
@@ -70,7 +70,7 @@ export default function SaleEditPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] })
-      toast.success('Proposta atualizada com sucesso!')
+      toast.success('Proposta atualizada.')
       navigate('/vendas')
     },
     onError: (err) => handleApiError(err, 'Erro ao atualizar proposta'),
@@ -87,7 +87,7 @@ export default function SaleEditPage() {
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="mx-auto max-w-3xl space-y-6">
+        <div className="mx-auto max-w-6xl space-y-6">
           <div className="flex items-center gap-4">
             <Skeleton className="h-9 w-9 rounded-md" />
             <div className="space-y-1.5">
@@ -124,7 +124,7 @@ export default function SaleEditPage() {
         <div className="flex h-[50vh] flex-col items-center justify-center gap-4">
           <p className="text-lg text-muted-foreground">Proposta não encontrada</p>
           <Button variant="link" onClick={handleBack}>
-            Voltar para lista
+            Voltar para Vendas
           </Button>
         </div>
       </AppLayout>
@@ -133,11 +133,11 @@ export default function SaleEditPage() {
 
   return (
     <AppLayout>
-      <div className="mx-auto max-w-3xl">
-        <SaleEditForm
+      <div className="mx-auto max-w-6xl">
+        <SaleEditWorkbench
           sale={sale}
           onSubmit={handleSubmit}
-          onBack={handleBack}
+          onCancel={handleBack}
           isSubmitting={updateMutation.isPending}
         />
       </div>
