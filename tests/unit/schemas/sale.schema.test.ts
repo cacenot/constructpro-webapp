@@ -37,6 +37,7 @@ const validBalloonSchedule = {
 const validSale = {
   unit_id: 1,
   customer_id: 1,
+  same_index_for_all: true,
   index_type_code: 'IGPM',
   installment_schedules: [validEntrySchedule],
 }
@@ -143,6 +144,42 @@ describe('saleFormSchema', () => {
     const result = saleFormSchema.safeParse({ ...validSale, installment_schedules: [] })
     expect(result.success).toBe(false)
     expect(result.error?.issues[0]?.path).toContain('installment_schedules')
+  })
+})
+
+// ─── saleFormSchema: índice por parcela (same_index_for_all = false) ──────────
+
+describe('saleFormSchema — índice de correção por parcela', () => {
+  it('aceita índice por parcela quando cada não-entrada tem index_type_code', () => {
+    const result = saleFormSchema.safeParse({
+      ...validSale,
+      same_index_for_all: false,
+      index_type_code: null,
+      installment_schedules: [validEntrySchedule, { ...validRegularSchedule, index_type_code: 'IPCA' }],
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejeita não-entrada sem index_type_code quando o índice é por parcela', () => {
+    const result = saleFormSchema.safeParse({
+      ...validSale,
+      same_index_for_all: false,
+      index_type_code: null,
+      installment_schedules: [validEntrySchedule, validRegularSchedule],
+    })
+    expect(result.success).toBe(false)
+    const issue = result.error?.issues.find((i) => i.path.includes('index_type_code'))
+    expect(issue).toBeDefined()
+  })
+
+  it('a entrada nunca exige index_type_code próprio', () => {
+    const result = saleFormSchema.safeParse({
+      ...validSale,
+      same_index_for_all: false,
+      index_type_code: null,
+      installment_schedules: [validEntrySchedule],
+    })
+    expect(result.success).toBe(true)
   })
 })
 
