@@ -38,5 +38,10 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
+    env: {
+      // Firebase usa localStorage (não IndexedDB) p/ o storageState do Playwright
+      // capturar os tokens de auth. Sem isto, todo spec cai em /login.
+      VITE_FIREBASE_PERSISTENCE: 'local',
+    },
   },
 })
