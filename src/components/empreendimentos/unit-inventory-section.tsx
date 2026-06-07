@@ -2,7 +2,7 @@ import type { components } from '@cacenot/construct-pro-api-client'
 import { Layers } from 'lucide-react'
 import { DataRow, DetailPanel } from '@/components/empreendimentos/detail-panel'
 import { type Vital, VitalsStrip } from '@/components/empreendimentos/vitals-strip'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatPercent } from '@/lib/utils'
 
 type ProjectUnitSummary = components['schemas']['ProjectUnitSummary']
 
@@ -19,7 +19,7 @@ export function UnitInventorySection({ data }: UnitInventorySectionProps) {
     {
       label: 'Disponíveis',
       value: data.available_count,
-      sub: `${availability.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% do total`,
+      sub: `${formatPercent(availability)}% do total`,
       tone: 'success',
     },
     { label: 'Reservadas', value: data.reserved_count, tone: 'info' },

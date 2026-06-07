@@ -3,7 +3,7 @@ import { Cell, Label, Pie, PieChart } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
 import { Separator } from '@/components/ui/separator'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatPercent } from '@/lib/utils'
 
 type ProjectSalesSummary = components['schemas']['ProjectSalesSummary']
 
@@ -36,7 +36,7 @@ function CustomTooltip({
   const entry = payload[0]
   if (!entry) return null
   const data = entry.payload
-  const pct = data.total > 0 ? ((data.value / data.total) * 100).toFixed(1).replace('.', ',') : '0'
+  const pct = data.total > 0 ? formatPercent((data.value / data.total) * 100) : '0'
 
   return (
     <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
@@ -197,7 +197,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Desconto médio</span>
                   <span className="tabular-nums text-sm font-medium">
-                    {Number(data.avg_discount_percentage).toFixed(2).replace('.', ',')}%
+                    {formatPercent(Number(data.avg_discount_percentage), 2, true)}%
                   </span>
                 </div>
               )}

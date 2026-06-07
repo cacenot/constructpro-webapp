@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { ProjectSummaryItem } from '@/hooks/useProjects'
+import { formatMonthYear } from '@/lib/format-date'
 
 interface ProjectCardProps {
   project: ProjectSummaryItem
@@ -45,13 +46,6 @@ const compactBRL = new Intl.NumberFormat('pt-BR', {
   notation: 'compact',
   maximumFractionDigits: 1,
 })
-
-/** "MM/AAAA" a partir de um ISO datetime UTC (a `delivery_date` vem em UTC). */
-function formatDeliveryMonthYear(iso: string): string {
-  const d = new Date(iso)
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0')
-  return `${month}/${d.getUTCFullYear()}`
-}
 
 /** Textura de planta baixa: grid de hairlines de 32px, marca da casa "na planta". */
 const blueprintGrid = {
@@ -190,7 +184,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
               {project.status === 'finished'
                 ? 'entregue'
                 : project.delivery_date
-                  ? `entrega ${formatDeliveryMonthYear(project.delivery_date)}`
+                  ? `entrega ${formatMonthYear(project.delivery_date)}`
                   : 'entrega a definir'}
             </p>
           </div>

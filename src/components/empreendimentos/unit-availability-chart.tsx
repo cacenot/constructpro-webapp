@@ -1,6 +1,6 @@
 import type { components } from '@cacenot/construct-pro-api-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { cn, formatPercent } from '@/lib/utils'
 
 type ProjectUnitSummary = components['schemas']['ProjectUnitSummary']
 
@@ -29,7 +29,7 @@ function StatusBar({ label, value, total, colorClass, barClass }: StatusBarProps
         <div className="flex items-center gap-2">
           <span className="tabular-nums font-medium">{value}</span>
           <span className="tabular-nums text-xs text-muted-foreground">
-            ({pct.toFixed(1).replace('.', ',')}%)
+            ({formatPercent(pct)}%)
           </span>
         </div>
       </div>

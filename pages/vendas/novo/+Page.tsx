@@ -5,6 +5,7 @@ import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { SaleForm } from '@/components/vendas/sale-form'
 import { handleApiError, throwApiError } from '@/lib/api-error'
+import { rateToWireString } from '@/lib/utils'
 import type { SaleFormData } from '@/schemas/sale.schema'
 
 export default function SaleNewPage() {
@@ -51,11 +52,11 @@ export default function SaleNewPage() {
           })),
           broker_id: data.broker_id ?? undefined,
           commission_broker_rate: data.commission_broker_rate
-            ? String(data.commission_broker_rate)
+            ? rateToWireString(data.commission_broker_rate)
             : undefined,
           agency_id: data.agency_id ?? undefined,
           commission_agency_rate: data.commission_agency_rate
-            ? String(data.commission_agency_rate)
+            ? rateToWireString(data.commission_agency_rate)
             : undefined,
         },
       })

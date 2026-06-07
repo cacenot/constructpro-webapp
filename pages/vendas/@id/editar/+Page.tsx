@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SaleEditForm } from '@/components/vendas/sale-edit-form'
 import { handleApiError, throwApiError } from '@/lib/api-error'
+import { rateToWireString } from '@/lib/utils'
 import type { SaleEditFormData } from '@/schemas/sale.schema'
 
 export default function SaleEditPage() {
@@ -53,12 +54,12 @@ export default function SaleEditPage() {
           broker_id: data.broker_id ?? null,
           commission_broker_rate:
             data.broker_id && data.commission_broker_rate
-              ? String(data.commission_broker_rate)
+              ? rateToWireString(data.commission_broker_rate)
               : null,
           agency_id: data.agency_id ?? null,
           commission_agency_rate:
             data.agency_id && data.commission_agency_rate
-              ? String(data.commission_agency_rate)
+              ? rateToWireString(data.commission_agency_rate)
               : null,
         },
       })

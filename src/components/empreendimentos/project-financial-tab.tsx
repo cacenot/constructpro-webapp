@@ -6,7 +6,7 @@ import { type Vital, VitalsStrip } from '@/components/empreendimentos/vitals-str
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import type { ProjectDetailResponse } from '@/hooks/useProjects'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 
 type ProjectFinancialSummary = components['schemas']['ProjectFinancialSummary']
 
@@ -97,7 +97,7 @@ function PaymentProgressPanel({ data }: { data: ProjectFinancialSummary }) {
       <div className="space-y-3">
         <div className="flex items-end justify-between gap-4">
           <span className="text-3xl font-semibold tabular-nums tracking-tight">
-            {progress.toFixed(1).replace('.', ',')}%
+            {formatPercent(progress)}%
           </span>
           <span className="text-right text-sm tabular-nums text-muted-foreground">
             {formatCurrency(data.total_paid.cents / 100)} de{' '}

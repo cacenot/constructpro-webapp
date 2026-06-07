@@ -25,6 +25,27 @@ export function centsToReaisString(cents: number): string {
   return `${sign}${Math.trunc(abs / 100)}.${String(abs % 100).padStart(2, '0')}`
 }
 
+/**
+ * Converte uma taxa em percentual na string que o `WireRate` do backend espera:
+ * percentual decimal com no máximo 4 casas (5.5 → "5.5000"). Acima de 4 casas o
+ * backend rejeita (não arredonda), então fixamos em 4 — protege contra lixo de
+ * ponto flutuante. Um número cru seria lido como PPM (10.000× maior); daí a string.
+ */
+export function rateToWireString(percent: number): string {
+  return percent.toFixed(4)
+}
+
+/**
+ * Percentual no formato pt-BR (vírgula decimal). Por padrão sem casas falsas
+ * (62 → "62", 62,5 → "62,5"); passe `fixed` para casas fixas (ex.: desconto "10,50").
+ */
+export function formatPercent(value: number, maxDecimals = 1, fixed = false): string {
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: fixed ? maxDecimals : 0,
+    maximumFractionDigits: maxDecimals,
+  })
+}
+
 export function formatArea(area: string | number | null): string {
   if (!area) return '—'
   const num = typeof area === 'string' ? Number.parseFloat(area) : area

@@ -1,6 +1,6 @@
 import type { components } from '@cacenot/construct-pro-api-client'
 import { type Vital, VitalsStrip } from '@/components/empreendimentos/vitals-strip'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatPercent } from '@/lib/utils'
 
 type ProjectUnitSummary = components['schemas']['ProjectUnitSummary']
 type ProjectFinancialSummary = components['schemas']['ProjectFinancialSummary']
@@ -8,11 +8,6 @@ type ProjectFinancialSummary = components['schemas']['ProjectFinancialSummary']
 interface ProjectVitalsStripProps {
   unitSummary?: ProjectUnitSummary | null
   financialSummary?: ProjectFinancialSummary | null
-}
-
-/** Percentual pt-BR sem casas falsas: 62 → "62", 62.5 → "62,5". */
-function pct(value: number): string {
-  return value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
 }
 
 /**
@@ -34,7 +29,7 @@ export function ProjectVitalsStrip({ unitSummary, financialSummary }: ProjectVit
     })
     vitals.push({
       label: 'Vendido',
-      value: `${pct(soldPct)}%`,
+      value: `${formatPercent(soldPct)}%`,
       sub: `${unitSummary.sold_count} de ${unitSummary.total_units} unidades`,
     })
     vitals.push({
@@ -49,7 +44,7 @@ export function ProjectVitalsStrip({ unitSummary, financialSummary }: ProjectVit
     vitals.push({
       label: 'Recebido',
       value: formatCurrency(financialSummary.total_paid.cents / 100),
-      sub: `${pct(Number(financialSummary.payment_progress_percentage))}% do principal`,
+      sub: `${formatPercent(Number(financialSummary.payment_progress_percentage))}% do principal`,
       tone: paid ? 'success' : 'default',
     })
 
