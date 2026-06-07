@@ -137,7 +137,7 @@ interface WireMoney {
   brl: string
 }
 
-const money = (cents: number): WireMoney => ({
+export const money = (cents: number): WireMoney => ({
   cents,
   decimal: (cents / 100).toFixed(2),
   brl: (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
@@ -179,7 +179,7 @@ export function sale(overrides: Partial<SaleFactory> = {}): SaleFactory {
 export interface ContractFactory {
   id: number
   sale_id: number
-  principal_amount_cents: number
+  principal_amount: WireMoney
   index_type_code: string
   status: 'pending' | 'active' | 'in_default' | 'settled' | 'canceled' | 'terminated'
   signed_at: string | null
@@ -193,7 +193,7 @@ export function contract(overrides: Partial<ContractFactory> = {}): ContractFact
   return {
     id,
     sale_id: 1,
-    principal_amount_cents: 50000000,
+    principal_amount: money(50000000),
     index_type_code: 'IGPM',
     status: 'active',
     signed_at: '2026-03-01T10:00:00Z',
@@ -212,11 +212,11 @@ export interface InstallmentFactory {
   kind: 'entry' | 'monthly' | 'yearly' | 'extra'
   payment_method: 'boleto' | 'pix' | 'cash' | 'transfer' | 'card'
   due_date: string
-  base_amount_cents: number
-  current_amount_cents: number
+  base_amount: WireMoney
+  current_amount: WireMoney
   status: 'scheduled' | 'invoiced' | 'partial' | 'paid' | 'canceled' | 'overdue'
   paid_at: string | null
-  paid_amount_cents: number | null
+  paid_amount: WireMoney
   created_at: string
   updated_at: string
 }
@@ -229,11 +229,11 @@ export function installment(overrides: Partial<InstallmentFactory> = {}): Instal
     kind: 'monthly',
     payment_method: 'boleto',
     due_date: '2026-06-10',
-    base_amount_cents: 500000,
-    current_amount_cents: 500000,
+    base_amount: money(500000),
+    current_amount: money(500000),
     status: 'scheduled',
     paid_at: null,
-    paid_amount_cents: null,
+    paid_amount: money(0),
     created_at: '2026-03-01T10:00:00Z',
     updated_at: '2026-03-01T10:00:00Z',
     ...overrides,

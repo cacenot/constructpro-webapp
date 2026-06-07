@@ -12,7 +12,13 @@ export async function registerFinanceiroHandlers(page: Page) {
     const installments = [
       factory.installment({ id: 1, status: 'scheduled', due_date: '2026-06-10' }),
       factory.installment({ id: 2, status: 'overdue', due_date: '2026-04-10' }),
-      factory.installment({ id: 3, status: 'paid', due_date: '2026-03-10', paid_at: '2026-03-08T14:00:00Z', paid_amount_cents: 500000 }),
+      factory.installment({
+        id: 3,
+        status: 'paid',
+        due_date: '2026-03-10',
+        paid_at: '2026-03-08T14:00:00Z',
+        paid_amount: factory.money(500000),
+      }),
     ]
     await route.fulfill({
       status: 200,
@@ -27,10 +33,10 @@ export async function registerFinanceiroHandlers(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        total_amount_cents: 1500000,
-        paid_amount_cents: 500000,
-        overdue_amount_cents: 500000,
-        pending_amount_cents: 500000,
+        total_current_amount: factory.money(1500000),
+        total_paid_amount: factory.money(500000),
+        total_overdue_amount: factory.money(500000),
+        overdue_count: 1,
       }),
     })
   })
@@ -57,7 +63,7 @@ export async function registerFinanceiroHandlers(page: Page) {
           id: 1,
           status: 'paid',
           paid_at: new Date().toISOString(),
-          paid_amount_cents: 500000,
+          paid_amount: factory.money(500000),
         })
       ),
     })
