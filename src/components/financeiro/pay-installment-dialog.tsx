@@ -32,7 +32,7 @@ import type { InstallmentResponse } from '@/hooks/use-installments'
 import { installmentKeys, useInstallments } from '@/hooks/use-installments'
 import { useTenantConfig } from '@/hooks/use-tenant-config'
 import { handleApiError, throwApiError } from '@/lib/api-error'
-import { formatCurrency, formatId } from '@/lib/utils'
+import { centsToReaisString, formatCurrency, formatId } from '@/lib/utils'
 import {
   type InstallmentPaymentFormData,
   installmentPaymentSchema,
@@ -142,7 +142,7 @@ export function PayInstallmentDialog({
         {
           params: { path: { installment_id: resolvedInstallment.id } },
           body: {
-            amount: data.amount_cents,
+            amount: centsToReaisString(data.amount_cents),
             payment_method: data.payment_method,
             paid_at: data.paid_at || undefined,
             note: data.note || undefined,

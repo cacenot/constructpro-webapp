@@ -5,6 +5,7 @@ import { navigate } from 'vike/client/router'
 import { AppLayout } from '@/components/app-layout'
 import { UnitForm } from '@/components/unidades/unit-form'
 import { handleApiError, throwApiError } from '@/lib/api-error'
+import { centsToReaisString } from '@/lib/utils'
 import type { UnitFormData } from '@/schemas/unit.schema'
 
 export default function UnitNewPage() {
@@ -13,15 +14,13 @@ export default function UnitNewPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: UnitFormData) => {
-      // API v2 accepts price as integer (cents); client types still expect object — cast until package updates
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: result, error } = await client.POST('/api/v1/units', {
         body: {
           name: data.name,
           category: data.category,
           project_id: data.project_id,
           area: data.area,
-          price: data.price_cents,
+          price: centsToReaisString(data.price_cents),
           description: data.description || null,
           apartment_type: data.apartment_type || null,
           bedrooms: data.bedrooms ?? null,
@@ -29,7 +28,7 @@ export default function UnitNewPage() {
           garages: data.garages ?? null,
           floor: data.floor ?? null,
           features: data.features?.length ? data.features : undefined,
-        } as never,
+        },
       })
 
       if (error) throwApiError(error, 'Falha ao cadastrar unidade')

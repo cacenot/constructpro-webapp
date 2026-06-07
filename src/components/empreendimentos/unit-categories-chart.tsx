@@ -99,7 +99,7 @@ export function UnitCategoriesChart({ data }: UnitCategoriesChartProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Unidades por Categoria</CardTitle>
+        <CardTitle className="text-base">Unidades por categoria</CardTitle>
       </CardHeader>
       <div className="p-6 pt-0">
         <ChartContainer config={chartConfig} className="h-50 w-full">

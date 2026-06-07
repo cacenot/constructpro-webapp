@@ -14,7 +14,7 @@ import { ProposalPartiesCreate } from '@/components/vendas/proposal/proposal-par
 import { ProposalWorkbench } from '@/components/vendas/proposal/proposal-workbench'
 import { useProposalData } from '@/hooks/use-proposal-data'
 import { handleApiError, throwApiError } from '@/lib/api-error'
-import { buildCommissionRate } from '@/lib/commission-utils'
+import { rateToWireString } from '@/lib/utils'
 import { type SaleFormData, saleFormSchema } from '@/schemas/sale.schema'
 
 export default function SaleNewPage() {
@@ -82,11 +82,11 @@ export default function SaleNewPage() {
           })),
           broker_id: formData.broker_id ?? undefined,
           commission_broker_rate: formData.commission_broker_rate
-            ? buildCommissionRate(formData.commission_broker_rate)
+            ? rateToWireString(formData.commission_broker_rate)
             : undefined,
           agency_id: formData.agency_id ?? undefined,
           commission_agency_rate: formData.commission_agency_rate
-            ? buildCommissionRate(formData.commission_agency_rate)
+            ? rateToWireString(formData.commission_agency_rate)
             : undefined,
         },
       })

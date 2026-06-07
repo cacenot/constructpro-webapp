@@ -8,6 +8,7 @@ import { AppLayout } from '@/components/app-layout'
 import { Button } from '@/components/ui/button'
 import { UnitForm } from '@/components/unidades/unit-form'
 import { handleApiError, throwApiError } from '@/lib/api-error'
+import { centsToReaisString } from '@/lib/utils'
 import type { UnitFormData } from '@/schemas/unit.schema'
 
 type ApiClient = ReturnType<typeof useApiClient>['client']
@@ -81,7 +82,7 @@ export default function UnitEditPage() {
           name: data.name,
           category: data.category,
           area: data.area,
-          price: data.price_cents,
+          price: centsToReaisString(data.price_cents),
           description: data.description || null,
           apartment_type: data.apartment_type || null,
           bedrooms: data.bedrooms ?? null,

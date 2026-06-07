@@ -15,11 +15,11 @@ interface SalesTimelineChartProps {
 const chartConfig = {
   amount: {
     label: 'Valor Total',
-    color: 'var(--color-primary)',
+    color: 'var(--color-chart-2)',
   },
   count: {
     label: 'Vendas',
-    color: 'var(--color-chart-2)',
+    color: 'var(--color-chart-4)',
   },
 } satisfies ChartConfig
 
@@ -32,7 +32,8 @@ function formatMonth(dateStr: string): string {
 }
 
 function formatCompactCurrency(value: number): string {
-  if (value >= 1_000_000) return `R$${(value / 1_000_000).toFixed(1)}M`
+  if (value >= 1_000_000)
+    return `R$${(value / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}M`
   if (value >= 1_000) return `R$${(value / 1_000).toFixed(0)}k`
   return `R$${value.toFixed(0)}`
 }
@@ -82,7 +83,7 @@ export function SalesTimelineChart({ data }: SalesTimelineChartProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Evolucao de Vendas</CardTitle>
+        <CardTitle className="text-base">Evolução de vendas</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-75 w-full">
@@ -140,11 +141,11 @@ export function SalesTimelineChart({ data }: SalesTimelineChartProps) {
 
         <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
-            <div className="size-2.5 rounded-full bg-primary" />
+            <div className="size-2.5 rounded-full bg-chart-2" />
             Valor total
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="size-2.5 rounded-full bg-pipeline-proposta-dot" />
+            <div className="size-2.5 rounded-full bg-chart-4" />
             N. de vendas
           </div>
         </div>

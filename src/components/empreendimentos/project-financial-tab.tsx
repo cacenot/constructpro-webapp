@@ -1,12 +1,12 @@
 import type { components } from '@cacenot/construct-pro-api-client'
-import { AlertTriangle, ArrowRight } from 'lucide-react'
+import { AlertTriangle, ArrowRight, FileText, TrendingUp } from 'lucide-react'
 import { navigate } from 'vike/client/router'
-import { Badge } from '@/components/ui/badge'
+import { DetailPanel } from '@/components/empreendimentos/detail-panel'
+import { type Vital, VitalsStrip } from '@/components/empreendimentos/vitals-strip'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import type { ProjectDetailResponse } from '@/hooks/useProjects'
-import { cn, formatCurrency } from '@/lib/utils'
+import { cn, formatCurrency, formatPercent } from '@/lib/utils'
 
 type ProjectFinancialSummary = components['schemas']['ProjectFinancialSummary']
 
@@ -14,105 +14,122 @@ interface ProjectFinancialTabProps {
   project: ProjectDetailResponse
 }
 
-function ContractStatusBadges({ data }: { data: ProjectFinancialSummary }) {
+function CarteiraStrip({ data }: { data: ProjectFinancialSummary }) {
+  const correction = data.total_correction.cents
+  const vitals: Vital[] = [
+    { label: 'Principal contratado', value: formatCurrency(data.total_principal.cents / 100) },
+    {
+      label: 'Recebido',
+      value: formatCurrency(data.total_paid.cents / 100),
+      tone: data.total_paid.cents > 0 ? 'success' : 'default',
+    },
+    { label: 'Saldo devedor', value: formatCurrency(data.total_outstanding.cents / 100) },
+    {
+      label: 'Correção monetária',
+      value: `${correction > 0 ? '+' : ''}${formatCurrency(correction / 100)}`,
+      tone: correction > 0 ? 'warning' : 'default',
+    },
+  ]
+  return <VitalsStrip vitals={vitals} />
+}
+
+const PILL_BASE =
+  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium'
+
+function StatusPill({
+  count,
+  label,
+  pill,
+  dot,
+}: {
+  count: number
+  label: string
+  pill: string
+  dot: string
+}) {
   return (
-    <div className="flex flex-wrap gap-2">
-      <Badge variant="outline" className="border-success/30 bg-success/10 text-success">
-        {data.active_contracts} ativos
-      </Badge>
-      <Badge variant="outline" className="border-info/30 bg-info/10 text-info">
-        {data.settled_contracts} quitados
-      </Badge>
-      {data.defaulting_contracts > 0 && (
-        <Badge
-          variant="outline"
-          className="border-destructive/30 bg-destructive/10 font-semibold text-destructive"
-        >
-          <AlertTriangle className="mr-1 size-3" />
-          {data.defaulting_contracts} inadimplentes
-        </Badge>
-      )}
-      <Badge variant="outline">{data.total_contracts} contratos</Badge>
-    </div>
+    <span className={cn(PILL_BASE, pill)}>
+      <span className={cn('size-1.5 rounded-full', dot)} />
+      <span className="tabular-nums">{count}</span> {label}
+    </span>
   )
 }
 
-function FinancialKpiCards({ data }: { data: ProjectFinancialSummary }) {
+function ContractsPanel({ data }: { data: ProjectFinancialSummary }) {
   return (
-    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardContent className="pt-5 pb-4">
-          <p className="text-xs font-medium text-muted-foreground">Principal Contratado</p>
-          <p className="tabular-nums mt-1 text-2xl font-bold">
-            {formatCurrency(data.total_principal.cents / 100)}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="pt-5 pb-4">
-          <p className="text-xs font-medium text-success">Total Recebido</p>
-          <p className="tabular-nums mt-1 text-2xl font-bold text-success">
-            {formatCurrency(data.total_paid.cents / 100)}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="pt-5 pb-4">
-          <p className="text-xs font-medium text-muted-foreground">Saldo Devedor</p>
-          <p className="tabular-nums mt-1 text-2xl font-bold">
-            {formatCurrency(data.total_outstanding.cents / 100)}
-          </p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="pt-5 pb-4">
-          <p
-            className={cn(
-              'text-xs font-medium',
-              data.total_correction.cents > 0 ? 'text-warning' : 'text-muted-foreground'
-            )}
-          >
-            Correcoes
-          </p>
-          <p
-            className={cn(
-              'tabular-nums mt-1 text-2xl font-bold',
-              data.total_correction.cents > 0 && 'text-warning'
-            )}
-          >
-            {data.total_correction.cents > 0 ? '+' : ''}
-            {formatCurrency(data.total_correction.cents / 100)}
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+    <DetailPanel title="Contratos" icon={FileText}>
+      <div className="flex flex-wrap gap-2">
+        <StatusPill
+          count={data.active_contracts}
+          label="ativos"
+          pill="border-pipeline-fechado-dot/30 bg-pipeline-fechado text-pipeline-fechado-fg"
+          dot="bg-pipeline-fechado-dot"
+        />
+        <StatusPill
+          count={data.settled_contracts}
+          label="quitados"
+          pill="border-pipeline-reservado-dot/30 bg-pipeline-reservado text-pipeline-reservado-fg"
+          dot="bg-pipeline-reservado-dot"
+        />
+        {data.defaulting_contracts > 0 && (
+          <StatusPill
+            count={data.defaulting_contracts}
+            label="inadimplentes"
+            pill="border-pipeline-perdido-dot/30 bg-pipeline-perdido text-pipeline-perdido-fg"
+            dot="bg-pipeline-perdido-dot"
+          />
+        )}
+        <StatusPill
+          count={data.total_contracts}
+          label="no total"
+          pill="border-border bg-muted text-muted-foreground"
+          dot="bg-muted-foreground"
+        />
+      </div>
+    </DetailPanel>
   )
 }
 
-function PaymentProgressCard({ data }: { data: ProjectFinancialSummary }) {
-  const progressValue = Number(data.payment_progress_percentage)
-
+function PaymentProgressPanel({ data }: { data: ProjectFinancialSummary }) {
+  const progress = Number(data.payment_progress_percentage)
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Progresso de Pagamento</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-end justify-between">
-          <span className="tabular-nums text-3xl font-bold">{progressValue.toFixed(1)}%</span>
-          <span className="text-sm text-muted-foreground">
+    <DetailPanel title="Progresso de pagamento" icon={TrendingUp}>
+      <div className="space-y-3">
+        <div className="flex items-end justify-between gap-4">
+          <span className="text-3xl font-semibold tabular-nums tracking-tight">
+            {formatPercent(progress)}%
+          </span>
+          <span className="text-right text-sm tabular-nums text-muted-foreground">
             {formatCurrency(data.total_paid.cents / 100)} de{' '}
             {formatCurrency(data.total_principal.cents / 100)}
           </span>
         </div>
-        <Progress value={progressValue} className="h-3" />
-      </CardContent>
-    </Card>
+        <Progress value={progress} className="h-2" />
+      </div>
+    </DetailPanel>
+  )
+}
+
+function DefaultAlert({ data }: { data: ProjectFinancialSummary }) {
+  const n = data.defaulting_contracts
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
+      <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
+      <div className="space-y-0.5">
+        <p className="font-medium text-destructive">
+          {n} {n === 1 ? 'contrato inadimplente' : 'contratos inadimplentes'}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          de {data.total_contracts} na carteira. Priorize a régua de cobrança para conter o atraso.
+        </p>
+      </div>
+    </div>
   )
 }
 
 export function ProjectFinancialTab({ project }: ProjectFinancialTabProps) {
-  if (!project.financial_summary) {
+  const financial = project.financial_summary
+  if (!financial) {
     return (
       <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-lg border border-dashed">
         <p className="text-muted-foreground">Nenhum contrato registrado neste empreendimento.</p>
@@ -125,9 +142,14 @@ export function ProjectFinancialTab({ project }: ProjectFinancialTabProps) {
 
   return (
     <div className="space-y-6">
-      <ContractStatusBadges data={project.financial_summary} />
-      <FinancialKpiCards data={project.financial_summary} />
-      <PaymentProgressCard data={project.financial_summary} />
+      <CarteiraStrip data={financial} />
+
+      {financial.defaulting_contracts > 0 && <DefaultAlert data={financial} />}
+
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <ContractsPanel data={financial} />
+        <PaymentProgressPanel data={financial} />
+      </div>
 
       <div className="border-t pt-4">
         <Button

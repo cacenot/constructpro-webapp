@@ -1,6 +1,6 @@
 import type { components } from '@cacenot/construct-pro-api-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { cn, formatPercent } from '@/lib/utils'
 
 type ProjectUnitSummary = components['schemas']['ProjectUnitSummary']
 
@@ -28,7 +28,9 @@ function StatusBar({ label, value, total, colorClass, barClass }: StatusBarProps
         </div>
         <div className="flex items-center gap-2">
           <span className="tabular-nums font-medium">{value}</span>
-          <span className="tabular-nums text-xs text-muted-foreground">({pct.toFixed(1)}%)</span>
+          <span className="tabular-nums text-xs text-muted-foreground">
+            ({formatPercent(pct)}%)
+          </span>
         </div>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -45,11 +47,11 @@ export function UnitAvailabilityChart({ data }: UnitAvailabilityChartProps) {
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Disponibilidade de Unidades</CardTitle>
+        <CardTitle className="text-base">Disponibilidade de unidades</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-center space-y-4">
         <StatusBar
-          label="Disponivel"
+          label="Disponíveis"
           value={data.available_count}
           total={data.total_units}
           colorClass="bg-success"
@@ -71,7 +73,7 @@ export function UnitAvailabilityChart({ data }: UnitAvailabilityChartProps) {
         />
         {data.unavailable_count > 0 && (
           <StatusBar
-            label="Indisponiveis"
+            label="Indisponíveis"
             value={data.unavailable_count}
             total={data.total_units}
             colorClass="bg-muted-foreground/50"

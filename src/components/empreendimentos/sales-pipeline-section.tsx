@@ -3,7 +3,7 @@ import { Cell, Label, Pie, PieChart } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
 import { Separator } from '@/components/ui/separator'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatPercent } from '@/lib/utils'
 
 type ProjectSalesSummary = components['schemas']['ProjectSalesSummary']
 
@@ -20,8 +20,8 @@ const COLORS = {
 
 const chartConfig = {
   closed: { label: 'Fechadas', color: COLORS.closed },
-  pending_signature: { label: 'Aguard. Assinatura', color: COLORS.pending_signature },
-  pending_payment: { label: 'Aguard. Pagamento', color: COLORS.pending_payment },
+  pending_signature: { label: 'Aguardando Assinatura', color: COLORS.pending_signature },
+  pending_payment: { label: 'Aguardando Pagamento', color: COLORS.pending_payment },
   lost: { label: 'Perdidas', color: COLORS.lost },
 } satisfies ChartConfig
 
@@ -36,7 +36,7 @@ function CustomTooltip({
   const entry = payload[0]
   if (!entry) return null
   const data = entry.payload
-  const pct = data.total > 0 ? ((data.value / data.total) * 100).toFixed(1) : '0'
+  const pct = data.total > 0 ? formatPercent((data.value / data.total) * 100) : '0'
 
   return (
     <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
@@ -57,13 +57,13 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
   const pieData = [
     { name: 'Fechadas', value: data.closed_count, fill: COLORS.closed, total: data.total_sales },
     {
-      name: 'Aguard. Assinatura',
+      name: 'Aguardando Assinatura',
       value: data.pending_signature_count,
       fill: COLORS.pending_signature,
       total: data.total_sales,
     },
     {
-      name: 'Aguard. Pagamento',
+      name: 'Aguardando Pagamento',
       value: data.pending_payment_count,
       fill: COLORS.pending_payment,
       total: data.total_sales,
@@ -74,7 +74,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Pipeline de Vendas</CardTitle>
+        <CardTitle className="text-base">Funil de vendas</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid gap-6 lg:grid-cols-2">
@@ -148,7 +148,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="size-2.5 rounded-full bg-pipeline-proposta-dot" />
-                  <span className="text-sm">Aguard. Assinatura</span>
+                  <span className="text-sm">Aguardando Assinatura</span>
                 </div>
                 <span className="tabular-nums text-sm font-medium">
                   {data.pending_signature_count}
@@ -157,7 +157,7 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="size-2.5 rounded-full bg-pipeline-reservado-dot" />
-                  <span className="text-sm">Aguard. Pagamento</span>
+                  <span className="text-sm">Aguardando Pagamento</span>
                 </div>
                 <span className="tabular-nums text-sm font-medium">
                   {data.pending_payment_count}
@@ -176,28 +176,28 @@ export function SalesPipelineSection({ data }: SalesPipelineSectionProps) {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total Vendido</span>
+                <span className="text-sm text-muted-foreground">Total vendido</span>
                 <span className="tabular-nums text-sm font-semibold text-success">
                   {formatCurrency(data.total_sold.cents / 100)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Em Propostas</span>
+                <span className="text-sm text-muted-foreground">Em propostas</span>
                 <span className="tabular-nums text-sm font-medium">
                   {formatCurrency(data.total_proposal.cents / 100)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Preço Médio</span>
+                <span className="text-sm text-muted-foreground">Preço médio</span>
                 <span className="tabular-nums text-sm font-medium">
                   {formatCurrency(data.avg_sale_price.cents / 100)}
                 </span>
               </div>
               {data.avg_discount_percentage != null && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Desconto Médio</span>
+                  <span className="text-sm text-muted-foreground">Desconto médio</span>
                   <span className="tabular-nums text-sm font-medium">
-                    {Number(data.avg_discount_percentage).toFixed(2)}%
+                    {formatPercent(Number(data.avg_discount_percentage), 2, true)}%
                   </span>
                 </div>
               )}

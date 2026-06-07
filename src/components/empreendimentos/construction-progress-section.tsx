@@ -41,7 +41,7 @@ export function ConstructionProgressSection({ updates }: ConstructionProgressSec
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <HardHat className="size-4" />
-            Progresso da Obra
+            Progresso da obra
           </CardTitle>
           <span className="tabular-nums text-2xl font-bold">{latestPercentage}%</span>
         </div>

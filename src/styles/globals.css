@@ -904,8 +904,9 @@ button:not(:disabled),
   cursor: pointer;
 }
 
-/* Acessibilidade: respeita quem prefere menos movimento. Anula entradas, transições
-   e scroll suave para usuários com `prefers-reduced-motion: reduce`. */
+/* Acessibilidade: respeita prefers-reduced-motion. Neutraliza animações,
+   transições e scroll suave para quem pede menos movimento (WCAG 2.3.3).
+   !important para vencer as utilities do tw-animate-css. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
