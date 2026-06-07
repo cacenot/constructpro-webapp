@@ -2,7 +2,7 @@ import type { components } from '@cacenot/construct-pro-api-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { DataRow } from '@/components/vendas/data-row'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatPercent } from '@/lib/utils'
 
 type Sale = components['schemas']['SaleResponse']
 
@@ -10,16 +10,18 @@ interface DealCommissionPanelProps {
   sale: Sale
 }
 
-function rateLabel(rate?: { formatted?: string; ppm?: number } | null): string {
+// A API já entrega a taxa pronta: `formatted` (display pt-BR) e `percentage`
+// (string decimal). Preferimos o backend a recalcular de `ppm` no front.
+function rateLabel(rate?: { formatted?: string; percentage?: string } | null): string {
   if (rate?.formatted) return rate.formatted
-  if (rate?.ppm != null) return `${(rate.ppm / 10000).toFixed(2).replace('.', ',')}%`
+  if (rate?.percentage != null) return `${formatPercent(Number(rate.percentage), 2)}%`
   return '—'
 }
 
 export function DealCommissionPanel({ sale }: DealCommissionPanelProps) {
-  const brokerPpm = sale.commission_broker_rate?.ppm ?? 0
-  const agencyPpm = sale.commission_agency_rate?.ppm ?? 0
-  const totalEstimated = ((brokerPpm + agencyPpm) / 10000 / 100) * (sale.amount.cents / 100)
+  const brokerPct = Number(sale.commission_broker_rate?.percentage ?? 0)
+  const agencyPct = Number(sale.commission_agency_rate?.percentage ?? 0)
+  const totalEstimated = ((brokerPct + agencyPct) / 100) * (sale.amount.cents / 100)
 
   return (
     <Card>

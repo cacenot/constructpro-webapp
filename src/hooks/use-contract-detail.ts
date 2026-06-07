@@ -1,6 +1,7 @@
 import type { paths } from '@cacenot/construct-pro-api-client'
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { useQuery } from '@tanstack/react-query'
+import { extractApiErrorMessage } from '@/lib/api-error'
 
 type ContractDetailResponse =
   paths['/api/v1/contracts/{contract_id}']['get']['responses']['200']['content']['application/json']
@@ -25,7 +26,11 @@ export function useContractDetail(contractId: number | undefined) {
       const { data, error } = await client.GET('/api/v1/contracts/{contract_id}', {
         params: { path: { contract_id: contractId as number } },
       })
-      if (error) throw new Error('Falha ao carregar dados financeiros do contrato')
+      if (error) {
+        throw new Error(
+          extractApiErrorMessage(error, 'Falha ao carregar dados financeiros do contrato')
+        )
+      }
       return data
     },
     enabled: !!contractId,

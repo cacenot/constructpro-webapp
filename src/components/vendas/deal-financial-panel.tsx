@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
 import { StatLabel } from '@/components/vendas/data-row'
 import { formatMonthYear } from '@/lib/format-date'
-import { formatCurrency } from '@/lib/utils'
+import { formatCompactCurrency, formatCurrency } from '@/lib/utils'
 
 type FinancialSummary = components['schemas']['ContractFinancialSummary']
 type BalanceTimeline = components['schemas']['ContractBalanceTimeline']
@@ -38,12 +38,6 @@ function emptyBalanceNote(status?: ContractStatus): string {
 const chartConfig = {
   balance: { label: 'Saldo devedor', color: 'var(--color-chart-2)' },
 } satisfies ChartConfig
-
-function compactCurrency(value: number): string {
-  if (Math.abs(value) >= 1_000_000) return `R$${(value / 1_000_000).toFixed(1)}M`
-  if (Math.abs(value) >= 1_000) return `R$${(value / 1_000).toFixed(0)}k`
-  return `R$${value.toFixed(0)}`
-}
 
 function BalanceTooltip({
   active,
@@ -127,7 +121,7 @@ export function DealFinancialPanel({ financial, timeline, status }: DealFinancia
                   axisLine={false}
                   tickMargin={8}
                   width={60}
-                  tickFormatter={compactCurrency}
+                  tickFormatter={(v) => formatCompactCurrency(v)}
                 />
                 <ChartTooltip content={<BalanceTooltip />} />
                 <Area

@@ -3,7 +3,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
 import { formatMonthYear } from '@/lib/format-date'
-import { formatCurrency } from '@/lib/utils'
+import { formatCompactCurrency, formatCurrency } from '@/lib/utils'
 
 type CorrectionSummary = components['schemas']['ContractCorrectionSummary']
 
@@ -14,11 +14,6 @@ interface DealCorrectionPanelProps {
 const chartConfig = {
   amount: { label: 'Correção', color: 'var(--color-chart-3)' },
 } satisfies ChartConfig
-
-function compactCurrency(value: number): string {
-  if (Math.abs(value) >= 1_000) return `R$${(value / 1_000).toFixed(1)}k`
-  return `R$${value.toFixed(0)}`
-}
 
 function CorrectionTooltip({
   active,
@@ -83,7 +78,7 @@ export function DealCorrectionPanel({ correction }: DealCorrectionPanelProps) {
                 axisLine={false}
                 tickMargin={8}
                 width={52}
-                tickFormatter={compactCurrency}
+                tickFormatter={(v) => formatCompactCurrency(v, 1)}
               />
               <ChartTooltip content={<CorrectionTooltip />} />
               <Bar dataKey="amount" fill="var(--color-amount)" radius={[4, 4, 0, 0]} barSize={22} />
