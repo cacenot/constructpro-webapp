@@ -1,3 +1,4 @@
+import { format, subDays } from 'date-fns'
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
 import type { CustomerFilterValue } from '@/components/ui/customer-filter'
@@ -11,7 +12,35 @@ import {
 
 const PAGE_SIZE = 10
 const DEFAULT_SORT = 'due_date:asc'
-const DEFAULT_DUE_PRESET = 'thisMonth'
+// Sem filtro de vencimento por padrão: o console abre sobre a carteira inteira
+// (Pulso e Aging agregam toda a base). O usuário recorta a partir daí.
+const DEFAULT_DUE_PRESET = ''
+const DEFAULT_TAB = 'resumo'
+
+/** Faixas de envelhecimento da inadimplência (espelham InstallmentAging do backend). */
+export type AgingBucketKey = 'not_due' | 'd1_30' | 'd31_60' | 'd61_90' | 'd90_plus'
+
+// Parcelas com saldo em aberto (não pagas, não canceladas) — o recorte que o
+// aging mede. Usado no cross-filter de uma faixa para a tabela.
+const OPEN_STATUSES = 'scheduled,invoiced,partial'
+
+/** Traduz a faixa de aging em intervalo de vencimento (due_date) relativo a hoje. */
+function agingDueRange(bucket: AgingBucketKey): { min: string; max: string } {
+  const today = new Date()
+  const fmt = (date: Date) => format(date, 'yyyy-MM-dd')
+  switch (bucket) {
+    case 'not_due':
+      return { min: fmt(today), max: '' }
+    case 'd1_30':
+      return { min: fmt(subDays(today, 30)), max: fmt(subDays(today, 1)) }
+    case 'd31_60':
+      return { min: fmt(subDays(today, 60)), max: fmt(subDays(today, 31)) }
+    case 'd61_90':
+      return { min: fmt(subDays(today, 90)), max: fmt(subDays(today, 61)) }
+    case 'd90_plus':
+      return { min: '', max: fmt(subDays(today, 91)) }
+  }
+}
 
 export interface InstallmentsTableFilters {
   statusFilter: string[]
@@ -44,6 +73,11 @@ export interface InstallmentsTableSort {
   setSort: (value: string) => void
 }
 
+export interface InstallmentsTableView {
+  tab: string
+  setTab: (value: string) => void
+}
+
 export interface UseInstallmentsTableReturn {
   data: InstallmentSummaryItemResponse[]
   isLoading: boolean
@@ -54,6 +88,8 @@ export interface UseInstallmentsTableReturn {
   filters: InstallmentsTableFilters
   pagination: InstallmentsTablePagination
   sort: InstallmentsTableSort
+  view: InstallmentsTableView
+  applyAgingBucket: (bucket: AgingBucketKey) => void
   selectedInstallmentId: string
   setSelectedInstallmentId: (id: string) => void
 }
@@ -72,6 +108,7 @@ const installmentsQueryParsers = {
   customerName: parseAsString.withDefault(''),
   project: parseAsInteger.withDefault(0),
   sort: parseAsString.withDefault(DEFAULT_SORT),
+  tab: parseAsString.withDefault(DEFAULT_TAB),
   page: parseAsInteger.withDefault(1),
   parcela: parseAsString.withDefault(''),
 }
@@ -110,6 +147,7 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     customerName,
     project,
     sort,
+    tab,
     page,
     parcela,
   } = queryState
@@ -218,6 +256,20 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       }
     }
 
+  // Cross-filter: clicar numa faixa de aging recorta a aba Parcelas para as
+  // parcelas em aberto daquela idade (intervalo de vencimento + status abertos).
+  const applyAgingBucket = (bucket: AgingBucketKey) => {
+    const { min, max } = agingDueRange(bucket)
+    setQueryState({
+      tab: 'parcelas',
+      status: OPEN_STATUSES,
+      duePreset: 'custom',
+      dueMin: min,
+      dueMax: max,
+      page: 1,
+    })
+  }
+
   return {
     data: installments,
     isLoading,
@@ -259,6 +311,11 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       sort,
       setSort: (value) => setQueryState({ sort: value, page: 1 }),
     },
+    view: {
+      tab,
+      setTab: (value: string) => setQueryState({ tab: value }),
+    },
+    applyAgingBucket,
     selectedInstallmentId: parcela,
     setSelectedInstallmentId: (id: string) => setQueryState({ parcela: id }),
   }

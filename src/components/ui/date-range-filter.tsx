@@ -97,17 +97,20 @@ function formatLabel(value: DateRangeValue): string {
   const preset = PRESETS.find((p) => p.id === value.preset)
   if (preset && preset.id !== 'custom') return preset.label
 
-  const parts: string[] = []
-  if (value.min) {
-    const [y, m, d] = value.min.split('-')
-    parts.push(`${d}/${m}/${y}`)
+  const fmt = (iso: string) => {
+    const [y, m, d] = iso.split('-')
+    return `${d}/${m}/${y}`
   }
-  if (value.max && value.max !== value.min) {
-    const [y, m, d] = value.max.split('-')
-    parts.push(`${d}/${m}/${y}`)
-    return `${parts[0]} – ${parts[1]}`
+  const hasMin = !!value.min
+  const hasMax = !!value.max
+
+  // Range aberto de um lado só (ex.: cross-filter de aging "90+ dias" → até a data).
+  if (hasMin && hasMax) {
+    return value.min === value.max ? fmt(value.min) : `${fmt(value.min)} – ${fmt(value.max)}`
   }
-  return parts[0] ?? 'Personalizado'
+  if (hasMin) return `A partir de ${fmt(value.min)}`
+  if (hasMax) return `Até ${fmt(value.max)}`
+  return 'Personalizado'
 }
 
 /** Compute a DateRangeValue for a given preset id */
