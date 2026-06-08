@@ -1,0 +1,35 @@
+name: Deploy staging
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build + deploy → staging.costara.app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/build-webapp
+        with:
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Resolver credenciais Cloudflare (1Password)
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          CLOUDFLARE_API_TOKEN: op://costara-prod/web-deploy/cloudflare_api_token
+          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/web-deploy/cloudflare_account_id
+
+      - name: Deploy staging
+        shell: bash
+        run: pnpm exec wrangler deploy --env staging
