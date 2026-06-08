@@ -63,6 +63,11 @@ if ! [[ "${VERSION}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
+if [[ -n "${NOTES_FILE}" && ! -f "${NOTES_FILE}" ]]; then
+  echo "ERRO: arquivo de notes '${NOTES_FILE}' não encontrado." >&2
+  exit 1
+fi
+
 cd "$(git rev-parse --show-toplevel)"
 
 prepend_changelog() {
@@ -71,40 +76,41 @@ prepend_changelog() {
   date_str="$(date +%Y-%m-%d)"
   header="## [${version}] - ${date_str}"
 
+  # Monta a seção nova (cabeçalho + corpo das notes) num arquivo temporário.
+  # O corpo nunca passa por awk -v, evitando problemas de escaping.
+  local section
+  section="$(mktemp)"
+  {
+    printf '%s\n\n' "${header}"
+    cat "${notes_file}"
+    printf '\n'
+  } > "${section}"
+
   if [[ ! -f "${changelog}" ]]; then
     {
       printf '# Changelog\n\n'
       printf 'Todas as mudanças notáveis deste projeto são documentadas aqui.\n'
       printf 'O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)\n'
       printf 'e o projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).\n\n'
-      printf '%s\n\n' "${header}"
-      cat "${notes_file}"
-      printf '\n'
+      cat "${section}"
     } > "${changelog}"
+    rm -f "${section}"
     return 0
   fi
 
-  # Insere a nova seção logo antes da primeira "## " existente; se não houver
-  # nenhuma (changelog só com header), insere no fim.
-  local tmp
-  tmp="$(mktemp)"
-  awk -v header="${header}" -v bodyfile="${notes_file}" '
-    BEGIN { inserted = 0 }
-    /^## / && !inserted {
-      print header; print ""
-      while ((getline line < bodyfile) > 0) print line
-      print ""
-      inserted = 1
-    }
-    { print }
-    END {
-      if (!inserted) {
-        print ""; print header; print ""
-        while ((getline line < bodyfile) > 0) print line
-      }
-    }
-  ' "${changelog}" > "${tmp}"
-  mv "${tmp}" "${changelog}"
+  # CHANGELOG já existe: divide em head (antes da 1ª "## ") e rest (da 1ª "## "
+  # em diante) e reconstrói com a seção nova no meio. Se não houver nenhuma
+  # "## " (changelog só com header), tudo vai p/ head e a seção fica no fim.
+  local head_part rest_part
+  head_part="$(mktemp)"
+  rest_part="$(mktemp)"
+  awk -v head="${head_part}" -v rest="${rest_part}" '
+    BEGIN { seen = 0 }
+    /^## / { seen = 1 }
+    { if (seen) print > rest; else print > head }
+  ' "${changelog}"
+  cat "${head_part}" "${section}" "${rest_part}" > "${changelog}"
+  rm -f "${head_part}" "${rest_part}" "${section}"
 }
 
 current_branch=$(git rev-parse --abbrev-ref HEAD)

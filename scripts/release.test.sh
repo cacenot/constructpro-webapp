@@ -99,6 +99,36 @@ assert "commit empurrado p/ origin main" \
   bash -c "[ \"\$(git rev-parse main)\" = \"\$(git -C '${ORIGIN}' rev-parse main)\" ]"
 assert_contains "gh release create chamado" "${WORK}/gh-calls.log" "release create v0.2.0"
 
+# --- Cenário 2: segundo release sobre CHANGELOG existente (caminho de insert) ---
+echo "feature 2" >> feature.txt
+git add feature.txt
+git commit -q -m "feat: outra feature (#3)"
+git push -q origin main
+
+NOTES2="${WORK}/notes2.md"
+cat > "${NOTES2}" <<'EOF'
+### Features
+- outra feature (#3)
+EOF
+
+set +e
+PATH="${STUB}:${PATH}" RELEASE_BRANCH=main \
+  bash "${RELEASE_SH}" v0.3.0 --bump --notes-file="${NOTES2}"
+RC2=$?
+set -e
+
+assert "2º release retornou 0" test "${RC2}" -eq 0
+assert "package.json bumpado p/ 0.3.0" \
+  bash -c '[ "$(node -p "require(\"./package.json\").version")" = "0.3.0" ]'
+assert_contains "CHANGELOG mantém seção v0.2.0" CHANGELOG.md "## [v0.2.0]"
+assert_contains "CHANGELOG ganhou seção v0.3.0" CHANGELOG.md "## [v0.3.0]"
+assert_contains "CHANGELOG tem corpo da 2ª release" CHANGELOG.md "outra feature (#3)"
+assert "v0.3.0 inserido ACIMA de v0.2.0" bash -c '
+  l3=$(grep -n "## \[v0.3.0\]" CHANGELOG.md | head -1 | cut -d: -f1)
+  l2=$(grep -n "## \[v0.2.0\]" CHANGELOG.md | head -1 | cut -d: -f1)
+  [ -n "$l3" ] && [ -n "$l2" ] && [ "$l3" -lt "$l2" ]
+'
+
 echo
 echo "PASS=${PASS} FAIL=${FAIL}"
 [ "${FAIL}" -eq 0 ]
