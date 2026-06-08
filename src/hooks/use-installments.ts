@@ -57,7 +57,7 @@ export const installmentKeys = {
   detail: (id: string) => ['installments', 'detail', id] as const,
 }
 
-export function useInstallments(params?: InstallmentsQuery) {
+export function useInstallments(params?: InstallmentsQuery, options?: { enabled?: boolean }) {
   const { client } = useApiClient()
 
   return useQuery({
@@ -73,6 +73,7 @@ export function useInstallments(params?: InstallmentsQuery) {
 
       return data
     },
+    enabled: options?.enabled,
   })
 }
 

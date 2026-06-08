@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
 import { InstallmentDetailDrawer } from '@/components/financeiro/installment-detail-drawer'
+import { InstallmentDetailPanel } from '@/components/financeiro/installment-detail-panel'
 import { InstallmentsAgingBlock } from '@/components/financeiro/installments-aging-block'
 import { InstallmentsByProjectBlock } from '@/components/financeiro/installments-by-project-block'
 import { InstallmentsCashflowBlock } from '@/components/financeiro/installments-cashflow-block'
@@ -21,6 +22,7 @@ import type {
 } from '@/hooks/use-installments'
 import { installmentKeys } from '@/hooks/use-installments'
 import { useInstallmentsTable } from '@/hooks/use-installments-table'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { handleApiError, throwApiError } from '@/lib/api-error'
 
 // Revela o conteúdo ao trocar de aba: fade + slide-up sutil, 200ms, ease-out.
@@ -48,6 +50,11 @@ export default function FinanceiroPage() {
 
   const { client } = useApiClient()
   const queryClient = useQueryClient()
+
+  // Master-detail: painel inline ao lado da tabela em telas largas; abaixo de
+  // lg o mesmo painel abre como drawer overlay (não cabe lado a lado).
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const detailOpen = !!selectedInstallmentId
 
   type Installment = InstallmentSummaryItemResponse | InstallmentDetailResponse
 
@@ -152,34 +159,58 @@ export default function FinanceiroPage() {
                 onClearFilters={handleClearFilters}
               />
 
-              <Card className="rounded-xl shadow-sm">
-                <CardContent className="p-0">
-                  <InstallmentsTable
-                    data={data}
-                    isLoading={isLoading}
-                    hasActiveFilters={hasActiveFilters}
-                    onClearFilters={handleClearFilters}
-                    onPayInstallment={handlePayInstallment}
-                    onIssueBoleto={handleIssueBoleto}
-                    onViewDetails={handleViewDetails}
-                    sort={sort.sort}
-                    onSort={sort.setSort}
-                  />
-                </CardContent>
-                <InstallmentsPagination {...pagination} />
-              </Card>
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                  <Card className="rounded-xl shadow-sm">
+                    <CardContent className="p-0">
+                      <InstallmentsTable
+                        data={data}
+                        isLoading={isLoading}
+                        hasActiveFilters={hasActiveFilters}
+                        onClearFilters={handleClearFilters}
+                        onPayInstallment={handlePayInstallment}
+                        onIssueBoleto={handleIssueBoleto}
+                        onViewDetails={handleViewDetails}
+                        sort={sort.sort}
+                        onSort={sort.setSort}
+                      />
+                    </CardContent>
+                    <InstallmentsPagination {...pagination} />
+                  </Card>
+                </div>
+
+                {/* Painel inline (master-detail) só em telas largas; abaixo de lg
+                    o mesmo painel vira drawer (ver abaixo). */}
+                {detailOpen && isDesktop && (
+                  <aside className="w-full shrink-0 lg:w-[27rem]">
+                    <Card className="sticky top-6 flex max-h-[calc(100vh-6rem)] flex-col gap-0 overflow-hidden p-0 shadow-sm">
+                      <InstallmentDetailPanel
+                        installmentId={selectedInstallmentId}
+                        onClose={handleCloseDrawer}
+                        onSelectInstallment={setSelectedInstallmentId}
+                        onPayInstallment={handlePayInstallment}
+                        onIssueBoleto={handleIssueBoleto}
+                      />
+                    </Card>
+                  </aside>
+                )}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
       </div>
 
-      <InstallmentDetailDrawer
-        installmentId={selectedInstallmentId}
-        open={!!selectedInstallmentId}
-        onClose={handleCloseDrawer}
-        onPayInstallment={handlePayInstallment}
-        onIssueBoleto={handleIssueBoleto}
-      />
+      {/* Mobile/tablet: o painel da parcela abre como drawer overlay. */}
+      {!isDesktop && (
+        <InstallmentDetailDrawer
+          installmentId={selectedInstallmentId}
+          open={detailOpen}
+          onClose={handleCloseDrawer}
+          onSelectInstallment={setSelectedInstallmentId}
+          onPayInstallment={handlePayInstallment}
+          onIssueBoleto={handleIssueBoleto}
+        />
+      )}
 
       <PayInstallmentDialog
         installment={selectedInstallment}
