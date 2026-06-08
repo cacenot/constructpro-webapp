@@ -1,0 +1,35 @@
+name: Build webapp
+description: Instala deps e builda dist/client, resolvendo a config VITE_* do 1Password.
+inputs:
+  op-service-account-token:
+    description: Token do service account 1Password (github-ci, read-only).
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/setup-webapp
+      with:
+        op-service-account-token: ${{ inputs.op-service-account-token }}
+
+    - name: Resolver config VITE_* (1Password)
+      uses: 1password/load-secrets-action@v2
+      with:
+        export-env: true
+      env:
+        OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-service-account-token }}
+        VITE_FIREBASE_API_KEY: op://costara-prod/webapp-env/VITE_FIREBASE_API_KEY
+        VITE_FIREBASE_AUTH_DOMAIN: op://costara-prod/webapp-env/VITE_FIREBASE_AUTH_DOMAIN
+        VITE_FIREBASE_PROJECT_ID: op://costara-prod/webapp-env/VITE_FIREBASE_PROJECT_ID
+        VITE_FIREBASE_STORAGE_BUCKET: op://costara-prod/webapp-env/VITE_FIREBASE_STORAGE_BUCKET
+        VITE_FIREBASE_MESSAGING_SENDER_ID: op://costara-prod/webapp-env/VITE_FIREBASE_MESSAGING_SENDER_ID
+        VITE_FIREBASE_APP_ID: op://costara-prod/webapp-env/VITE_FIREBASE_APP_ID
+        VITE_API_BASE_URL: op://costara-prod/webapp-env/VITE_API_BASE_URL
+        VITE_CUSTOMERS_PAGE_SIZE: op://costara-prod/webapp-env/VITE_CUSTOMERS_PAGE_SIZE
+        VITE_PROJECTS_PAGE_SIZE: op://costara-prod/webapp-env/VITE_PROJECTS_PAGE_SIZE
+        VITE_UNITS_PAGE_SIZE: op://costara-prod/webapp-env/VITE_UNITS_PAGE_SIZE
+
+    - name: Build (gera version.json + dist/client)
+      shell: bash
+      run: pnpm build
+      env:
+        GIT_SHA: ${{ github.sha }}

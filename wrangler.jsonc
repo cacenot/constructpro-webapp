@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "costara-webapp",
+  "compatibility_date": "2026-06-01",
+  "assets": {
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application"
+  },
+  "env": {
+    "staging": {
+      "name": "costara-webapp-staging",
+      "routes": [{ "pattern": "staging.costara.app", "custom_domain": true }]
+    },
+    "production": {
+      "name": "costara-webapp",
+      "routes": [{ "pattern": "costara.app", "custom_domain": true }]
+    }
+  }
+}

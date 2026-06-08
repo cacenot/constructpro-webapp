@@ -1,0 +1,8 @@
+# Catch-all: o HTML do app e as rotas SPA (/vendas/123, /dashboard, …) são servidos como
+# index.html — sem esta regra ficariam sem Cache-Control e sujeitos a cache heurístico do
+# browser. A regra mais específica /assets/* sobrescreve o Cache-Control para os assets hashed.
+/*
+  Cache-Control: no-cache, no-store, must-revalidate
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

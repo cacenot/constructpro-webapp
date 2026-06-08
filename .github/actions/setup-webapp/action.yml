@@ -1,0 +1,31 @@
+name: Setup webapp
+description: Setup pnpm/node e instala dependências (resolve o token do pacote privado via 1Password).
+inputs:
+  op-service-account-token:
+    description: Token do service account 1Password (github-ci, read-only).
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm
+        registry-url: https://npm.pkg.github.com
+        scope: '@cacenot'
+
+    - name: Resolver token do pacote privado (1Password)
+      uses: 1password/load-secrets-action@v2
+      with:
+        export-env: true
+      env:
+        OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-service-account-token }}
+        GH_PACKAGES_TOKEN: op://costara-prod/webapp-deploy/gh_packages_token
+
+    - name: Install
+      shell: bash
+      run: pnpm install --frozen-lockfile
+      env:
+        NODE_AUTH_TOKEN: ${{ env.GH_PACKAGES_TOKEN }}

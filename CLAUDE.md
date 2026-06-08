@@ -107,6 +107,33 @@ Data list pages use **TanStack Table + shadcn Table** — not custom row compone
 - **Page size minimum:** 10 items per page.
 - **Server-side:** All filtering, sorting, and pagination happens on the server. Pass params to the API hook.
 
+## Deploy & CI/CD
+
+Hospedagem em **Cloudflare Workers Static Assets** (config em `wrangler.jsonc`). SPA mode nativo
+(`not_found_handling`); headers de cache em `public/_headers`. **Firebase Auth permanece** — só o
+hosting foi migrado.
+
+**Ambientes:**
+- `main` (push) → deploy automático em `staging.costara.app` (`deploy-staging.yml`)
+- tag `vX.Y.Z` (push) → deploy em `costara.app` + smoke test (`deploy-production.yml`)
+- PR → preview URL comentada no PR (`preview.yml`)
+
+**Quality gates** (`ci.yml`, required para merge): `pnpm lint` (Biome) + `pnpm typecheck` (tsc) +
+`pnpm test` (Vitest), em jobs paralelos.
+
+**Secrets:** tudo no 1Password (vault `costara-prod`, items `web-env` e `web-deploy`), resolvido no
+CI via `load-secrets-action`. Único GitHub Secret do repo: `OP_SERVICE_ACCOUNT_TOKEN`. Os `VITE_*`
+são públicos no bundle (Firebase client keys são públicas por design); o 1Password dá centralização
+e protege o que é sensível (`cloudflare_api_token`, `gh_packages_token`).
+
+**Release:** `./scripts/release.sh vX.Y.Z --bump` bumpa o `package.json`, roda os gates e cria/
+empurra a tag de uma vez (ou, em dois passos: ajuste a versão no `package.json`, commite, e rode
+`./scripts/release.sh vX.Y.Z`). O script roda os gates localmente antes de criar/empurrar a tag.
+`version.json` (gerado no build) é a fonte que o smoke test consulta.
+
+**Rollback:** `pnpm exec wrangler rollback --env production` reverte o Worker para a versão anterior
+instantaneamente (ou re-rode `release.sh` com a tag anterior).
+
 ## Common Gotchas
 
 - Firebase must be initialized once — `src/lib/firebase.ts` checks `getApps()`

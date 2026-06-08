@@ -1,0 +1,52 @@
+name: Preview
+on:
+  pull_request:
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  preview:
+    name: Build + upload preview
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/build-webapp
+        with:
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Resolver credenciais Cloudflare (1Password)
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          CLOUDFLARE_API_TOKEN: op://costara-prod/webapp-deploy/cloudflare_api_token
+          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/webapp-deploy/cloudflare_account_id
+
+      - name: Upload da versão de preview (não-roteada)
+        id: preview
+        shell: bash
+        run: |
+          set -o pipefail
+          output=$(pnpm exec wrangler versions upload --env staging 2>&1 | tee /dev/stderr)
+          # `|| true`: grep sai 1 sem match e, com pipefail+`set -e` do runner, abortaria o
+          # step mesmo com upload bem-sucedido. Regex aceita maiúsculas no prefixo da versão.
+          url=$(echo "$output" | grep -oE 'https://[a-zA-Z0-9-]+\.workers\.dev[^ ]*' | head -1 || true)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Comentar a preview URL no PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: preview
+          message: |
+            🔎 **Preview deployado:** ${{ steps.preview.outputs.url || '(URL não capturada — confira os logs do job)' }}
+
+            Commit: `${{ github.sha }}`

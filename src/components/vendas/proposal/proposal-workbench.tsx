@@ -183,7 +183,7 @@ export function ProposalWorkbench({
   const hasDivergence = unitPriceCents > 0 && Math.abs(vitals.diff) > 0
 
   const handleContinue = React.useCallback(async () => {
-    const stepFields = STEP_FIELDS[mode][currentStep]
+    const stepFields = STEP_FIELDS[mode][currentStep] ?? []
     const ok = stepFields.length === 0 || (await form.trigger(stepFields))
     if (!ok) return
     // Ao sair do plano de pagamento, confirma se o total foge do preço de tabela.
