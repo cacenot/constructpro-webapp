@@ -23,17 +23,17 @@ git status --porcelain
 git fetch origin main --tags
 [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] && echo SYNC_OK || echo SYNC_FAIL
 gh auth status
-git describe --tags --abbrev=0
+git describe --tags --abbrev=0 --match "v[0-9]*"
 ```
 
 Pare e explique o que corrigir se: branch != `main`; `git status --porcelain`
 não-vazio (tree suja); `SYNC_FAIL`; `gh auth status` não autenticado. Guarde a
-última tag como `PREV`.
+última tag como `PREV`. Se não houver tags `v*` (primeira release do projeto), use o commit raiz como `PREV` (`git rev-list --max-parents=0 HEAD`) e trate como release inicial.
 
 Liste o range e aborte se vazio:
 
 ```bash
-PREV="$(git describe --tags --abbrev=0)"
+PREV="$(git describe --tags --abbrev=0 --match "v[0-9]*")"
 git log --pretty='%H %s' "${PREV}..HEAD"
 ```
 
@@ -91,8 +91,7 @@ Monte o corpo das notes em PT-BR (omita seções vazias):
 **PRs:** #N, #M, ...
 ```
 
-Escreva o corpo com `Write` em `/tmp/release-notes-<VERSION>.md` (substitua
-`<VERSION>` pelo valor real).
+Escreva o corpo com `Write` em `/tmp/release-notes-<VERSION>.md` (substitua `<PREV>` e `<VERSION>` pelos valores resolvidos).
 
 ## 5. HITL #2 — go/no-go final
 
