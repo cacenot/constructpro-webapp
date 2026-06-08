@@ -63,9 +63,14 @@ if ! [[ "${VERSION}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
-if [[ -n "${NOTES_FILE}" && ! -f "${NOTES_FILE}" ]]; then
-  echo "ERRO: arquivo de notes '${NOTES_FILE}' não encontrado." >&2
-  exit 1
+if [[ -n "${NOTES_FILE}" ]]; then
+  if [[ ! -f "${NOTES_FILE}" ]]; then
+    echo "ERRO: arquivo de notes '${NOTES_FILE}' não encontrado." >&2
+    exit 1
+  fi
+  # Resolve p/ caminho absoluto AGORA (antes do cd à raiz), senão um path
+  # relativo quebraria no prepend_changelog após o cd.
+  NOTES_FILE="$(cd "$(dirname "${NOTES_FILE}")" && pwd)/$(basename "${NOTES_FILE}")"
 fi
 
 cd "$(git rev-parse --show-toplevel)"
