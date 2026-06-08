@@ -76,7 +76,9 @@ jobs:
           for i in $(seq 1 18); do
             response=$(curl --fail --silent "https://costara.app/version.json" || true)
             if [ -n "$response" ]; then
-              version=$(echo "$response" | jq -r .version)
+              # `.version // empty` + `|| true`: durante a propagação o apex pode servir uma
+              # error page HTML; sem guarda o jq abortaria o poll em vez de seguir tentando.
+              version=$(echo "$response" | jq -r '.version // empty' 2>/dev/null || true)
               echo "Tentativa $i: version=$version (alvo=$target)"
               if [ "$version" = "$target" ]; then
                 echo "Versão publicada bate com a tag — release verificado."

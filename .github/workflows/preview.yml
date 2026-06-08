@@ -37,7 +37,9 @@ jobs:
         run: |
           set -o pipefail
           output=$(pnpm exec wrangler versions upload --env staging 2>&1 | tee /dev/stderr)
-          url=$(echo "$output" | grep -oE 'https://[a-z0-9-]+\.workers\.dev[^ ]*' | head -1)
+          # `|| true`: grep sai 1 sem match e, com pipefail+`set -e` do runner, abortaria o
+          # step mesmo com upload bem-sucedido. Regex aceita maiúsculas no prefixo da versão.
+          url=$(echo "$output" | grep -oE 'https://[a-zA-Z0-9-]+\.workers\.dev[^ ]*' | head -1 || true)
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Comentar a preview URL no PR
@@ -45,6 +47,6 @@ jobs:
         with:
           header: preview
           message: |
-            🔎 **Preview deployado:** ${{ steps.preview.outputs.url }}
+            🔎 **Preview deployado:** ${{ steps.preview.outputs.url || '(URL não capturada — confira os logs do job)' }}
 
             Commit: `${{ github.sha }}`
