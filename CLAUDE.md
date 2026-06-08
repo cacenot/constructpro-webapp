@@ -23,6 +23,8 @@ Add shadcn components: `pnpm dlx shadcn@latest add <component>`
 
 **Routing:** Vike file-based routing in SPA mode (SSR disabled). Routes live in `pages/` — each route needs a `+Page.tsx` file. Route groups use `(groupName)/` for non-URL grouping (e.g., `pages/(auth)/login/+Page.tsx` → `/login`). The root layout `pages/+Layout.tsx` wraps all routes with providers.
 
+**Navigation:** Vike's client router intercepts internal `<a href="/route">` anchors and turns them into SPA navigations (no full reload) — so use plain `<a href>` for navigational links (see `account-menu.tsx`, `organizacao/+Page.tsx`). Reserve `navigate()` from `vike/client/router` for programmatic navigation inside handlers (form submits, button clicks).
+
 **State management:**
 - **Zustand** (`src/stores/app-store.ts`) — UI state (sidebar, theme), persisted to localStorage
 - **TanStack Query v5** (`src/lib/query-client.ts`) — server state (5min stale, 30min GC, 3 retries except 401)
