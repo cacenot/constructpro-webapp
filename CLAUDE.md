@@ -123,7 +123,7 @@ hosting foi migrado.
 **Quality gates** (`ci.yml`, required para merge): `pnpm lint` (Biome) + `pnpm typecheck` (tsc) +
 `pnpm test` (Vitest), em jobs paralelos.
 
-**Secrets:** tudo no 1Password (vault `costara-prod`, items `web-env` e `web-deploy`), resolvido no
+**Secrets:** tudo no 1Password (vault `costara-prod`, items `webapp-env` e `webapp-deploy`), resolvido no
 CI via `load-secrets-action`. Único GitHub Secret do repo: `OP_SERVICE_ACCOUNT_TOKEN`. Os `VITE_*`
 são públicos no bundle (Firebase client keys são públicas por design); o 1Password dá centralização
 e protege o que é sensível (`cloudflare_api_token`, `gh_packages_token`).
