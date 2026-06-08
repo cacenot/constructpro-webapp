@@ -6,6 +6,8 @@ type InstallmentDetailResponse = components['schemas']['InstallmentDetailRespons
 type InstallmentSummaryItemResponse = components['schemas']['InstallmentSummaryItemResponse']
 type PaginatedInstallmentsResponse = components['schemas']['PaginatedResponse_InstallmentResponse_']
 type InstallmentListSummary = components['schemas']['InstallmentListSummary']
+type PortfolioCashflowResponse = components['schemas']['PortfolioCashflowResponse']
+type CashflowMonth = components['schemas']['CashflowMonth']
 
 interface InstallmentsQuery {
   page?: number | null
@@ -23,12 +25,21 @@ interface InstallmentsQuery {
   sort_by?: string[]
 }
 
+interface CashflowQuery {
+  from: string
+  to: string
+  project_id?: number | null
+  customer_id?: number | null
+}
+
 export const installmentKeys = {
   all: ['installments'] as const,
   lists: () => ['installments', 'list'] as const,
   list: (filters: InstallmentsQuery) => ['installments', 'list', filters] as const,
   summaries: () => ['installments', 'summary'] as const,
   summary: (filters: InstallmentsQuery) => ['installments', 'summary', filters] as const,
+  cashflows: () => ['installments', 'cashflow'] as const,
+  cashflow: (params: CashflowQuery) => ['installments', 'cashflow', params] as const,
   details: () => ['installments', 'detail'] as const,
   detail: (id: string) => ['installments', 'detail', id] as const,
 }
@@ -91,11 +102,33 @@ export function useInstallmentsSummary(params?: InstallmentsQuery) {
   })
 }
 
+export function useInstallmentsCashflow(params: CashflowQuery) {
+  const { client } = useApiClient()
+
+  return useQuery({
+    queryKey: installmentKeys.cashflow(params),
+    queryFn: async () => {
+      const { data, error } = await client.GET('/api/v1/installments/cashflow', {
+        params: { query: params },
+      })
+
+      if (error) {
+        throw new Error('Falha ao carregar fluxo de caixa')
+      }
+
+      return data
+    },
+  })
+}
+
 export type {
   InstallmentsQuery,
+  CashflowQuery,
   InstallmentResponse,
   InstallmentDetailResponse,
   InstallmentSummaryItemResponse,
   PaginatedInstallmentsResponse,
   InstallmentListSummary,
+  PortfolioCashflowResponse,
+  CashflowMonth,
 }

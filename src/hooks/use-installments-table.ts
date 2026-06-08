@@ -1,4 +1,4 @@
-import { format, subDays } from 'date-fns'
+import { endOfMonth, format, parseISO, subDays } from 'date-fns'
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
 import type { CustomerFilterValue } from '@/components/ui/customer-filter'
@@ -90,6 +90,7 @@ export interface UseInstallmentsTableReturn {
   sort: InstallmentsTableSort
   view: InstallmentsTableView
   applyAgingBucket: (bucket: AgingBucketKey) => void
+  applyMonthFilter: (monthIso: string) => void
   selectedInstallmentId: string
   setSelectedInstallmentId: (id: string) => void
 }
@@ -270,6 +271,21 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     })
   }
 
+  // Cross-filter: clicar num mês do fluxo de caixa recorta a aba Parcelas para
+  // todas as parcelas que vencem naquele mês (sem recorte de status: recebidas
+  // e a receber, para reconciliar com as duas barras do gráfico).
+  const applyMonthFilter = (monthIso: string) => {
+    const start = parseISO(monthIso)
+    setQueryState({
+      tab: 'parcelas',
+      status: '',
+      duePreset: 'custom',
+      dueMin: format(start, 'yyyy-MM-dd'),
+      dueMax: format(endOfMonth(start), 'yyyy-MM-dd'),
+      page: 1,
+    })
+  }
+
   return {
     data: installments,
     isLoading,
@@ -316,6 +332,7 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       setTab: (value: string) => setQueryState({ tab: value }),
     },
     applyAgingBucket,
+    applyMonthFilter,
     selectedInstallmentId: parcela,
     setSelectedInstallmentId: (id: string) => setQueryState({ parcela: id }),
   }

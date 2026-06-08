@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
 import { InstallmentDetailDrawer } from '@/components/financeiro/installment-detail-drawer'
 import { InstallmentsAgingBlock } from '@/components/financeiro/installments-aging-block'
+import { InstallmentsCashflowBlock } from '@/components/financeiro/installments-cashflow-block'
 import { InstallmentsFilters } from '@/components/financeiro/installments-filters'
 import { InstallmentsPagination } from '@/components/financeiro/installments-pagination'
 import { InstallmentsTable } from '@/components/financeiro/installments-table'
@@ -37,6 +38,7 @@ export default function FinanceiroPage() {
     sort,
     view,
     applyAgingBucket,
+    applyMonthFilter,
     selectedInstallmentId,
     setSelectedInstallmentId,
   } = useInstallmentsTable()
@@ -111,11 +113,22 @@ export default function FinanceiroPage() {
           </TabsList>
 
           <TabsContent value="resumo" className={TAB_CONTENT_MOTION}>
-            <InstallmentsAgingBlock
-              summary={summary}
-              isLoading={isLoading}
-              onSelectBucket={applyAgingBucket}
-            />
+            <div className="grid gap-6 lg:grid-cols-12">
+              <div className="lg:col-span-5">
+                <InstallmentsAgingBlock
+                  summary={summary}
+                  isLoading={isLoading}
+                  onSelectBucket={applyAgingBucket}
+                />
+              </div>
+              <div className="lg:col-span-7">
+                <InstallmentsCashflowBlock
+                  projectId={filters.projectFilter}
+                  customerId={filters.customerFilter?.id ?? null}
+                  onSelectMonth={applyMonthFilter}
+                />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="parcelas" className={TAB_CONTENT_MOTION}>
