@@ -1,7 +1,7 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { useQuery } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
 import { type ReactNode, useEffect } from 'react'
+import { ConsoleBoot } from '@/components/auth/console-boot'
 import { useAuth } from '@/contexts/auth-context'
 import { useTenantConfig } from '@/hooks/use-tenant-config'
 import { useTenantStore } from '@/stores/tenant-store'
@@ -37,11 +37,7 @@ export function TenantLoader({ children }: { children: ReactNode }) {
   }, [data, tenantId, setTenantId, setTenants])
 
   if (user && (isLoading || (!tenantId && !data))) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <ConsoleBoot label="Carregando sua operação…" />
   }
 
   return <>{children}</>
