@@ -904,6 +904,58 @@ button:not(:disabled),
   cursor: pointer;
 }
 
+/* ==========================================================================
+   7. AUTH / CONSOLE BOOT — o limiar da Sala de Controle
+   Grade de desenho técnico ("na planta") + motion de standby.
+   Profundidade por tom; o lima só aparece como "energia" no boot (estado),
+   nunca como decoração de superfície.
+   ========================================================================== */
+
+/* Grade blueprint: hairlines finíssimas que evocam a planta do imóvel.
+   Mascarada para desvanecer nas bordas — emoldura, não compete. */
+.auth-grid {
+  /* Papel de desenho: linha maior (a cada 4 células) + linha menor.
+     O contraste entre as duas faz a leitura de "prancheta", ainda discreto. */
+  background-image:
+    linear-gradient(to right, var(--color-border-default) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-border-default) 1px, transparent 1px),
+    linear-gradient(to right, var(--color-border-subtle) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-border-subtle) 1px, transparent 1px);
+  background-size: 184px 184px, 184px 184px, 46px 46px, 46px 46px;
+  background-position: center center;
+  -webkit-mask-image: radial-gradient(ellipse 98% 96% at 50% 44%, oklch(0 0 0) 14%, transparent 88%);
+  mask-image: radial-gradient(ellipse 98% 96% at 50% 44%, oklch(0 0 0) 14%, transparent 88%);
+}
+
+/* Halo tonal de "tela ligada": um respiro de grafite mais alto no topo.
+   Tom, não cor — coerente com The Tonal Lift Rule. */
+.auth-glow {
+  background:
+    radial-gradient(ellipse 64% 54% at 50% 0%, var(--color-bg-elevated) 0%, transparent 72%);
+  opacity: 0.62;
+}
+
+/* Entrada do módulo de foco: sobe e revela uma vez. */
+@keyframes auth-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.auth-rise { animation: auth-rise 0.52s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Boot: o mark "respira" com um halo lima (energia/estado, não decoração). */
+@keyframes boot-breathe {
+  0%, 100% { opacity: 0.72; filter: drop-shadow(0 0 0 transparent); }
+  50%      { opacity: 1; filter: drop-shadow(0 0 16px oklch(0.84 0.19 128 / 0.40)); }
+}
+.boot-breathe { animation: boot-breathe 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+
+/* Boot: trilho de progresso indeterminado — um pulso lima varrendo o poço. */
+@keyframes boot-sweep {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(340%); }
+}
+.boot-sweep { animation: boot-sweep 1.45s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+
 /* Acessibilidade: respeita prefers-reduced-motion. Neutraliza animações,
    transições e scroll suave para quem pede menos movimento (WCAG 2.3.3).
    !important para vencer as utilities do tw-animate-css. */
@@ -915,5 +967,16 @@ button:not(:disabled),
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Boot sem movimento: trilho vira barra estável e o mark fica nítido,
+     o estado "carregando" segue legível pela barra + rótulo. */
+  .boot-sweep {
+    width: 100% !important;
+    transform: none !important;
+    opacity: 0.7;
+  }
+  .boot-breathe {
+    opacity: 1 !important;
   }
 }

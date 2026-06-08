@@ -1,4 +1,5 @@
 import {
+  confirmPasswordReset,
   EmailAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
@@ -7,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   type User,
   updatePassword,
+  verifyPasswordResetCode,
 } from 'firebase/auth'
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 import { auth } from '@/lib/firebase'
@@ -18,6 +20,10 @@ interface AuthContextType {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>
+  /** Valida um oobCode de redefinição e retorna o e-mail associado. */
+  verifyResetCode: (oobCode: string) => Promise<string>
+  /** Confirma a nova senha a partir do oobCode recebido por e-mail. */
+  confirmReset: (oobCode: string, newPassword: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -40,12 +46,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true)
-    try {
-      await signInWithEmailAndPassword(auth, email, password)
-    } finally {
-      setLoading(false)
-    }
+    // Não tocamos no `loading` global aqui: ele é a resolução inicial da sessão
+    // que o AuthGuard observa. Se o ligássemos, o AuthGuard trocaria o login pelo
+    // ConsoleBoot durante a tentativa, desmontando o formulário e descartando o
+    // erro inline. O estado de envio é local ao formulário (RHF isSubmitting).
+    // onAuthStateChanged cuida de `user`/`loading` quando o login dá certo.
+    await signInWithEmailAndPassword(auth, email, password)
   }
 
   const signOut = async () => {
@@ -75,6 +81,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await updatePassword(currentUser, newPassword)
   }
 
+  const verifyResetCode = async (oobCode: string) => {
+    return verifyPasswordResetCode(auth, oobCode)
+  }
+
+  const confirmReset = async (oobCode: string, newPassword: string) => {
+    await confirmPasswordReset(auth, oobCode, newPassword)
+  }
+
   const value: AuthContextType = {
     user,
     loading,
@@ -82,6 +96,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signOut,
     resetPassword,
     changePassword,
+    verifyResetCode,
+    confirmReset,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
