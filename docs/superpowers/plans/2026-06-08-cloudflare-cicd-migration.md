@@ -19,6 +19,7 @@
 - **Validação de YAML:** workflows e composite actions são validados em sintaxe com `pnpm dlx yaml-lint <arquivo>` e, semanticamente, só quando rodam no GitHub (Task 11, `gh run watch`). Isso é esperado — GitHub Actions não tem um validador semântico local 100% fiel.
 - **Tarefas com `[AÇÃO HUMANA]`** (0, 11, 12, 13) exigem acesso a consoles externos (1Password, Cloudflare, GitHub Settings, DNS) que um agente não consegue operar. Pare e devolva ao humano nessas.
 - **Ordem crítica:** Tasks 1–10 são código e podem ser feitas em sequência. Task 13 (remover Firebase) só roda **depois** da validação de produção (Task 12).
+- **Status:** Tasks 1–10 implementadas na branch `cloudflare-impl`. O review final aplicou correções de robustez (commit `c122147`) que divergem levemente dos blocos abaixo — o **código é a fonte de verdade** para: `public/_headers` (catch-all `/*` no-cache em vez de regras por-path), `preview.yml` (grep com `|| true`) e o smoke de `deploy-production.yml` (`jq '.version // empty'`).
 
 ## Fora de escopo
 
