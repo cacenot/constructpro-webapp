@@ -1,9 +1,10 @@
 import { type Vital, VitalsStrip, VitalsStripSkeleton } from '@/components/ui/vitals-strip'
-import type { InstallmentListSummary } from '@/hooks/use-installments'
+import type { InstallmentListSummary, ProjectFinancialSummary } from '@/hooks/use-installments'
 import { formatCurrency } from '@/lib/utils'
 
 interface InstallmentsVitalsStripProps {
   summary: InstallmentListSummary | null | undefined
+  financialSummary?: ProjectFinancialSummary | null | undefined
   isLoading: boolean
 }
 
@@ -18,8 +19,12 @@ function pct(value: number): string {
  * coral) e Correção acumulada (o reajuste por índice, em âmbar). Todos os números
  * refletem os filtros aplicados (agregação no servidor sobre toda a base).
  */
-export function InstallmentsVitalsStrip({ summary, isLoading }: InstallmentsVitalsStripProps) {
-  if (isLoading) return <VitalsStripSkeleton count={4} />
+export function InstallmentsVitalsStrip({
+  summary,
+  financialSummary,
+  isLoading,
+}: InstallmentsVitalsStripProps) {
+  if (isLoading) return <VitalsStripSkeleton count={financialSummary === undefined ? 4 : 5} />
 
   const issued = summary?.total_current_amount?.cents ?? 0
   const paid = summary?.total_paid_amount?.cents ?? 0
@@ -57,6 +62,22 @@ export function InstallmentsVitalsStrip({ summary, isLoading }: InstallmentsVita
       tone: correction > 0 ? 'warning' : 'default',
     },
   ]
+
+  // KPI de nível ledger (contratos), além das parcelas. Saúde da carteira em
+  // contratos ativos, com a inadimplência contratual no detalhe.
+  if (financialSummary) {
+    const active = financialSummary.active_contracts ?? 0
+    const defaulting = financialSummary.defaulting_contracts ?? 0
+    vitals.push({
+      label: 'Contratos',
+      value: active.toLocaleString('pt-BR'),
+      sub:
+        defaulting > 0
+          ? `${defaulting} ${defaulting === 1 ? 'inadimplente' : 'inadimplentes'}`
+          : 'todos em dia',
+      subTone: defaulting > 0 ? 'destructive' : undefined,
+    })
+  }
 
   return <VitalsStrip vitals={vitals} />
 }

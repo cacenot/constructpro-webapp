@@ -89,8 +89,10 @@ export interface UseInstallmentsTableReturn {
   pagination: InstallmentsTablePagination
   sort: InstallmentsTableSort
   view: InstallmentsTableView
+  queryParams: InstallmentsQuery
   applyAgingBucket: (bucket: AgingBucketKey) => void
   applyMonthFilter: (monthIso: string) => void
+  applyProjectFilter: (projectId: number) => void
   selectedInstallmentId: string
   setSelectedInstallmentId: (id: string) => void
 }
@@ -286,6 +288,12 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     })
   }
 
+  // Cross-filter: clicar num empreendimento recorta a aba Parcelas para a carteira
+  // daquele projeto (dimensão ortogonal, não mexe nos demais filtros ativos).
+  const applyProjectFilter = (projectId: number) => {
+    setQueryState({ tab: 'parcelas', project: projectId, page: 1 })
+  }
+
   return {
     data: installments,
     isLoading,
@@ -331,8 +339,10 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       tab,
       setTab: (value: string) => setQueryState({ tab: value }),
     },
+    queryParams,
     applyAgingBucket,
     applyMonthFilter,
+    applyProjectFilter,
     selectedInstallmentId: parcela,
     setSelectedInstallmentId: (id: string) => setQueryState({ parcela: id }),
   }

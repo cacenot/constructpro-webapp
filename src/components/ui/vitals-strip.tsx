@@ -15,7 +15,11 @@ export interface Vital {
   label: string
   value: ReactNode
   sub?: ReactNode
+  /** Tom do valor. */
   tone?: VitalTone
+  /** Tom do subtítulo, quando o destaque semântico mora no detalhe (ex.: o valor
+   * é neutro mas o sub sinaliza risco). Default: muted. */
+  subTone?: VitalTone
 }
 
 const TONE: Record<VitalTone, string> = {
@@ -62,7 +66,14 @@ export function VitalsStrip({ vitals, className }: VitalsStripProps) {
             {vital.value}
           </span>
           {vital.sub != null && (
-            <span className="tabular-nums text-xs text-muted-foreground">{vital.sub}</span>
+            <span
+              className={cn(
+                'tabular-nums text-xs',
+                vital.subTone ? TONE[vital.subTone] : 'text-muted-foreground'
+              )}
+            >
+              {vital.sub}
+            </span>
           )}
         </div>
       ))}

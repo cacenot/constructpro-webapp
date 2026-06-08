@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
 import { InstallmentDetailDrawer } from '@/components/financeiro/installment-detail-drawer'
 import { InstallmentsAgingBlock } from '@/components/financeiro/installments-aging-block'
+import { InstallmentsByProjectBlock } from '@/components/financeiro/installments-by-project-block'
 import { InstallmentsCashflowBlock } from '@/components/financeiro/installments-cashflow-block'
 import { InstallmentsFilters } from '@/components/financeiro/installments-filters'
 import { InstallmentsPagination } from '@/components/financeiro/installments-pagination'
@@ -37,8 +38,10 @@ export default function FinanceiroPage() {
     pagination,
     sort,
     view,
+    queryParams,
     applyAgingBucket,
     applyMonthFilter,
+    applyProjectFilter,
     selectedInstallmentId,
     setSelectedInstallmentId,
   } = useInstallmentsTable()
@@ -98,6 +101,10 @@ export default function FinanceiroPage() {
           </p>
         </div>
 
+        {/* Pulso. O 5º vital "Contratos" (financial-summary) está pronto no
+            componente, mas desligado até o backend reconciliar a contagem de
+            contratos ativos/inadimplentes — hoje reporta "todos em dia" com
+            R$ 690k em atraso na carteira (ver issue no construct-pro-api). */}
         <InstallmentsVitalsStrip summary={summary} isLoading={isLoading} />
 
         <Tabs value={view.tab} onValueChange={view.setTab}>
@@ -126,6 +133,12 @@ export default function FinanceiroPage() {
                   projectId={filters.projectFilter}
                   customerId={filters.customerFilter?.id ?? null}
                   onSelectMonth={applyMonthFilter}
+                />
+              </div>
+              <div className="lg:col-span-12">
+                <InstallmentsByProjectBlock
+                  baseParams={queryParams}
+                  onSelectProject={applyProjectFilter}
                 />
               </div>
             </div>
