@@ -16,6 +16,9 @@ test-results
 .playwright/
 *.local
 
+# Versão gerada no build (não versionar)
+public/version.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
