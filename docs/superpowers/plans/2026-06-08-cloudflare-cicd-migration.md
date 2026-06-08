@@ -23,7 +23,7 @@
 
 ## Fora de escopo
 
-- **Playwright e2e no gate:** o `playwright.config.ts` e os specs e2e já existem no repo, mas e2e **não** entra no `ci.yml` bloqueante (decisão do spec §7/§9 — custo + precisa de conta Firebase de teste). Ativar depois = adicionar credenciais de teste ao `web-env` + `VITE_FIREBASE_PERSISTENCE=local` e um job opt-in. Nenhuma tarefa aqui.
+- **Playwright e2e no gate:** o `playwright.config.ts` e os specs e2e já existem no repo, mas e2e **não** entra no `ci.yml` bloqueante (decisão do spec §7/§9 — custo + precisa de conta Firebase de teste). Ativar depois = adicionar credenciais de teste ao `webapp-env` + `VITE_FIREBASE_PERSISTENCE=local` e um job opt-in. Nenhuma tarefa aqui.
 - **Migração do Firebase Auth:** permanece. Só o hosting migra.
 - **Staging do backend:** não existe; o staging do webapp consome a API de produção.
 
@@ -33,11 +33,11 @@
 
 Pré-requisitos que não são código. Devem existir antes de Task 11 (primeira execução real no CI).
 
-- [ ] **No 1Password, vault `costara-prod`, criar item `web-env`** (tipo Secure Note) com os campos:
+- [ ] **No 1Password, vault `costara-prod`, criar item `webapp-env`** (tipo Secure Note) com os campos:
   - `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID` — copiar dos GitHub Secrets atuais do repo.
   - `VITE_API_BASE_URL` = `https://api.costara.app/api` (mesma API para staging e prod; o backend não tem staging).
   - `VITE_CUSTOMERS_PAGE_SIZE` = `20`, `VITE_PROJECTS_PAGE_SIZE` = `20`, `VITE_UNITS_PAGE_SIZE` = `20`.
-- [ ] **Criar item `web-deploy`** (tipo API Credential) com os campos:
+- [ ] **Criar item `webapp-deploy`** (tipo API Credential) com os campos:
   - `cloudflare_api_token` — token Cloudflare com permissões **Account › Workers Scripts › Edit** e **Zone › Workers Routes › Edit** (zona `costara.app`).
   - `cloudflare_account_id` — Account ID da Cloudflare.
   - `gh_packages_token` — PAT do GitHub com `read:packages` (o mesmo `GH_PACKAGES_TOKEN` atual).
@@ -256,7 +256,7 @@ runs:
         export-env: true
       env:
         OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-service-account-token }}
-        GH_PACKAGES_TOKEN: op://costara-prod/web-deploy/gh_packages_token
+        GH_PACKAGES_TOKEN: op://costara-prod/webapp-deploy/gh_packages_token
 
     - name: Install
       shell: bash
@@ -310,16 +310,16 @@ runs:
         export-env: true
       env:
         OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-service-account-token }}
-        VITE_FIREBASE_API_KEY: op://costara-prod/web-env/VITE_FIREBASE_API_KEY
-        VITE_FIREBASE_AUTH_DOMAIN: op://costara-prod/web-env/VITE_FIREBASE_AUTH_DOMAIN
-        VITE_FIREBASE_PROJECT_ID: op://costara-prod/web-env/VITE_FIREBASE_PROJECT_ID
-        VITE_FIREBASE_STORAGE_BUCKET: op://costara-prod/web-env/VITE_FIREBASE_STORAGE_BUCKET
-        VITE_FIREBASE_MESSAGING_SENDER_ID: op://costara-prod/web-env/VITE_FIREBASE_MESSAGING_SENDER_ID
-        VITE_FIREBASE_APP_ID: op://costara-prod/web-env/VITE_FIREBASE_APP_ID
-        VITE_API_BASE_URL: op://costara-prod/web-env/VITE_API_BASE_URL
-        VITE_CUSTOMERS_PAGE_SIZE: op://costara-prod/web-env/VITE_CUSTOMERS_PAGE_SIZE
-        VITE_PROJECTS_PAGE_SIZE: op://costara-prod/web-env/VITE_PROJECTS_PAGE_SIZE
-        VITE_UNITS_PAGE_SIZE: op://costara-prod/web-env/VITE_UNITS_PAGE_SIZE
+        VITE_FIREBASE_API_KEY: op://costara-prod/webapp-env/VITE_FIREBASE_API_KEY
+        VITE_FIREBASE_AUTH_DOMAIN: op://costara-prod/webapp-env/VITE_FIREBASE_AUTH_DOMAIN
+        VITE_FIREBASE_PROJECT_ID: op://costara-prod/webapp-env/VITE_FIREBASE_PROJECT_ID
+        VITE_FIREBASE_STORAGE_BUCKET: op://costara-prod/webapp-env/VITE_FIREBASE_STORAGE_BUCKET
+        VITE_FIREBASE_MESSAGING_SENDER_ID: op://costara-prod/webapp-env/VITE_FIREBASE_MESSAGING_SENDER_ID
+        VITE_FIREBASE_APP_ID: op://costara-prod/webapp-env/VITE_FIREBASE_APP_ID
+        VITE_API_BASE_URL: op://costara-prod/webapp-env/VITE_API_BASE_URL
+        VITE_CUSTOMERS_PAGE_SIZE: op://costara-prod/webapp-env/VITE_CUSTOMERS_PAGE_SIZE
+        VITE_PROJECTS_PAGE_SIZE: op://costara-prod/webapp-env/VITE_PROJECTS_PAGE_SIZE
+        VITE_UNITS_PAGE_SIZE: op://costara-prod/webapp-env/VITE_UNITS_PAGE_SIZE
 
     - name: Build (gera version.json + dist/client)
       shell: bash
@@ -480,8 +480,8 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          CLOUDFLARE_API_TOKEN: op://costara-prod/web-deploy/cloudflare_api_token
-          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/web-deploy/cloudflare_account_id
+          CLOUDFLARE_API_TOKEN: op://costara-prod/webapp-deploy/cloudflare_api_token
+          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/webapp-deploy/cloudflare_account_id
 
       - name: Upload da versão de preview (não-roteada)
         id: preview
@@ -557,8 +557,8 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          CLOUDFLARE_API_TOKEN: op://costara-prod/web-deploy/cloudflare_api_token
-          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/web-deploy/cloudflare_account_id
+          CLOUDFLARE_API_TOKEN: op://costara-prod/webapp-deploy/cloudflare_api_token
+          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/webapp-deploy/cloudflare_account_id
 
       - name: Deploy staging
         shell: bash
@@ -646,8 +646,8 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          CLOUDFLARE_API_TOKEN: op://costara-prod/web-deploy/cloudflare_api_token
-          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/web-deploy/cloudflare_account_id
+          CLOUDFLARE_API_TOKEN: op://costara-prod/webapp-deploy/cloudflare_api_token
+          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/webapp-deploy/cloudflare_account_id
 
       - name: Deploy production
         shell: bash
@@ -885,7 +885,7 @@ git commit -m "feat(ci): script release.sh (gate local + tag + push)"
 Em `.env.example`, substituir a primeira linha (`# Firebase`) por:
 
 ```
-# Em CI/staging/prod, estas variáveis vêm do 1Password (op://costara-prod/web-env/*),
+# Em CI/staging/prod, estas variáveis vêm do 1Password (op://costara-prod/webapp-env/*),
 # resolvidas pelo load-secrets-action. Localmente, preencha este arquivo (.env, gitignored).
 # Firebase
 ```
@@ -911,7 +911,7 @@ hosting foi migrado.
 (Vitest) + `pnpm typecheck:tests`. O build de produção usa `tsc -p tsconfig.app.json` (não `tsc -b`)
 para não acoplar o deploy ao type-check dos testes.
 
-**Secrets:** tudo no 1Password (vault `costara-prod`, items `web-env` e `web-deploy`), resolvido no
+**Secrets:** tudo no 1Password (vault `costara-prod`, items `webapp-env` e `webapp-deploy`), resolvido no
 CI via `load-secrets-action`. Único GitHub Secret do repo: `OP_SERVICE_ACCOUNT_TOKEN`. Os `VITE_*`
 são públicos no bundle (Firebase client keys são públicas por design); o 1Password dá centralização
 e protege o que é sensível (`cloudflare_api_token`, `gh_packages_token`).

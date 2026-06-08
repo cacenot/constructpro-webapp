@@ -22,7 +22,7 @@ runs:
         export-env: true
       env:
         OP_SERVICE_ACCOUNT_TOKEN: ${{ inputs.op-service-account-token }}
-        GH_PACKAGES_TOKEN: op://costara-prod/web-deploy/gh_packages_token
+        GH_PACKAGES_TOKEN: op://costara-prod/webapp-deploy/gh_packages_token
 
     - name: Install
       shell: bash

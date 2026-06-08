@@ -63,7 +63,7 @@ de GitHub Secrets) → `FirebaseExtended/action-hosting-deploy`.
 | 3 | Quality gates (bloqueantes) | **Biome** (lint+format), **Vitest** (unit), **Typecheck isolado** (`tsc`) |
 | 3b | Playwright e2e | **Fora** do gate obrigatório por ora; estrutura preparada para ligar depois |
 | 4 | Domínios | prod = **`costara.app`** (apex); staging = **`staging.costara.app`** |
-| 5 | 1Password | **Reusar vault `costara-prod`**; items novos `web-env` + `web-deploy`; reusar SA `github-ci` |
+| 5 | 1Password | **Reusar vault `costara-prod`**; items novos `webapp-env` + `webapp-deploy`; reusar SA `github-ci` |
 | 6 | Organização de workflows | **Separados por gatilho + composite action local** |
 
 ---
@@ -104,25 +104,25 @@ Vault **`costara-prod`** (reusado). Dois items novos:
 
 | Item | Tipo | Campos |
 |---|---|---|
-| `web-env` | Secure Note | `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_API_BASE_URL`, `VITE_CUSTOMERS_PAGE_SIZE`, `VITE_PROJECTS_PAGE_SIZE`, `VITE_UNITS_PAGE_SIZE` |
-| `web-deploy` | API Credential | `cloudflare_api_token` (Workers Scripts:Edit + Workers Routes:Edit), `cloudflare_account_id`, `gh_packages_token` |
+| `webapp-env` | Secure Note | `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_API_BASE_URL`, `VITE_CUSTOMERS_PAGE_SIZE`, `VITE_PROJECTS_PAGE_SIZE`, `VITE_UNITS_PAGE_SIZE` |
+| `webapp-deploy` | API Credential | `cloudflare_api_token` (Workers Scripts:Edit + Workers Routes:Edit), `cloudflare_account_id`, `gh_packages_token` |
 
 Reference map (`op://`):
 
 ```
-op://costara-prod/web-env/VITE_FIREBASE_API_KEY
-op://costara-prod/web-env/VITE_FIREBASE_AUTH_DOMAIN
-op://costara-prod/web-env/VITE_FIREBASE_PROJECT_ID
-op://costara-prod/web-env/VITE_FIREBASE_STORAGE_BUCKET
-op://costara-prod/web-env/VITE_FIREBASE_MESSAGING_SENDER_ID
-op://costara-prod/web-env/VITE_FIREBASE_APP_ID
-op://costara-prod/web-env/VITE_API_BASE_URL
-op://costara-prod/web-env/VITE_CUSTOMERS_PAGE_SIZE
-op://costara-prod/web-env/VITE_PROJECTS_PAGE_SIZE
-op://costara-prod/web-env/VITE_UNITS_PAGE_SIZE
-op://costara-prod/web-deploy/cloudflare_api_token
-op://costara-prod/web-deploy/cloudflare_account_id
-op://costara-prod/web-deploy/gh_packages_token
+op://costara-prod/webapp-env/VITE_FIREBASE_API_KEY
+op://costara-prod/webapp-env/VITE_FIREBASE_AUTH_DOMAIN
+op://costara-prod/webapp-env/VITE_FIREBASE_PROJECT_ID
+op://costara-prod/webapp-env/VITE_FIREBASE_STORAGE_BUCKET
+op://costara-prod/webapp-env/VITE_FIREBASE_MESSAGING_SENDER_ID
+op://costara-prod/webapp-env/VITE_FIREBASE_APP_ID
+op://costara-prod/webapp-env/VITE_API_BASE_URL
+op://costara-prod/webapp-env/VITE_CUSTOMERS_PAGE_SIZE
+op://costara-prod/webapp-env/VITE_PROJECTS_PAGE_SIZE
+op://costara-prod/webapp-env/VITE_UNITS_PAGE_SIZE
+op://costara-prod/webapp-deploy/cloudflare_api_token
+op://costara-prod/webapp-deploy/cloudflare_account_id
+op://costara-prod/webapp-deploy/gh_packages_token
 ```
 
 - **Único GitHub Secret no repo:** `OP_SERVICE_ACCOUNT_TOKEN` (do SA `github-ci`, read-only — já
@@ -133,8 +133,8 @@ op://costara-prod/web-deploy/gh_packages_token
   entrega centralização e rotação, e tira ~10 secrets soltos do GitHub; o que é *de fato* sensível
   — `cloudflare_api_token` e `gh_packages_token` — fica protegido de verdade.
 - **Ambiente único de config:** como o **backend não tem staging**, o staging do webapp aponta
-  `VITE_API_BASE_URL` para a API de prod (`api.costara.app`). Um item `web-env` atende os dois
-  ambientes. Se algum valor precisar divergir no futuro, cria-se `web-env-staging`.
+  `VITE_API_BASE_URL` para a API de prod (`api.costara.app`). Um item `webapp-env` atende os dois
+  ambientes. Se algum valor precisar divergir no futuro, cria-se `webapp-env-staging`.
 - **Dev local:** `.env` (gitignored) continua funcionando; `.env.example` será atualizado.
   Opcional (futuro): script `op run` para puxar config do vault em dev.
 
@@ -147,7 +147,7 @@ inputs: op-token (required)
 steps:
   - pnpm/action-setup@v4
   - actions/setup-node@v4 (node 22, registry npm.pkg.github.com, scope @cacenot, cache pnpm)
-  - 1password/load-secrets-action@v2 (export-env: true)   # resolve web-env + gh_packages_token
+  - 1password/load-secrets-action@v2 (export-env: true)   # resolve webapp-env + gh_packages_token
   - pnpm install --frozen-lockfile  (NODE_AUTH_TOKEN = gh_packages_token)
   - node scripts/gen-version.mjs    # escreve public/version.json (gitignored), lendo GIT_SHA do env
   - pnpm build  (VITE_* já no env; Vite copia public/version.json → dist/client/version.json)
@@ -202,7 +202,7 @@ reverte produção instantaneamente. Procedimento documentado no README/`scripts
 
 ## 5. Plano de cutover (zero downtime)
 
-1. **Setup de credenciais:** criar items 1Password (`web-env`, `web-deploy`), gerar o Cloudflare
+1. **Setup de credenciais:** criar items 1Password (`webapp-env`, `webapp-deploy`), gerar o Cloudflare
    API token (Workers Scripts:Edit + Routes:Edit), adicionar `OP_SERVICE_ACCOUNT_TOKEN` como secret
    do repo.
 2. **Branch dedicada** `chore/cloudflare-cicd`: adicionar `wrangler.jsonc`, composite action, os 4
@@ -258,7 +258,7 @@ reverte produção instantaneamente. Procedimento documentado no README/`scripts
 ## 7. Playwright e2e (fora do gate, estrutura preparada)
 
 O job e2e fica **preparado mas desligado** — opt-in por label no PR ou rodando só antes do deploy
-de produção. Ativar depois exige adicionar ao `web-env` as credenciais de uma conta Firebase de
+de produção. Ativar depois exige adicionar ao `webapp-env` as credenciais de uma conta Firebase de
 teste e `VITE_FIREBASE_PERSISTENCE=local` no ambiente de CI (ver memória `e2e-setup`).
 
 ---
@@ -281,7 +281,7 @@ teste e `VITE_FIREBASE_PERSISTENCE=local` no ambiente de CI (ver memória `e2e-s
 - Ambiente de staging para o **backend** (não existe; webapp staging usa a API de prod).
 - SSR/edge functions (Worker é assets-only por ora; a escolha de Workers deixa a porta aberta).
 - Ativar Playwright e2e no gate (preparado, não ligado).
-- Múltiplos sets de config por ambiente (`web-env-staging`) — só se um valor divergir.
+- Múltiplos sets de config por ambiente (`webapp-env-staging`) — só se um valor divergir.
 
 ---
 
@@ -293,6 +293,6 @@ teste e `VITE_FIREBASE_PERSISTENCE=local` no ambiente de CI (ver memória `e2e-s
 3. Merge em `main` publica staging automaticamente; tag `vX.Y.Z` publica produção com smoke test
    confirmando a versão em `version.json`.
 4. PRs recebem uma preview URL comentada automaticamente.
-5. Nenhum `VITE_*` solto no GitHub: tudo vem de `op://costara-prod/web-env/*`; único secret do repo
+5. Nenhum `VITE_*` solto no GitHub: tudo vem de `op://costara-prod/webapp-env/*`; único secret do repo
    é `OP_SERVICE_ACCOUNT_TOKEN`.
 6. Firebase Hosting descomissionado; Firebase Auth intacto.
