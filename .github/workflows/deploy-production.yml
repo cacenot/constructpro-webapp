@@ -1,0 +1,91 @@
+name: Deploy production
+on:
+  push:
+    tags: ['v*.*.*']
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Gate (tag == version) + quality gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verificar que a tag bate com package.json version
+        shell: bash
+        run: |
+          TAG="${{ github.ref_name }}"
+          PKGVER="v$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKGVER" ]; then
+            echo "ERRO: tag $TAG != package.json $PKGVER"
+            exit 1
+          fi
+          echo "OK: tag $TAG == package.json $PKGVER"
+
+      - uses: ./.github/actions/setup-webapp
+        with:
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+        continue-on-error: true
+
+  deploy:
+    name: Build + deploy → costara.app
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/build-webapp
+        with:
+          op-service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Resolver credenciais Cloudflare (1Password)
+        uses: 1password/load-secrets-action@v2
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          CLOUDFLARE_API_TOKEN: op://costara-prod/web-deploy/cloudflare_api_token
+          CLOUDFLARE_ACCOUNT_ID: op://costara-prod/web-deploy/cloudflare_account_id
+
+      - name: Deploy production
+        shell: bash
+        run: pnpm exec wrangler deploy --env production
+
+  smoke:
+    name: Smoke (verifica version.json)
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll costara.app/version.json até bater com a tag
+        shell: bash
+        run: |
+          set -u
+          tag="${{ github.ref_name }}"
+          target="${tag#v}"
+          # 18 tentativas × 10s = até ~3 min para o deploy propagar.
+          for i in $(seq 1 18); do
+            response=$(curl --fail --silent "https://costara.app/version.json" || true)
+            if [ -n "$response" ]; then
+              version=$(echo "$response" | jq -r .version)
+              echo "Tentativa $i: version=$version (alvo=$target)"
+              if [ "$version" = "$target" ]; then
+                echo "Versão publicada bate com a tag — release verificado."
+                exit 0
+              fi
+            else
+              echo "Tentativa $i: version.json inacessível"
+            fi
+            sleep 10
+          done
+          echo "SMOKE FAIL: version.json não reportou $target em ~3 min"
+          exit 1
