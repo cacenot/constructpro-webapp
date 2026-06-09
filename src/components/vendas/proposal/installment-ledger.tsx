@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, Lock, Plus, Trash2 } from 'lucide-react'
 import * as React from 'react'
 import type {
   FieldArrayWithId,
@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { NumberStepper } from '@/components/ui/number-stepper'
 import {
   Select,
@@ -28,9 +27,13 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
-  computeAllowedDates,
+  computeChainedStart,
   computeDefaultStartDate,
-  formatDateISO,
+  computeMonthlySpan,
+  computeScheduleEnd,
+  deriveRecurrenceFields,
+  deriveRecurringFromSpan,
+  formatBRDate,
 } from '@/lib/installment-utils'
 import {
   INSTALLMENT_PERIODICITY_LABELS,
@@ -50,24 +53,6 @@ import {
 import { CONSOLE_LABEL, REVEAL } from './section'
 
 type Recurrence = 'monthly' | 'bimonthly' | 'quarterly' | 'semestral' | 'yearly'
-
-// Cache por sessão: mesmo conjunto de datas permitidas → mesma lista de bloqueadas.
-const _disabledDatesCache = new Map<string, string[]>()
-function getDisabledDates(allowedDates: string[]): string[] {
-  if (!allowedDates.length) return []
-  const key = allowedDates.join(',')
-  const cached = _disabledDatesCache.get(key)
-  if (cached) return cached
-  const today = new Date()
-  const result = Array.from({ length: 10957 }, (_, i) => {
-    const d = new Date(today)
-    d.setDate(d.getDate() + i)
-    const iso = formatDateISO(d.getFullYear(), d.getMonth() + 1, d.getDate())
-    return allowedDates.includes(iso) ? '' : iso
-  }).filter(Boolean)
-  _disabledDatesCache.set(key, result)
-  return result
-}
 
 function formatMonthBR(yearMonth: string): string {
   const [year, month] = yearMonth.split('-')
@@ -115,6 +100,9 @@ interface InstallmentLedgerProps {
   indexTypesLoading?: boolean
   violations?: { month: string; count: number }[]
   maxInstallmentsPerMonth?: number
+  valorPropostaCents?: number
+  saldo?: number
+  onDistribute?: (v: number | null) => void
 }
 
 export function InstallmentLedger({
@@ -129,6 +117,9 @@ export function InstallmentLedger({
   indexTypesLoading = false,
   violations = [],
   maxInstallmentsPerMonth,
+  valorPropostaCents: _valorPropostaCents = 0,
+  saldo = 0,
+  onDistribute: _onDistribute,
 }: InstallmentLedgerProps) {
   // Índices de cada kind dentro do field array.
   const groupedIndices = React.useMemo(() => {
@@ -157,26 +148,88 @@ export function InstallmentLedger({
     [groupedIndices, watchedSchedules]
   )
 
+  const [unlocked, setUnlocked] = React.useState<Set<number>>(new Set())
+
+  const groupRange = React.useCallback(
+    (indices: number[]): string | null => {
+      if (!watchedSchedules || !indices.length) return null
+      let start: Date | null = null
+      let end: Date | null = null
+      for (const i of indices) {
+        const s = watchedSchedules[i]
+        if (!s?.start_date) continue
+        const sd = new Date(`${s.start_date}T12:00:00`)
+        const ed = computeScheduleEnd(s)
+        if (!start || sd < start) start = sd
+        if (ed && (!end || ed > end)) end = ed
+      }
+      if (!start || !end) return null
+      return `${formatBRDate(start)} → ${formatBRDate(end)}`
+    },
+    [watchedSchedules]
+  )
+
   const addRecurring = React.useCallback(
     (kind: 'regular' | 'balloon' | 'extra', recurrence: Recurrence) => {
       const isYearly = recurrence === 'yearly'
-      const recurrenceDay = isYearly ? 15 : 10
-      const recurrenceMonth = isYearly ? 12 : null
-      const startDate = computeDefaultStartDate(recurrence, recurrenceDay, recurrenceMonth)
+      const day = isYearly ? 15 : 10
+      const periodMonthsMap: Record<Recurrence, number> = {
+        monthly: 1,
+        bimonthly: 2,
+        quarterly: 3,
+        semestral: 6,
+        yearly: 12,
+      }
+
+      // Mensais encadeiam (sem sobreposição) após o último grupo mensal.
+      if (kind === 'regular' && recurrence === 'monthly') {
+        const list = (watchedSchedules ?? []) as InstallmentScheduleFormData[]
+        const lastMonthly = [...list]
+          .reverse()
+          .find((s) => s.kind === 'regular' && s.recurrence_type === 'monthly' && s.start_date)
+        const startDate = lastMonthly
+          ? computeChainedStart(lastMonthly, day)
+          : computeDefaultStartDate('monthly', day, null)
+        append({
+          kind,
+          payment_method: 'boleto',
+          quantity: 1,
+          amount: 0,
+          specific_date: null,
+          recurrence_type: 'monthly',
+          recurrence_day: day,
+          recurrence_month: null,
+          start_date: startDate || null,
+          asset_proposal: null,
+        })
+        return
+      }
+
+      // Balões/reforços: quantidade derivada do span das mensais + saldo distribuído.
+      const span = computeMonthlySpan((watchedSchedules ?? []) as InstallmentScheduleFormData[])
+      const period = periodMonthsMap[recurrence] ?? 1
+      const derived = span ? deriveRecurringFromSpan(span, period, day) : null
+      const quantity = derived?.quantity ?? 1
+      const startISO =
+        derived?.startISO ?? computeDefaultStartDate(recurrence, day, isYearly ? 12 : null)
+      const perAmount = quantity > 0 && saldo > 0 ? Math.max(0, Math.round(saldo / quantity)) : 0
+      const { recurrence_day, recurrence_month } = startISO
+        ? deriveRecurrenceFields(startISO, recurrence)
+        : { recurrence_day: day, recurrence_month: isYearly ? 12 : null }
       append({
         kind,
         payment_method: 'boleto',
-        quantity: 1,
-        amount: 0,
+        quantity,
+        amount: perAmount,
         specific_date: null,
         recurrence_type: recurrence,
-        recurrence_day: recurrenceDay,
-        recurrence_month: recurrenceMonth,
-        start_date: startDate || null,
+        recurrence_day,
+        recurrence_month,
+        start_date: startISO || null,
         asset_proposal: null,
       })
     },
-    [append]
+    [append, watchedSchedules, saldo]
   )
 
   const addKeyDelivery = React.useCallback(() => {
@@ -374,6 +427,8 @@ export function InstallmentLedger({
             {NON_ENTRY_KINDS.map((kind) => {
               const indices = groupedIndices.get(kind) ?? []
               if (indices.length === 0) return null
+              const firstMonthlyIndex = groupedIndices.get('regular')?.[0]
+              const range = groupRange(indices)
               return (
                 <div key={kind} className="space-y-2">
                   <div className="flex items-baseline justify-between">
@@ -384,23 +439,35 @@ export function InstallmentLedger({
                       R$ {formatCentsToDisplay(subtotal(kind)) || '0,00'}
                     </span>
                   </div>
+                  {range && (
+                    <p className="text-[0.6875rem] tabular-nums text-muted-foreground">{range}</p>
+                  )}
 
                   <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
-                    {indices.map((index) => (
-                      <InstallmentRow
-                        key={fields[index]?.id ?? index}
-                        form={form}
-                        index={index}
-                        schedule={watchedSchedules?.[index]}
-                        // biome-ignore lint/suspicious/noExplicitAny: field genérico
-                        fallbackKind={(fields[index] as any)?.kind as InstallmentKind}
-                        disabled={disabled}
-                        sameIndexForAll={sameIndexForAll}
-                        indexTypes={indexTypes}
-                        indexTypesLoading={indexTypesLoading}
-                        onRemove={() => remove(index)}
-                      />
-                    ))}
+                    {indices.map((index) => {
+                      const schedule = watchedSchedules?.[index]
+                      const isMonthly =
+                        schedule?.kind === 'regular' && schedule?.recurrence_type === 'monthly'
+                      const chainedLocked =
+                        isMonthly && index !== firstMonthlyIndex && !unlocked.has(index)
+                      return (
+                        <InstallmentRow
+                          key={fields[index]?.id ?? index}
+                          form={form}
+                          index={index}
+                          schedule={schedule}
+                          // biome-ignore lint/suspicious/noExplicitAny: field genérico
+                          fallbackKind={(fields[index] as any)?.kind as InstallmentKind}
+                          disabled={disabled}
+                          sameIndexForAll={sameIndexForAll}
+                          indexTypes={indexTypes}
+                          indexTypesLoading={indexTypesLoading}
+                          onRemove={() => remove(index)}
+                          chainedLocked={chainedLocked}
+                          onUnlock={() => setUnlocked((s) => new Set(s).add(index))}
+                        />
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -490,6 +557,8 @@ interface InstallmentRowProps {
   indexTypes: { code: string }[]
   indexTypesLoading: boolean
   onRemove: () => void
+  chainedLocked?: boolean
+  onUnlock?: () => void
 }
 
 function InstallmentRow({
@@ -502,25 +571,14 @@ function InstallmentRow({
   indexTypes,
   indexTypesLoading,
   onRemove,
+  chainedLocked = false,
+  onUnlock,
 }: InstallmentRowProps) {
   const kind = (schedule?.kind ?? fallbackKind) as InstallmentKind
   const recurrence = schedule?.recurrence_type as Recurrence | null | undefined
   const usesSpecificDate = kind === 'key_delivery'
   const recurrenceDay = schedule?.recurrence_day
   const recurrenceMonth = schedule?.recurrence_month
-  const isYearly = recurrence === 'yearly'
-
-  const dateDisabled = usesSpecificDate
-    ? false
-    : isYearly
-      ? !recurrenceDay || !recurrenceMonth
-      : !recurrenceDay
-
-  const allowedDates =
-    !usesSpecificDate && recurrence && !dateDisabled
-      ? computeAllowedDates(recurrence, recurrenceDay, recurrenceMonth)
-      : []
-  const disabledDates = getDisabledDates(allowedDates)
 
   // Sazonalidade editável no card, só para reforços/balões (parcela é sempre mensal).
   const isBalloon = kind === 'balloon'
@@ -628,91 +686,56 @@ function InstallmentRow({
             )}
           />
         ) : (
-          <>
-            <FormField
-              control={form.control}
-              name={`installment_schedules.${index}.recurrence_day`}
-              render={({ field: f }) => (
-                <FormItem className="col-span-1 sm:col-span-1">
-                  <FormLabel className={CONSOLE_LABEL}>Dia *</FormLabel>
+          <FormField
+            control={form.control}
+            name={`installment_schedules.${index}.start_date`}
+            render={({ field: f }) => (
+              <FormItem className="col-span-2 sm:col-span-6">
+                <FormLabel className={CONSOLE_LABEL}>Início *</FormLabel>
+                {chainedLocked ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 flex-1 items-center gap-2 rounded-md border border-dashed border-border px-3 text-sm text-muted-foreground">
+                      <Lock className="size-3.5" />
+                      <span className="tabular-nums">
+                        {f.value ? formatBRDate(new Date(`${f.value}T12:00:00`)) : '—'}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={onUnlock}
+                    >
+                      Destravar
+                    </Button>
+                  </div>
+                ) : (
                   <FormControl>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min="1"
-                      max="31"
-                      className="tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    <DatePicker
+                      value={f.value}
                       disabled={disabled}
-                      value={f.value ?? ''}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const val = e.target.value ? Number.parseInt(e.target.value, 10) : null
-                        f.onChange(val)
-                        if (recurrence) {
-                          const next = computeDefaultStartDate(recurrence, val, recurrenceMonth)
-                          form.setValue(`installment_schedules.${index}.start_date`, next || null)
+                      onChange={(v) => {
+                        f.onChange(v)
+                        if (v && recurrence) {
+                          const d = deriveRecurrenceFields(v, recurrence)
+                          form.setValue(
+                            `installment_schedules.${index}.recurrence_day`,
+                            d.recurrence_day
+                          )
+                          form.setValue(
+                            `installment_schedules.${index}.recurrence_month`,
+                            d.recurrence_month
+                          )
                         }
                       }}
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {isYearly && (
-              <FormField
-                control={form.control}
-                name={`installment_schedules.${index}.recurrence_month`}
-                render={({ field: f }) => (
-                  <FormItem className="col-span-1 sm:col-span-2">
-                    <FormLabel className={CONSOLE_LABEL}>Mês *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        max="12"
-                        className="tabular-nums"
-                        disabled={disabled}
-                        value={f.value ?? ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          const val = e.target.value ? Number.parseInt(e.target.value, 10) : null
-                          f.onChange(val)
-                          const next = computeDefaultStartDate('yearly', recurrenceDay, val)
-                          form.setValue(`installment_schedules.${index}.start_date`, next || null)
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
                 )}
-              />
+                <FormMessage />
+              </FormItem>
             )}
-
-            <FormField
-              control={form.control}
-              name={`installment_schedules.${index}.start_date`}
-              render={({ field: f }) => (
-                <FormItem className="col-span-2 sm:col-span-3">
-                  <FormLabel className={CONSOLE_LABEL}>Início *</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      value={f.value}
-                      onChange={f.onChange}
-                      disabled={dateDisabled || disabled}
-                      disabledDates={disabledDates}
-                    />
-                  </FormControl>
-                  {dateDisabled && !disabled && (
-                    <p className="text-[0.6875rem] text-muted-foreground">
-                      Preencha o dia{isYearly ? ' e o mês' : ''} de vencimento primeiro
-                    </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
+          />
         )}
 
         {/* Índice por grupo (toggle "mesmo índice" desligado), nunca para entradas. */}
