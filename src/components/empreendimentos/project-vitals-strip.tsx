@@ -48,7 +48,7 @@ export function ProjectVitalsStrip({ unitSummary, financialSummary }: ProjectVit
       tone: paid ? 'success' : 'default',
     })
 
-    const defaulting = financialSummary.defaulting_contracts
+    const defaulting = financialSummary.overdue_contracts
     vitals.push({
       label: 'Inadimplência',
       value: defaulting,

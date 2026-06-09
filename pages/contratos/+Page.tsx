@@ -61,7 +61,7 @@ export default function ContratosPage() {
       page: number
       page_size: number
       sale_id?: number | null
-      status?: ('active' | 'settled' | 'pending' | 'in_default' | 'canceled' | 'terminated')[]
+      status?: ('active' | 'settled' | 'pending' | 'canceled' | 'terminated')[]
       index_type_code?: string
       'signed_at[min]'?: string
       'signed_at[max]'?: string

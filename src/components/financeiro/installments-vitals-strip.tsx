@@ -67,7 +67,7 @@ export function InstallmentsVitalsStrip({
   // contratos ativos, com a inadimplência contratual no detalhe.
   if (financialSummary) {
     const active = financialSummary.active_contracts ?? 0
-    const defaulting = financialSummary.defaulting_contracts ?? 0
+    const defaulting = financialSummary.overdue_contracts ?? 0
     vitals.push({
       label: 'Contratos',
       value: active.toLocaleString('pt-BR'),

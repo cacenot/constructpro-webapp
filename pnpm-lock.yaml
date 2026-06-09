@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@cacenot/construct-pro-api-client':
-        specifier: 1.3.0
-        version: 1.3.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)
+        specifier: 1.4.0
+        version: 1.4.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.4))
@@ -401,8 +401,8 @@ packages:
   '@brillout/vite-plugin-server-entry@0.7.17':
     resolution: {integrity: sha512-MfvSytYl51J2B+RrHvRXMdRNc1U2lHG/K9Gw05/jdPY2iYU2YQKdEzsPswfEWnt3fd1TrXF27h/fx5DIRn19jw==}
 
-  '@cacenot/construct-pro-api-client@1.3.0':
-    resolution: {integrity: sha512-uu9C0Rl+PCQ2pRJGDNgWfD0+XX79bANGiu3vFjnK6BnYsDXXVBQjvas0kYAoxvmkWTmPU83bo4ui5EBSJDq4lQ==, tarball: https://npm.pkg.github.com/download/@cacenot/construct-pro-api-client/1.3.0/47c51a3298048e6f1a1bf25e3ef547e93850a72d}
+  '@cacenot/construct-pro-api-client@1.4.0':
+    resolution: {integrity: sha512-VJl3ooTgjmb4SP0HyNR32QoETAhZUTk44t6e32qKerUh7CeCb5SAMXX+vTEtQMrHVMk6SNiM9wgg+mt3fgPLeg==, tarball: https://npm.pkg.github.com/download/@cacenot/construct-pro-api-client/1.4.0/5cc9ad92c09459bf8f3926a0b0e6465d24c7c31e}
     peerDependencies:
       '@tanstack/react-query': '>=5.0.0'
       react: '>=18.0.0'
@@ -3600,7 +3600,7 @@ snapshots:
       '@brillout/import': 0.2.6
       '@brillout/picocolors': 1.0.30
 
-  '@cacenot/construct-pro-api-client@1.3.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)':
+  '@cacenot/construct-pro-api-client@1.4.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)':
     dependencies:
       '@tanstack/react-query': 5.90.20(react@19.2.4)
       openapi-fetch: 0.9.8

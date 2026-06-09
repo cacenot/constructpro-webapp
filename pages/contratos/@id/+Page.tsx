@@ -95,7 +95,7 @@ export default function ContractDetailPage() {
   const outstandingBalanceColor =
     contract.status === 'settled'
       ? 'text-emerald-600 dark:text-emerald-400'
-      : contract.status === 'in_default'
+      : contract.is_overdue
         ? 'text-red-600 dark:text-red-400'
         : ''
 

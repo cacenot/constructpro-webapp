@@ -57,7 +57,7 @@ export function DealCockpit({
   // já mostra o estado de erro com "Tentar novamente".
   const financialUnavailable = stageClosed && !!isContractError && !fin
   const contractStatus = contractDetail?.status
-  const isActiveContract = contractStatus === 'active' || contractStatus === 'in_default'
+  const isActiveContract = contractStatus === 'active'
 
   // Headline + estatísticas de apoio, adaptados ao estado.
   let headlineLabel: string

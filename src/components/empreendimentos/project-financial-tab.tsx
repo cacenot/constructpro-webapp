@@ -71,9 +71,9 @@ function ContractsPanel({ data }: { data: ProjectFinancialSummary }) {
           pill="border-pipeline-reservado-dot/30 bg-pipeline-reservado text-pipeline-reservado-fg"
           dot="bg-pipeline-reservado-dot"
         />
-        {data.defaulting_contracts > 0 && (
+        {data.overdue_contracts > 0 && (
           <StatusPill
-            count={data.defaulting_contracts}
+            count={data.overdue_contracts}
             label="inadimplentes"
             pill="border-pipeline-perdido-dot/30 bg-pipeline-perdido text-pipeline-perdido-fg"
             dot="bg-pipeline-perdido-dot"
@@ -111,7 +111,7 @@ function PaymentProgressPanel({ data }: { data: ProjectFinancialSummary }) {
 }
 
 function DefaultAlert({ data }: { data: ProjectFinancialSummary }) {
-  const n = data.defaulting_contracts
+  const n = data.overdue_contracts
   return (
     <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
       <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
@@ -144,7 +144,7 @@ export function ProjectFinancialTab({ project }: ProjectFinancialTabProps) {
     <div className="space-y-6">
       <CarteiraStrip data={financial} />
 
-      {financial.defaulting_contracts > 0 && <DefaultAlert data={financial} />}
+      {financial.overdue_contracts > 0 && <DefaultAlert data={financial} />}
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <ContractsPanel data={financial} />

@@ -54,7 +54,7 @@ export function DealActions({
   const hasContract = !!sale.contract
   const documentUrl = sale.contract?.document_url
   const contractStatus = contractDetail?.status ?? sale.contract?.status
-  const inDefault = contractStatus === 'in_default'
+  const isOverdue = contractDetail?.is_overdue ?? sale.contract?.is_overdue ?? false
 
   const canEdit = sale.status === SaleStatus.proposal
   const canApprove = sale.status === SaleStatus.proposal
@@ -65,11 +65,11 @@ export function DealActions({
 
   // Renegociar só faz sentido em contrato ativo ou em atraso (no atraso vira ação primária).
   // Quitado / encerrado / cancelado não renegociam.
-  const renegociarInOverflow = stage === 'closed' && contractStatus === 'active'
+  const renegociarInOverflow = stage === 'closed' && contractStatus === 'active' && !isOverdue
 
   const hasOverflow = !!documentUrl || renegociarInOverflow
 
-  const hasAnyAction = canApprove || canSign || canPayEntry || inDefault || canEdit || hasOverflow
+  const hasAnyAction = canApprove || canSign || canPayEntry || isOverdue || canEdit || hasOverflow
   if (!hasAnyAction) {
     // Estado anômalo: aguardando assinatura/pagamento mas o contrato ainda não
     // materializou (atraso pós-aprovação). Caso contrário, é um estágio terminal
@@ -117,7 +117,7 @@ export function DealActions({
           <ShortcutKbd k="E" />
         </Button>
       )}
-      {inDefault && (
+      {isOverdue && (
         <Tooltip>
           <TooltipTrigger asChild>
             <span className="block w-full">
