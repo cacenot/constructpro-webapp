@@ -1,9 +1,20 @@
 import { ArrowDown, ArrowUp, CalendarClock, Equal, Gauge } from 'lucide-react'
+import * as React from 'react'
+import { Button } from '@/components/ui/button'
 import { formatCentsToDisplay } from '@/components/ui/currency-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { formatBRDate } from '@/lib/installment-utils'
 import type { ProposalVitals as Vitals } from '@/lib/proposal-vitals'
 import { cn } from '@/lib/utils'
+import type { InstallmentKind, SaleFormData } from '@/schemas/sale.schema'
 import { GROUP_LABELS } from './constants'
+import { InstallmentCalendar } from './installment-calendar'
 import { CONSOLE_LABEL } from './section'
 
 const money = (cents: number) => `R$ ${formatCentsToDisplay(cents) || '0,00'}`
@@ -14,6 +25,9 @@ interface ProposalVitalsProps {
   /** Há unidade selecionada (preço de tabela disponível)? */
   hasUnit: boolean
   className?: string
+  schedules?: SaleFormData['installment_schedules']
+  /** Para o controle "Distribuir": delega ao workbench/ledger que tem acesso ao form. */
+  onDistribute?: (groupKind: InstallmentKind) => void
 }
 
 /**
@@ -21,7 +35,13 @@ interface ProposalVitalsProps {
  * (superfície bg-border, células bg-card separadas por gap-px), adaptado
  * à coluna estreita. Confronta o total contra o preço de tabela em tempo real.
  */
-export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsProps) {
+export function ProposalVitals({
+  vitals,
+  hasUnit,
+  className,
+  schedules,
+  onDistribute,
+}: ProposalVitalsProps) {
   const { total, diff, diffPercent, entryTotal, entryPercent, financed, count, contractEnd } =
     vitals
   const hasPlan = total > 0
@@ -32,6 +52,40 @@ export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsPro
         <Gauge className="size-4 text-muted-foreground" />
         <h2 className="text-sm font-semibold tracking-tight">Resumo</h2>
       </div>
+
+      {hasPlan && (
+        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border bg-border">
+          <div className="flex flex-col gap-2 bg-card p-4">
+            <span className={CONSOLE_LABEL}>Saldo da proposta</span>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs text-muted-foreground">Valor da proposta</span>
+              <span className="text-sm font-medium tabular-nums">
+                {money(vitals.valorPropostaCents)}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs text-muted-foreground">Soma do plano</span>
+              <span className="text-sm font-medium tabular-nums">{money(vitals.total)}</span>
+            </div>
+            <div className="flex items-baseline justify-between border-t border-border pt-2">
+              <span className="text-xs font-medium">
+                {vitals.saldo > 0 ? 'Falta distribuir' : vitals.saldo < 0 ? 'Sobra' : 'Saldo'}
+              </span>
+              <span
+                className={cn(
+                  'text-base font-semibold tabular-nums',
+                  Math.abs(vitals.saldo) < 1 ? 'text-success' : 'text-warning'
+                )}
+              >
+                {money(Math.abs(vitals.saldo))}
+              </span>
+            </div>
+            {Math.abs(vitals.saldo) >= 1 && onDistribute && vitals.groups.length > 0 && (
+              <DistributeControl groups={vitals.groups} onDistribute={onDistribute} />
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border">
         {/* Total da proposta — hero */}
@@ -146,6 +200,14 @@ export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsPro
           </dl>
         </div>
       )}
+
+      {/* Calendário de parcelas */}
+      {vitals.count > 0 && (
+        <div className="space-y-2">
+          <span className={CONSOLE_LABEL}>Calendário de parcelas</span>
+          <InstallmentCalendar schedules={schedules} />
+        </div>
+      )}
     </div>
   )
 }
@@ -158,6 +220,37 @@ function Cell({ label, value, sub }: { label: string; value: string; sub?: strin
       {sub != null && (
         <span className="text-[0.6875rem] tabular-nums text-muted-foreground">{sub}</span>
       )}
+    </div>
+  )
+}
+
+function DistributeControl({
+  groups,
+  onDistribute,
+}: {
+  groups: Vitals['groups']
+  onDistribute: (kind: InstallmentKind) => void
+}) {
+  const targets = groups.filter((g) => g.kind !== 'entry')
+  const [kind, setKind] = React.useState(targets[0]?.kind)
+  if (!targets.length || !kind) return null
+  return (
+    <div className="mt-1 flex gap-2">
+      <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
+        <SelectTrigger className="h-8 flex-1 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {targets.map((g) => (
+            <SelectItem key={g.kind} value={g.kind} className="text-xs">
+              {GROUP_LABELS[g.kind]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button type="button" size="sm" className="h-8" onClick={() => onDistribute(kind)}>
+        Distribuir
+      </Button>
     </div>
   )
 }
