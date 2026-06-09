@@ -20,7 +20,7 @@ import type {
   InstallmentDetailResponse,
   InstallmentSummaryItemResponse,
 } from '@/hooks/use-installments'
-import { installmentKeys } from '@/hooks/use-installments'
+import { installmentKeys, useInstallmentsFinancialSummary } from '@/hooks/use-installments'
 import { useInstallmentsTable } from '@/hooks/use-installments-table'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { handleApiError, throwApiError } from '@/lib/api-error'
@@ -50,6 +50,13 @@ export default function FinanceiroPage() {
 
   const { client } = useApiClient()
   const queryClient = useQueryClient()
+
+  // Pulso nivel-ledger (contratos): reconcilia com os filtros de projeto/cliente.
+  const { data: financialSummary, isLoading: isFinancialSummaryLoading } =
+    useInstallmentsFinancialSummary({
+      project_id: filters.projectFilter,
+      customer_id: filters.customerFilter?.id ?? null,
+    })
 
   // Master-detail: painel inline ao lado da tabela em telas largas; abaixo de
   // lg o mesmo painel abre como drawer overlay (não cabe lado a lado).
@@ -108,11 +115,14 @@ export default function FinanceiroPage() {
           </p>
         </div>
 
-        {/* Pulso. O 5º vital "Contratos" (financial-summary) está pronto no
-            componente, mas desligado até o backend reconciliar a contagem de
-            contratos ativos/inadimplentes — hoje reporta "todos em dia" com
-            R$ 690k em atraso na carteira (ver issue no construct-pro-api). */}
-        <InstallmentsVitalsStrip summary={summary} isLoading={isLoading} />
+        {/* Pulso. 5º vital "Contratos" (financial-summary) ligado: contratos
+            ativos + inadimplência derivada (overdue_contracts), reconciliando
+            com a carteira. construct-pro-api #140 resolveu a contagem. */}
+        <InstallmentsVitalsStrip
+          summary={summary}
+          financialSummary={financialSummary}
+          isLoading={isLoading || isFinancialSummaryLoading}
+        />
 
         <Tabs value={view.tab} onValueChange={view.setTab}>
           <TabsList variant="line">
