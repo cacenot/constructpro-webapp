@@ -176,17 +176,9 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
   // Parâmetros de filtro (sem page) — chave do infinite query e base do by-project.
   const filterParams = useMemo(() => {
     const params: InstallmentsQuery = {}
-    const OPEN = ['scheduled', 'invoiced', 'partial']
 
-    // Status: quando "Em atraso", restringe a parcelas em aberto (interseção com o
-    // filtro do usuário, se houver) — base do fallback enquanto #145 não sobe.
-    const statuses = overdueOnly
-      ? statusFilter.length > 0
-        ? statusFilter.filter((s) => OPEN.includes(s))
-        : OPEN
-      : statusFilter
-    if (statuses.length > 0) params.status = statuses as NonNullable<InstallmentsQuery['status']>
-
+    if (statusFilter.length > 0)
+      params.status = statusFilter as NonNullable<InstallmentsQuery['status']>
     if (kindFilter.length > 0) params.kind = kindFilter as NonNullable<InstallmentsQuery['kind']>
     if (paymentMethodFilter.length > 0)
       params.payment_method = paymentMethodFilter as NonNullable<
@@ -198,14 +190,10 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     if (paidAtRange?.min) params['paid_at[min]'] = paidAtRange.min
     if (paidAtRange?.max) params['paid_at[max]'] = paidAtRange.max
 
-    // "Em atraso": flag nativa (pós #145) + fallback por vencimento (≤ ontem),
-    // respeitando um teto de data já informado pelo usuário.
-    if (overdueOnly) {
-      params.overdue = true
-      const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd')
-      const currentMax = params['due_date[max]']
-      params['due_date[max]'] = currentMax && currentMax < yesterday ? currentMax : yesterday
-    }
+    // "Em atraso": filtro nativo do backend (construct-pro-api #145) — due_date < hoje
+    // ∧ não-cancelada ∧ restante > 0, combinável com os demais filtros e reconciliando
+    // com `overdue_count` do summary. O back é a verdade; sem fallback derivado.
+    if (overdueOnly) params.overdue = true
 
     if (customer > 0) params.customer_id = customer
     if (project > 0) params.project_id = project
