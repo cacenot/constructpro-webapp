@@ -147,6 +147,47 @@ export function InstallmentLedger({
 
   const [unlocked, setUnlocked] = React.useState<Set<number>>(new Set())
 
+  // Keeps chained monthly group starts in sync when an earlier group is edited.
+  // Safety: the `expected !== current` guard means once all starts are correct
+  // the effect fires no setValue calls, so no further re-renders are triggered —
+  // preventing an infinite loop.
+  React.useEffect(() => {
+    if (!watchedSchedules) return
+
+    // Build ordered list of field-array indices that are monthly regular schedules.
+    const monthlyIndices: number[] = []
+    watchedSchedules.forEach((s, i) => {
+      if (s?.kind === 'regular' && s?.recurrence_type === 'monthly') {
+        monthlyIndices.push(i)
+      }
+    })
+    // monthlyIndices is already in ascending order because forEach preserves order.
+
+    if (monthlyIndices.length < 2) return
+
+    for (let pos = 1; pos < monthlyIndices.length; pos++) {
+      const idx = monthlyIndices[pos] as number
+      if (unlocked.has(idx)) continue // user broke the chain for this group
+
+      const prevIdx = monthlyIndices[pos - 1] as number
+      const prev = watchedSchedules[prevIdx]
+      if (!prev?.start_date) continue // can't compute without anchor
+
+      const day = new Date(`${prev.start_date}T12:00:00`).getDate()
+      const expected = computeChainedStart(prev, day)
+      if (!expected) continue
+
+      const current = watchedSchedules[idx]?.start_date
+      if (expected !== current) {
+        form.setValue(`installment_schedules.${idx}.start_date`, expected)
+        form.setValue(
+          `installment_schedules.${idx}.recurrence_day`,
+          deriveRecurrenceFields(expected, 'monthly').recurrence_day
+        )
+      }
+    }
+  }, [watchedSchedules, unlocked, form])
+
   const groupRange = React.useCallback(
     (indices: number[]): string | null => {
       if (!watchedSchedules || !indices.length) return null
