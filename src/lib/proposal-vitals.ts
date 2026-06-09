@@ -61,6 +61,11 @@ export interface CommissionVitals {
   exceedsCap: boolean
 }
 
+/** Saldo dentro do piso de arredondamento (≤ ~½ centavo por parcela) conta como fechado. */
+export function isProposalBalanced(vitals: Pick<ProposalVitals, 'saldo' | 'count'>): boolean {
+  return Math.abs(vitals.saldo) <= Math.ceil(vitals.count / 2)
+}
+
 /**
  * Calcula todos os números do painel de instrumentos a partir do cronograma.
  * Fonte única para o ledger, o painel de vitais e os avisos de limite.

@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { formatBRDate } from '@/lib/installment-utils'
-import type { ProposalVitals as Vitals } from '@/lib/proposal-vitals'
+import { isProposalBalanced, type ProposalVitals as Vitals } from '@/lib/proposal-vitals'
 import { cn } from '@/lib/utils'
 import type { InstallmentKind, SaleFormData } from '@/schemas/sale.schema'
 import { GROUP_LABELS } from './constants'
@@ -69,18 +69,22 @@ export function ProposalVitals({
             </div>
             <div className="flex items-baseline justify-between border-t border-border pt-2">
               <span className="text-xs font-medium">
-                {vitals.saldo > 0 ? 'Falta distribuir' : vitals.saldo < 0 ? 'Sobra' : 'Saldo'}
+                {isProposalBalanced(vitals)
+                  ? 'Saldo'
+                  : vitals.saldo > 0
+                    ? 'Falta distribuir'
+                    : 'Sobra'}
               </span>
               <span
                 className={cn(
                   'text-base font-semibold tabular-nums',
-                  Math.abs(vitals.saldo) < 1 ? 'text-success' : 'text-warning'
+                  isProposalBalanced(vitals) ? 'text-success' : 'text-warning'
                 )}
               >
                 {money(Math.abs(vitals.saldo))}
               </span>
             </div>
-            {Math.abs(vitals.saldo) >= 1 && onDistribute && vitals.groups.length > 0 && (
+            {!isProposalBalanced(vitals) && onDistribute && vitals.groups.length > 0 && (
               <DistributeControl groups={vitals.groups} onDistribute={onDistribute} />
             )}
           </div>
