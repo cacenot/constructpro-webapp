@@ -73,6 +73,11 @@ export function NumberStepper({
   const canInc = !disabled && (max == null || current < max)
   const showBig = bigStep != null && bigStep > step
 
+  // Salto de ano "encaixa" no múltiplo do bigStep: de 1 vai para 12 (não 13),
+  // mantendo as quantidades alinhadas a anos cheios.
+  const snapUp = (m: number) => (Math.floor(current / m) + 1) * m
+  const snapDown = (m: number) => (Math.ceil(current / m) - 1) * m
+
   return (
     <div
       className={cn(
@@ -87,7 +92,7 @@ export function NumberStepper({
         <ArrowButton
           label={`Diminuir 1 ${bigStepLabel}`}
           edge="left"
-          onClick={() => commit(current - (bigStep as number))}
+          onClick={() => commit(snapDown(bigStep as number))}
           disabled={!canDec}
         >
           <ChevronsLeft className="size-3.5" />
@@ -120,7 +125,7 @@ export function NumberStepper({
         className="w-full min-w-0 border-0 bg-transparent px-2 text-center text-sm font-medium tabular-nums outline-none disabled:cursor-not-allowed"
       />
       <ArrowButton
-        label={`Aumentar 1 ${stepLabel}`}
+        label={`Adicionar 1 ${stepLabel}`}
         edge="right"
         onClick={() => commit(current + step)}
         disabled={!canInc}
@@ -129,9 +134,9 @@ export function NumberStepper({
       </ArrowButton>
       {showBig && (
         <ArrowButton
-          label={`Aumentar 1 ${bigStepLabel}`}
+          label={`Adicionar 1 ${bigStepLabel}`}
           edge="right"
-          onClick={() => commit(current + (bigStep as number))}
+          onClick={() => commit(snapUp(bigStep as number))}
           disabled={!canInc}
         >
           <ChevronsRight className="size-3.5" />

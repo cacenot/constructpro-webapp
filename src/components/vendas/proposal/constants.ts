@@ -14,6 +14,29 @@ export const GROUP_LABELS: Record<InstallmentKind, string> = {
   extra: 'Extras',
 }
 
+/**
+ * Cor de dado por tipo de parcela — fonte única para o mapa mensal (célula sólida)
+ * e os badges do ledger (dot sólido + tint), para correspondência visual direta.
+ * Não é a Voz lima de ação (botões): aqui o lima-400 é cor de dado do calendário,
+ * deliberadamente fora do orçamento da ação.
+ */
+export const KIND_DOT: Record<InstallmentKind, string> = {
+  entry: 'bg-sky-400',
+  regular: 'bg-lime-400',
+  balloon: 'bg-amber-400',
+  key_delivery: 'bg-violet-400',
+  extra: 'bg-muted-foreground',
+}
+
+/** Pílula tintada (tint translúcido + texto saturado) na mesma família do mapa. */
+export const KIND_BADGE: Record<InstallmentKind, string> = {
+  entry: 'bg-sky-400/15 text-sky-300',
+  regular: 'bg-lime-400/15 text-lime-300',
+  balloon: 'bg-amber-400/15 text-amber-300',
+  key_delivery: 'bg-violet-400/15 text-violet-300',
+  extra: 'bg-muted text-muted-foreground',
+}
+
 /** Ordem canônica de exibição dos grupos não-entrada. */
 export const NON_ENTRY_KINDS = ['regular', 'balloon', 'key_delivery', 'extra'] as const
 

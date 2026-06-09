@@ -427,6 +427,7 @@ export function ProposalWorkbench({
                     violations={vitals.perMonthViolations}
                     maxInstallmentsPerMonth={maxInstallmentsPerMonth}
                     saldo={vitals.saldo}
+                    valorPropostaCents={effectiveProposta}
                   />
                 </div>
 
