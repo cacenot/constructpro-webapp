@@ -16,7 +16,7 @@ interface ProposalPartiesCreateProps {
   onCustomerChange: (customer: SelectedCustomer | null) => void
 }
 
-/** Variante de criação: empreendimento → unidade → cliente, via autocomplete. */
+/** Variante de criação: cliente → empreendimento → unidade, via autocomplete. */
 export function ProposalPartiesCreate({
   form,
   selectedProject,
@@ -25,17 +25,34 @@ export function ProposalPartiesCreate({
   onCustomerChange,
 }: ProposalPartiesCreateProps) {
   return (
-    <div className="grid items-start gap-4 sm:grid-cols-12">
-      <div className="flex flex-col gap-1.5 sm:col-span-6">
+    <div className="space-y-4">
+      {/* 1 — Cliente */}
+      <FormField
+        control={form.control}
+        name="customer_id"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Cliente *</FormLabel>
+            <FormControl>
+              <CustomerAutocomplete value={field.value} onChange={onCustomerChange} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      {/* 2 — Empreendimento */}
+      <div className="flex flex-col gap-1.5">
         <Label>Empreendimento *</Label>
         <ProjectAutocomplete value={selectedProject?.id ?? null} onChange={onProjectChange} />
       </div>
 
+      {/* 3 — Unidade */}
       <FormField
         control={form.control}
         name="unit_id"
         render={({ field }) => (
-          <FormItem className="sm:col-span-6">
+          <FormItem>
             <FormLabel>Unidade *</FormLabel>
             <FormControl>
               <UnitAutocomplete
@@ -49,20 +66,6 @@ export function ProposalPartiesCreate({
                     : 'Selecione um empreendimento primeiro'
                 }
               />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={form.control}
-        name="customer_id"
-        render={({ field }) => (
-          <FormItem className="sm:col-span-6">
-            <FormLabel>Cliente *</FormLabel>
-            <FormControl>
-              <CustomerAutocomplete value={field.value} onChange={onCustomerChange} />
             </FormControl>
             <FormMessage />
           </FormItem>
