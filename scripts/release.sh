@@ -30,9 +30,13 @@ RELEASE_BRANCH="${RELEASE_BRANCH:-main}"
 
 VERSION_ARG=""
 BUMP=false
+E2E=false
+NOTES_FILE=""
 for arg in "$@"; do
   case "${arg}" in
     --bump) BUMP=true ;;
+    --e2e) E2E=true ;;
+    --notes-file=*) NOTES_FILE="${arg#*=}" ;;
     -*)
       echo "ERRO: flag desconhecida '${arg}'" >&2
       exit 1
@@ -59,7 +63,60 @@ if ! [[ "${VERSION}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
+if [[ -n "${NOTES_FILE}" ]]; then
+  if [[ ! -f "${NOTES_FILE}" ]]; then
+    echo "ERRO: arquivo de notes '${NOTES_FILE}' não encontrado." >&2
+    exit 1
+  fi
+  # Resolve p/ caminho absoluto AGORA (antes do cd à raiz), senão um path
+  # relativo quebraria no prepend_changelog após o cd.
+  NOTES_FILE="$(cd "$(dirname "${NOTES_FILE}")" && pwd)/$(basename "${NOTES_FILE}")"
+fi
+
 cd "$(git rev-parse --show-toplevel)"
+
+prepend_changelog() {
+  local version="$1" notes_file="$2" changelog="CHANGELOG.md"
+  local date_str header
+  date_str="$(date +%Y-%m-%d)"
+  header="## [${version}] - ${date_str}"
+
+  # Monta a seção nova (cabeçalho + corpo das notes) num arquivo temporário.
+  # O corpo nunca passa por awk -v, evitando problemas de escaping.
+  local section
+  section="$(mktemp)"
+  {
+    printf '%s\n\n' "${header}"
+    cat "${notes_file}"
+    printf '\n'
+  } > "${section}"
+
+  if [[ ! -f "${changelog}" ]]; then
+    {
+      printf '# Changelog\n\n'
+      printf 'Todas as mudanças notáveis deste projeto são documentadas aqui.\n'
+      printf 'O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)\n'
+      printf 'e o projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).\n\n'
+      cat "${section}"
+    } > "${changelog}"
+    rm -f "${section}"
+    return 0
+  fi
+
+  # CHANGELOG já existe: divide em head (antes da 1ª "## ") e rest (da 1ª "## "
+  # em diante) e reconstrói com a seção nova no meio. Se não houver nenhuma
+  # "## " (changelog só com header), tudo vai p/ head e a seção fica no fim.
+  local head_part rest_part
+  head_part="$(mktemp)"
+  rest_part="$(mktemp)"
+  awk -v head="${head_part}" -v rest="${rest_part}" '
+    BEGIN { seen = 0 }
+    /^## / { seen = 1 }
+    { if (seen) print > rest; else print > head }
+  ' "${changelog}"
+  cat "${head_part}" "${section}" "${rest_part}" > "${changelog}"
+  rm -f "${head_part}" "${rest_part}" "${section}"
+}
 
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 if [[ "${current_branch}" != "${RELEASE_BRANCH}" ]]; then
@@ -100,13 +157,23 @@ echo "Rodando quality gate (lint + typecheck + test)..."
 pnpm lint
 pnpm typecheck
 pnpm test || echo "AVISO: testes falharam — revise antes de prosseguir com o release."
+if [[ "${E2E}" == true ]]; then
+  echo "Rodando e2e (Playwright) — informativo..."
+  VITE_FIREBASE_PERSISTENCE=local pnpm test:e2e \
+    || echo "AVISO: e2e falharam — informativo, seguindo com o release."
+fi
 
 next="${VERSION#v}"
 if [[ "${BUMP}" == true ]]; then
   echo "Escrevendo versão ${next} em package.json..."
   npm pkg set version="${next}"
   git add package.json
-  git commit -m "chore(release): bump version to ${VERSION}"
+  if [[ -n "${NOTES_FILE}" ]]; then
+    echo "Atualizando CHANGELOG.md..."
+    prepend_changelog "${VERSION}" "${NOTES_FILE}"
+    git add CHANGELOG.md
+  fi
+  git commit -m "chore(release): ${VERSION}"
 else
   current_pkg="v$(node -p "require('./package.json').version")"
   if [[ "${current_pkg}" != "${VERSION}" ]]; then
@@ -125,6 +192,14 @@ if [[ "${BUMP}" == true ]]; then
 else
   echo "Push da tag ${VERSION}..."
   git push origin "${VERSION}"
+fi
+
+if [[ -n "${NOTES_FILE}" ]]; then
+  echo "Criando GitHub release ${VERSION}..."
+  if ! gh release create "${VERSION}" --title "${VERSION}" --notes-file "${NOTES_FILE}"; then
+    echo "AVISO: 'gh release create' falhou. Crie manualmente:" >&2
+    echo "  gh release create ${VERSION} --title ${VERSION} --notes-file ${NOTES_FILE}" >&2
+  fi
 fi
 
 echo

@@ -133,6 +133,10 @@ empurra a tag de uma vez (ou, em dois passos: ajuste a versão no `package.json`
 `./scripts/release.sh vX.Y.Z`). O script roda os gates localmente antes de criar/empurrar a tag.
 `version.json` (gerado no build) é a fonte que o smoke test consulta.
 
+Para um corte guiado (recomendação de bump via HITL, CHANGELOG + release notes, gates incl. e2e),
+use o slash command **`/release-bump`** — ele orquestra a decisão e delega a parte determinística
+(commit+tag+push+`gh release`) ao `release.sh` (flags `--bump --e2e --notes-file=`).
+
 **Rollback:** `pnpm exec wrangler rollback --env production` reverte o Worker para a versão anterior
 instantaneamente (ou re-rode `release.sh` com a tag anterior).
 
