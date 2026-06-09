@@ -74,11 +74,11 @@ Troca **apenas o campo**; rótulos "inadimplente(s)" permanecem (decisão de ter
 ### D — Inadimplência em nível de contrato
 
 1. **Novo componente** `src/components/contratos/contract-overdue-badge.tsx`: pill destrutivo com dot, texto **"Inadimplente"**, renderiza `null` quando `!is_overdue`. Recebe `isOverdue: boolean` (ou o contrato) — não acopla a um response específico.
-2. **Render** ao lado do status em:
-   - `src/components/contratos/contract-row.tsx` (coluna de status da lista).
-   - `pages/contratos/@id/+Page.tsx` (header do detalhe).
-   - `src/components/clientes/detail/customer-contracts-tab.tsx` (linha de contrato do cliente).
-   - `src/components/vendas/deal-cockpit.tsx` (header do cockpit).
+2. **Render** ao lado do status em (3 sites — todos consomem um tipo com `is_overdue`):
+   - `src/components/contratos/contract-row.tsx` (coluna de status da lista) — `ContractResponse`.
+   - `pages/contratos/@id/+Page.tsx` (header do detalhe) — `ContractDetailResponse`.
+   - `src/components/vendas/deal-cockpit.tsx` (header do cockpit) — `ContractDetailResponse`.
+   - **Adiado:** `customer-contracts-tab.tsx` usa `CustomerContractSummary`, que **não expõe `is_overdue`** — a pill ali exige o backend expor o campo nesse schema. Esse arquivo recebe **apenas** a remoção de `in_default` (frente A).
 3. **Filtro na lista** `pages/contratos/+Page.tsx`: Switch **"Apenas inadimplentes"** → adiciona `overdue: true` aos `queryParams`. Paralelo ao "Apenas contratos pendentes" (mutuamente exclusivos na prática — `pending` nunca é overdue). Incluir em `hasActiveFilters` e `handleClearFilters`; resetar `page` ao alternar.
 
 ## Error handling
@@ -100,6 +100,7 @@ Sem novas mutations. A nova query de `financial-summary` (frente C) segue o padr
 - Erro pré-existente `proposal-workbench.tsx:187`.
 - Sincronização do branch com `main` (rebase/merge dos 26 commits).
 - Lifecycle `terminated`/`canceled` (rastreado no backend em `#141`).
+- Pill de inadimplência na aba de contratos do cliente (`customer-contracts-tab`): `CustomerContractSummary` não expõe `is_overdue`; requer expor o campo no backend — adiado.
 
 ## Riscos / pontos a confirmar na implementação
 
