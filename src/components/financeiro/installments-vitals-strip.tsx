@@ -6,6 +6,7 @@ interface InstallmentsVitalsStripProps {
   summary: InstallmentListSummary | null | undefined
   financialSummary?: ProjectFinancialSummary | null | undefined
   isLoading: boolean
+  withContracts?: boolean
 }
 
 /** Percentual pt-BR sem casas falsas: 62 → "62", 62.5 → "62,5". */
@@ -23,8 +24,9 @@ export function InstallmentsVitalsStrip({
   summary,
   financialSummary,
   isLoading,
+  withContracts,
 }: InstallmentsVitalsStripProps) {
-  if (isLoading) return <VitalsStripSkeleton count={financialSummary === undefined ? 4 : 5} />
+  if (isLoading) return <VitalsStripSkeleton count={withContracts ? 5 : 4} />
 
   const issued = summary?.total_current_amount?.cents ?? 0
   const paid = summary?.total_paid_amount?.cents ?? 0
@@ -65,7 +67,7 @@ export function InstallmentsVitalsStrip({
 
   // KPI de nível ledger (contratos), além das parcelas. Saúde da carteira em
   // contratos ativos, com a inadimplência contratual no detalhe.
-  if (financialSummary) {
+  if (withContracts && financialSummary) {
     const active = financialSummary.active_contracts ?? 0
     const defaulting = financialSummary.overdue_contracts ?? 0
     vitals.push({

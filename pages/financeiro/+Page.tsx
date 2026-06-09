@@ -122,6 +122,7 @@ export default function FinanceiroPage() {
           summary={summary}
           financialSummary={financialSummary}
           isLoading={isLoading || isFinancialSummaryLoading}
+          withContracts
         />
 
         <Tabs value={view.tab} onValueChange={view.setTab}>
