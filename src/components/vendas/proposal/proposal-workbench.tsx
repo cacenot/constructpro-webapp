@@ -350,7 +350,7 @@ export function ProposalWorkbench({
                     </div>
 
                     {/* Switch + índice na mesma linha */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-4">
                       <div className="flex items-center gap-2.5">
                         <Switch
                           id="same-index"
