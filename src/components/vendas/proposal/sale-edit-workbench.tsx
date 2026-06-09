@@ -73,6 +73,11 @@ export function SaleEditWorkbench({
     },
   })
 
+  const planSum = (sale.installment_schedules ?? []).reduce(
+    (s, x) => s + (x.quantity ?? 0) * (x.amount ?? 0),
+    0
+  )
+
   // biome-ignore lint/suspicious/noExplicitAny: project vem aninhado em UnitWithProjectResponse
   const projectName = (sale.unit as any)?.project?.name as string | undefined
 
@@ -80,6 +85,7 @@ export function SaleEditWorkbench({
     <ProposalWorkbench
       form={form}
       mode="edit"
+      initialValorPropostaCents={planSum}
       eyebrow="Vendas"
       title="Editar proposta"
       unitPriceCents={sale.unit_price?.cents ?? 0}
