@@ -32,6 +32,14 @@ export interface ProposalVitals {
   diff: number
   /** Diferença sobre o preço de tabela, em %. */
   diffPercent: number
+  /** Alvo negociado (default = preço de tabela), em centavos. */
+  valorPropostaCents: number
+  /** valorProposta − total (>0 falta distribuir; <0 sobra), em centavos. */
+  saldo: number
+  /** valorProposta − preço de tabela (ágio/desconto), em centavos. */
+  agio: number
+  /** Ágio sobre o preço de tabela, em %. */
+  agioPercent: number
   /** Previsão de término do contrato. */
   contractEnd: { endDate: Date | null; totalMonths: number }
   /** Subtotais por grupo, apenas grupos com parcelas, na ordem canônica. */
@@ -66,7 +74,8 @@ export function computeProposalVitals(
     brokerRate?: number | null
     agencyRate?: number | null
     capPercent?: number
-  }
+  },
+  valorPropostaCents?: number
 ): ProposalVitals {
   const list = schedules ?? []
 
@@ -122,6 +131,11 @@ export function computeProposalVitals(
     }
   }
 
+  const proposta = valorPropostaCents ?? unitPriceCents
+  const saldo = proposta - total
+  const agio = proposta - unitPriceCents
+  const agioPercent = unitPriceCents > 0 ? (agio / unitPriceCents) * 100 : 0
+
   return {
     total,
     count,
@@ -131,6 +145,10 @@ export function computeProposalVitals(
     unitPriceCents,
     diff,
     diffPercent,
+    valorPropostaCents: proposta,
+    saldo,
+    agio,
+    agioPercent,
     contractEnd,
     groups,
     perMonthViolations,
