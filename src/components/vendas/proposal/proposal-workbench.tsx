@@ -25,7 +25,8 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { computeProposalVitals } from '@/lib/proposal-vitals'
+import { balanceGroupAmount } from '@/lib/installment-utils'
+import { computeProposalVitals, isProposalBalanced } from '@/lib/proposal-vitals'
 import type { InstallmentKind, InstallmentScheduleFormData } from '@/schemas/sale.schema'
 import { InstallmentLedger } from './installment-ledger'
 import { ProposalMediation } from './proposal-mediation'
@@ -109,9 +110,10 @@ export function ProposalWorkbench({
   const [valorPropostaCents, setValorPropostaCents] = React.useState<number | null>(
     initialValorPropostaCents ?? null
   )
+  const userEditedPropostaRef = React.useRef(false)
   React.useEffect(() => {
-    if (initialValorPropostaCents != null) return
-    setValorPropostaCents((prev) => (prev == null ? unitPriceCents : prev))
+    if (initialValorPropostaCents != null || userEditedPropostaRef.current) return
+    setValorPropostaCents(unitPriceCents)
   }, [unitPriceCents, initialValorPropostaCents])
   const effectiveProposta = valorPropostaCents ?? unitPriceCents
 
@@ -194,7 +196,7 @@ export function ProposalWorkbench({
     setMaxReached((m) => Math.max(m, step))
   }, [])
 
-  const hasSaldo = Math.abs(vitals.saldo) >= 1 // ≥ 1 centavo
+  const hasSaldo = !isProposalBalanced(vitals)
 
   const handleContinue = React.useCallback(async () => {
     const stepFields = STEP_FIELDS[mode][currentStep] ?? []
@@ -233,9 +235,11 @@ export function ProposalWorkbench({
       const indices = schedules.map((s, i) => ({ s, i })).filter((x) => x.s.kind === kind)
       const qty = indices.reduce((sum, x) => sum + (x.s.quantity ?? 0), 0)
       if (qty <= 0) return
-      const delta = Math.round(vitals.saldo / qty)
       for (const { i, s } of indices) {
-        form.setValue(`installment_schedules.${i}.amount`, Math.max(0, (s.amount ?? 0) + delta))
+        form.setValue(
+          `installment_schedules.${i}.amount`,
+          balanceGroupAmount(s.amount ?? 0, qty, vitals.saldo)
+        )
       }
     },
     [form, vitals.saldo]
@@ -339,7 +343,10 @@ export function ProposalWorkbench({
                         </label>
                         <CurrencyInput
                           value={effectiveProposta}
-                          onChange={(v) => setValorPropostaCents(v)}
+                          onChange={(v) => {
+                            userEditedPropostaRef.current = true
+                            setValorPropostaCents(v)
+                          }}
                           disabled={disabled}
                           className="max-w-[180px]"
                         />
@@ -419,7 +426,6 @@ export function ProposalWorkbench({
                     indexTypesLoading={indexTypesLoading}
                     violations={vitals.perMonthViolations}
                     maxInstallmentsPerMonth={maxInstallmentsPerMonth}
-                    valorPropostaCents={effectiveProposta}
                     saldo={vitals.saldo}
                   />
                 </div>

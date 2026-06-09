@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
+  balanceGroupAmount,
   computeChainedStart,
   computeDefaultStartDate,
   computeMonthlySpan,
@@ -100,9 +101,7 @@ interface InstallmentLedgerProps {
   indexTypesLoading?: boolean
   violations?: { month: string; count: number }[]
   maxInstallmentsPerMonth?: number
-  valorPropostaCents?: number
   saldo?: number
-  onDistribute?: (v: number | null) => void
 }
 
 export function InstallmentLedger({
@@ -117,9 +116,7 @@ export function InstallmentLedger({
   indexTypesLoading = false,
   violations = [],
   maxInstallmentsPerMonth,
-  valorPropostaCents: _valorPropostaCents = 0,
   saldo = 0,
-  onDistribute: _onDistribute,
 }: InstallmentLedgerProps) {
   // Índices de cada kind dentro do field array.
   const groupedIndices = React.useMemo(() => {
@@ -212,7 +209,7 @@ export function InstallmentLedger({
       const quantity = derived?.quantity ?? 1
       const startISO =
         derived?.startISO ?? computeDefaultStartDate(recurrence, day, isYearly ? 12 : null)
-      const perAmount = quantity > 0 && saldo > 0 ? Math.max(0, Math.round(saldo / quantity)) : 0
+      const perAmount = saldo > 0 ? balanceGroupAmount(0, quantity, saldo) : 0
       const { recurrence_day, recurrence_month } = startISO
         ? deriveRecurrenceFields(startISO, recurrence)
         : { recurrence_day: day, recurrence_month: isYearly ? 12 : null }
