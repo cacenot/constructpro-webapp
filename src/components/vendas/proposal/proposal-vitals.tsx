@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, CalendarClock, Equal, Gauge } from 'lucide-react'
 import * as React from 'react'
+import { AnimatedNumber } from '@/components/ui/animated-number'
 import { Button } from '@/components/ui/button'
 import { formatCentsToDisplay } from '@/components/ui/currency-input'
 import {
@@ -53,21 +54,28 @@ export function ProposalVitals({
         <h2 className="text-sm font-semibold tracking-tight">Resumo</h2>
       </div>
 
-      {hasPlan && (
-        <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border bg-border">
-          <div className="flex flex-col gap-2 bg-card p-4">
-            <span className={CONSOLE_LABEL}>Saldo da proposta</span>
+      {/* Total + reconciliação — merge do antigo "Total" com "Saldo da proposta" */}
+      <div className="rounded-lg border border-border bg-card p-4">
+        <span className={CONSOLE_LABEL}>Total da proposta</span>
+        <AnimatedNumber
+          value={total}
+          format={money}
+          className="mt-1.5 block text-2xl font-semibold leading-none tracking-tight"
+        />
+        <div className="mt-1.5">
+          <DiffChip total={total} diff={diff} diffPercent={diffPercent} hasUnit={hasUnit} />
+        </div>
+        {vitals.valorPropostaCents > 0 && (
+          <div className="mt-3 space-y-2 border-t border-border pt-3">
             <div className="flex items-baseline justify-between">
               <span className="text-xs text-muted-foreground">Valor da proposta</span>
-              <span className="text-sm font-medium tabular-nums">
-                {money(vitals.valorPropostaCents)}
-              </span>
+              <AnimatedNumber
+                value={vitals.valorPropostaCents}
+                format={money}
+                className="text-sm font-medium"
+              />
             </div>
             <div className="flex items-baseline justify-between">
-              <span className="text-xs text-muted-foreground">Soma do plano</span>
-              <span className="text-sm font-medium tabular-nums">{money(vitals.total)}</span>
-            </div>
-            <div className="flex items-baseline justify-between border-t border-border pt-2">
               <span className="text-xs font-medium">
                 {isProposalBalanced(vitals)
                   ? 'Saldo'
@@ -75,39 +83,32 @@ export function ProposalVitals({
                     ? 'Falta distribuir'
                     : 'Sobra'}
               </span>
-              <span
+              <AnimatedNumber
+                value={Math.abs(vitals.saldo)}
+                format={money}
                 className={cn(
-                  'text-base font-semibold tabular-nums',
+                  'text-base font-semibold',
                   isProposalBalanced(vitals) ? 'text-success' : 'text-warning'
                 )}
-              >
-                {money(Math.abs(vitals.saldo))}
-              </span>
+              />
             </div>
             {!isProposalBalanced(vitals) && onDistribute && vitals.groups.length > 0 && (
               <DistributeControl groups={vitals.groups} onDistribute={onDistribute} />
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border">
-        {/* Total da proposta — hero */}
-        <div className="col-span-2 flex flex-col gap-1.5 bg-card p-4">
-          <span className={CONSOLE_LABEL}>Total da proposta</span>
-          <span className="text-2xl font-semibold leading-none tracking-tight tabular-nums">
-            {money(total)}
-          </span>
-          <DiffChip total={total} diff={diff} diffPercent={diffPercent} hasUnit={hasUnit} />
-        </div>
-
         {/* Preço de tabela — referência */}
         <div className="col-span-2 flex flex-col gap-1 bg-card p-4">
           <span className={CONSOLE_LABEL}>Preço de tabela</span>
           {hasUnit ? (
-            <span className="text-sm font-medium tabular-nums text-muted-foreground">
-              {money(vitals.unitPriceCents)}
-            </span>
+            <AnimatedNumber
+              value={vitals.unitPriceCents}
+              format={money}
+              className="text-sm font-medium text-muted-foreground"
+            />
           ) : (
             <span className="text-sm text-muted-foreground">Selecione a unidade</span>
           )}
@@ -116,7 +117,7 @@ export function ProposalVitals({
         {/* Entrada / Financiado */}
         <div className="flex flex-col gap-1 bg-card p-4">
           <span className={CONSOLE_LABEL}>Entrada</span>
-          <span className="text-sm font-medium tabular-nums">{money(entryTotal)}</span>
+          <AnimatedNumber value={entryTotal} format={money} className="text-sm font-medium" />
           {hasPlan && (
             <div className="mt-1 space-y-1">
               <div
@@ -135,10 +136,20 @@ export function ProposalVitals({
             </div>
           )}
         </div>
-        <Cell label="Financiado" value={money(financed)} />
+        <div className="flex flex-col gap-1 bg-card p-4">
+          <span className={CONSOLE_LABEL}>Financiado</span>
+          <AnimatedNumber value={financed} format={money} className="text-sm font-medium" />
+        </div>
 
         {/* Parcelas / Término */}
-        <Cell label="Parcelas" value={count > 0 ? String(count) : '—'} />
+        <div className="flex flex-col gap-1 bg-card p-4">
+          <span className={CONSOLE_LABEL}>Parcelas</span>
+          {count > 0 ? (
+            <AnimatedNumber value={count} className="text-sm font-medium" />
+          ) : (
+            <span className="text-sm font-medium tabular-nums text-muted-foreground">—</span>
+          )}
+        </div>
         <div className="flex flex-col gap-1 bg-card p-4">
           <span className={CONSOLE_LABEL}>Término</span>
           {contractEnd.endDate ? (
@@ -165,9 +176,11 @@ export function ProposalVitals({
           <div className="col-span-2 flex flex-col gap-1 bg-card p-4">
             <span className={CONSOLE_LABEL}>Comissão de mediação</span>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-sm font-medium tabular-nums">
-                {money(vitals.commission.amountCents)}
-              </span>
+              <AnimatedNumber
+                value={vitals.commission.amountCents}
+                format={money}
+                className="text-sm font-medium"
+              />
               <span
                 className={cn(
                   'text-xs tabular-nums',
@@ -198,7 +211,9 @@ export function ProposalVitals({
                   {GROUP_LABELS[g.kind]}
                   <span className="ml-1.5 tabular-nums text-muted-foreground/70">×{g.count}</span>
                 </dt>
-                <dd className="text-xs font-medium tabular-nums">{money(g.subtotal)}</dd>
+                <dd className="text-xs font-medium">
+                  <AnimatedNumber value={g.subtotal} format={money} />
+                </dd>
               </div>
             ))}
           </dl>
@@ -211,18 +226,6 @@ export function ProposalVitals({
           <span className={CONSOLE_LABEL}>Calendário de parcelas</span>
           <InstallmentCalendar schedules={schedules} />
         </div>
-      )}
-    </div>
-  )
-}
-
-function Cell({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="flex flex-col gap-1 bg-card p-4">
-      <span className={CONSOLE_LABEL}>{label}</span>
-      <span className="text-sm font-medium tabular-nums">{value}</span>
-      {sub != null && (
-        <span className="text-[0.6875rem] tabular-nums text-muted-foreground">{sub}</span>
       )}
     </div>
   )

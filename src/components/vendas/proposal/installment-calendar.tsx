@@ -7,6 +7,7 @@ import {
   type InstallmentKind,
   type SaleFormData,
 } from '@/schemas/sale.schema'
+import { KIND_DOT } from './constants'
 import { REVEAL } from './section'
 
 const MONTHS = [
@@ -25,14 +26,6 @@ const MONTHS = [
 ]
 const ABBR = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
 
-// Cores de dado (não-ação): chaves em violeta para diferenciar.
-const KIND_DOT: Record<InstallmentKind, string> = {
-  entry: 'bg-sky-400',
-  regular: 'bg-lime-400',
-  balloon: 'bg-amber-400',
-  key_delivery: 'bg-violet-400',
-  extra: 'bg-muted-foreground',
-}
 const money = (c: number) => `R$ ${formatCentsToDisplay(c) || '0,00'}`
 
 function dominantKind(cells: MonthlyCell[]): InstallmentKind {

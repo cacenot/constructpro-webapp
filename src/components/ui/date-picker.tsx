@@ -14,6 +14,8 @@ export interface DatePickerProps {
   disabledDates?: string[]
   minDate?: string
   maxDate?: string
+  /** Dropdowns de mês/ano no cabeçalho — para datas anos à frente (ex.: entrega). */
+  monthYearNav?: boolean
 }
 
 function formatDateISO(date: Date): string {
@@ -56,6 +58,7 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(
       disabledDates = [],
       minDate,
       maxDate,
+      monthYearNav = false,
     },
     ref
   ) => {
@@ -63,6 +66,15 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(
 
     const selectedDate = value ? parseISO(value) : undefined
     const displayValue = formatDisplayDate(value)
+
+    // Faixa dos dropdowns de ano: do ano passado até 30 anos à frente.
+    const navProps = monthYearNav
+      ? {
+          captionLayout: 'dropdown' as const,
+          startMonth: new Date(new Date().getFullYear() - 1, 0),
+          endMonth: new Date(new Date().getFullYear() + 30, 11),
+        }
+      : {}
 
     const disabledMatcher = (date: Date) => {
       const iso = formatDateISO(date)
@@ -106,9 +118,11 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(
           <Calendar
             mode="single"
             selected={selectedDate}
+            defaultMonth={selectedDate}
             onSelect={handleSelect}
             disabled={disabledMatcher}
             initialFocus
+            {...navProps}
           />
           {value && (
             <div className="border-t p-2">

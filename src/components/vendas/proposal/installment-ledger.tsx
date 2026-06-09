@@ -6,6 +6,7 @@ import type {
   UseFieldArrayRemove,
   UseFormReturn,
 } from 'react-hook-form'
+import { SegmentedControl } from '@/components/configuracoes/segmented-control'
 import { Button } from '@/components/ui/button'
 import { CurrencyInput, formatCentsToDisplay } from '@/components/ui/currency-input'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -17,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import { NumberStepper } from '@/components/ui/number-stepper'
 import {
   Select,
@@ -31,11 +33,11 @@ import {
   computeChainedStart,
   computeDefaultStartDate,
   computeMonthlySpan,
-  computeScheduleEnd,
   deriveRecurrenceFields,
   deriveRecurringFromSpan,
   formatBRDate,
 } from '@/lib/installment-utils'
+import { cn } from '@/lib/utils'
 import {
   INSTALLMENT_PERIODICITY_LABELS,
   type InstallmentKind,
@@ -48,6 +50,8 @@ import {
   BALLOON_PERIODICITY_OPTIONS,
   createEntrySchedule,
   GROUP_LABELS,
+  KIND_BADGE,
+  KIND_DOT,
   NON_ENTRY_KINDS,
   PAYMENT_METHOD_OPTIONS,
 } from './constants'
@@ -70,20 +74,13 @@ function periodicityChip(kind: InstallmentKind, recurrence?: string | null): str
   return GROUP_LABELS[kind]
 }
 
-/** Quantas parcelas dessa periodicidade cabem em um ano (atalho "±1 ano" do stepper). */
-function installmentsPerYear(recurrence?: Recurrence | null): number {
-  switch (recurrence) {
-    case 'monthly':
-      return 12
-    case 'bimonthly':
-      return 6
-    case 'quarterly':
-      return 4
-    case 'semestral':
-      return 2
-    default:
-      return 1
-  }
+/** Meses entre ocorrências de cada periodicidade (fonte única do span/derivação). */
+const PERIOD_MONTHS: Record<Recurrence, number> = {
+  monthly: 1,
+  bimonthly: 2,
+  quarterly: 3,
+  semestral: 6,
+  yearly: 12,
 }
 
 interface InstallmentLedgerProps {
@@ -102,6 +99,8 @@ interface InstallmentLedgerProps {
   violations?: { month: string; count: number }[]
   maxInstallmentsPerMonth?: number
   saldo?: number
+  /** Valor da proposta (centavos), base para entrada digitada em %. */
+  valorPropostaCents?: number
 }
 
 export function InstallmentLedger({
@@ -117,6 +116,7 @@ export function InstallmentLedger({
   violations = [],
   maxInstallmentsPerMonth,
   saldo = 0,
+  valorPropostaCents = 0,
 }: InstallmentLedgerProps) {
   // Índices de cada kind dentro do field array.
   const groupedIndices = React.useMemo(() => {
@@ -188,36 +188,10 @@ export function InstallmentLedger({
     }
   }, [watchedSchedules, unlocked, form])
 
-  const groupRange = React.useCallback(
-    (indices: number[]): string | null => {
-      if (!watchedSchedules || !indices.length) return null
-      let start: Date | null = null
-      let end: Date | null = null
-      for (const i of indices) {
-        const s = watchedSchedules[i]
-        if (!s?.start_date) continue
-        const sd = new Date(`${s.start_date}T12:00:00`)
-        const ed = computeScheduleEnd(s)
-        if (!start || sd < start) start = sd
-        if (ed && (!end || ed > end)) end = ed
-      }
-      if (!start || !end) return null
-      return `${formatBRDate(start)} → ${formatBRDate(end)}`
-    },
-    [watchedSchedules]
-  )
-
   const addRecurring = React.useCallback(
     (kind: 'regular' | 'balloon' | 'extra', recurrence: Recurrence) => {
       const isYearly = recurrence === 'yearly'
       const day = isYearly ? 15 : 10
-      const periodMonthsMap: Record<Recurrence, number> = {
-        monthly: 1,
-        bimonthly: 2,
-        quarterly: 3,
-        semestral: 6,
-        yearly: 12,
-      }
 
       // Mensais encadeiam (sem sobreposição) após o último grupo mensal.
       if (kind === 'regular' && recurrence === 'monthly') {
@@ -245,7 +219,7 @@ export function InstallmentLedger({
 
       // Balões/reforços: quantidade derivada do span das mensais + saldo distribuído.
       const span = computeMonthlySpan((watchedSchedules ?? []) as InstallmentScheduleFormData[])
-      const period = periodMonthsMap[recurrence] ?? 1
+      const period = PERIOD_MONTHS[recurrence] ?? 1
       const derived = span ? deriveRecurringFromSpan(span, period, day) : null
       const quantity = derived?.quantity ?? 1
       const startISO =
@@ -268,6 +242,37 @@ export function InstallmentLedger({
       })
     },
     [append, watchedSchedules, saldo]
+  )
+
+  // Trocar a sazonalidade de um reforço redistribui o grupo até a data final das
+  // mensais: recalcula a quantidade pelo novo span e reparte o total (muda o valor).
+  const handlePeriodicityChange = React.useCallback(
+    (index: number, rec: Recurrence) => {
+      const list = (watchedSchedules ?? []) as InstallmentScheduleFormData[]
+      const row = list[index]
+      if (!row) return
+      const oldTotal = (row.quantity ?? 1) * (row.amount ?? 0)
+      const day = row.recurrence_day ?? (rec === 'yearly' ? 15 : 10)
+      const period = PERIOD_MONTHS[rec] ?? 1
+      const span = computeMonthlySpan(list)
+      const derived = span ? deriveRecurringFromSpan(span, period, day) : null
+      const quantity = derived?.quantity ?? row.quantity ?? 1
+      const startISO =
+        derived?.startISO ??
+        row.start_date ??
+        computeDefaultStartDate(rec, day, rec === 'yearly' ? 12 : null)
+      const amount = quantity > 0 ? Math.round(oldTotal / quantity) : (row.amount ?? 0)
+      const recFields = startISO
+        ? deriveRecurrenceFields(startISO, rec)
+        : { recurrence_day: day, recurrence_month: rec === 'yearly' ? 12 : null }
+      form.setValue(`installment_schedules.${index}.recurrence_type`, rec)
+      form.setValue(`installment_schedules.${index}.quantity`, quantity)
+      form.setValue(`installment_schedules.${index}.amount`, amount)
+      form.setValue(`installment_schedules.${index}.start_date`, startISO || null)
+      form.setValue(`installment_schedules.${index}.recurrence_day`, recFields.recurrence_day)
+      form.setValue(`installment_schedules.${index}.recurrence_month`, recFields.recurrence_month)
+    },
+    [watchedSchedules, form]
   )
 
   const addKeyDelivery = React.useCallback(() => {
@@ -316,6 +321,7 @@ export function InstallmentLedger({
                 className={`space-y-3 p-3 sm:p-4 ${entryIdx > 0 ? REVEAL : ''}`}
               >
                 <RowStrip
+                  kind="entry"
                   label={`Entrada ${entryIdx + 1}`}
                   onRemove={canRemove ? () => remove(realIndex) : undefined}
                   removeTooltip="Remover entrada"
@@ -327,14 +333,12 @@ export function InstallmentLedger({
                     name={`installment_schedules.${realIndex}.amount`}
                     render={({ field: f }) => (
                       <FormItem className="col-span-2 sm:col-span-4">
-                        <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
-                        <FormControl>
-                          <CurrencyInput
-                            value={f.value}
-                            onChange={f.onChange}
-                            disabled={disabled}
-                          />
-                        </FormControl>
+                        <EntryAmountField
+                          value={f.value}
+                          onChange={f.onChange}
+                          disabled={disabled}
+                          baseCents={valorPropostaCents}
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -345,7 +349,9 @@ export function InstallmentLedger({
                     name={`installment_schedules.${realIndex}.payment_method`}
                     render={({ field: f }) => (
                       <FormItem className="col-span-1 sm:col-span-4">
-                        <FormLabel className={CONSOLE_LABEL}>Forma *</FormLabel>
+                        <FormLabel className={cn(CONSOLE_LABEL, 'flex h-7 items-center')}>
+                          Forma *
+                        </FormLabel>
                         <Select
                           value={f.value}
                           onValueChange={(val) => {
@@ -381,7 +387,9 @@ export function InstallmentLedger({
                     name={`installment_schedules.${realIndex}.specific_date`}
                     render={({ field: f }) => (
                       <FormItem className="col-span-1 sm:col-span-4">
-                        <FormLabel className={CONSOLE_LABEL}>Vencimento *</FormLabel>
+                        <FormLabel className={cn(CONSOLE_LABEL, 'flex h-7 items-center')}>
+                          Vencimento *
+                        </FormLabel>
                         <FormControl>
                           <DatePicker value={f.value} onChange={f.onChange} disabled={disabled} />
                         </FormControl>
@@ -466,20 +474,9 @@ export function InstallmentLedger({
               const indices = groupedIndices.get(kind) ?? []
               if (indices.length === 0) return null
               const firstMonthlyIndex = groupedIndices.get('regular')?.[0]
-              const range = groupRange(indices)
               return (
                 <div key={kind} className="space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xs font-medium text-foreground">
-                      {GROUP_LABELS[kind]}
-                    </span>
-                    <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                      R$ {formatCentsToDisplay(subtotal(kind)) || '0,00'}
-                    </span>
-                  </div>
-                  {range && (
-                    <p className="text-[0.6875rem] tabular-nums text-muted-foreground">{range}</p>
-                  )}
+                  <div className="text-xs font-medium text-foreground">{GROUP_LABELS[kind]}</div>
 
                   <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
                     {indices.map((index) => {
@@ -503,6 +500,7 @@ export function InstallmentLedger({
                           onRemove={() => remove(index)}
                           chainedLocked={chainedLocked}
                           onUnlock={() => setUnlocked((s) => new Set(s).add(index))}
+                          onPeriodicityChange={(rec) => handlePeriodicityChange(index, rec)}
                         />
                       )
                     })}
@@ -545,11 +543,14 @@ function GroupHeader({
 
 function RowStrip({
   label,
+  kind,
   control,
   onRemove,
   removeTooltip,
 }: {
   label: string
+  /** Tipo da parcela — colore o badge na mesma família do mapa mensal. */
+  kind?: InstallmentKind
   /** Substitui o chip estático por um controle (ex.: select de sazonalidade do reforço). */
   control?: React.ReactNode
   onRemove?: () => void
@@ -558,7 +559,13 @@ function RowStrip({
   return (
     <div className="flex items-center justify-between">
       {control ?? (
-        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium uppercase tracking-[0.06em]',
+            kind ? KIND_BADGE[kind] : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {kind && <span className={cn('size-1.5 rounded-full', KIND_DOT[kind])} />}
           {label}
         </span>
       )}
@@ -597,6 +604,7 @@ interface InstallmentRowProps {
   onRemove: () => void
   chainedLocked?: boolean
   onUnlock?: () => void
+  onPeriodicityChange: (recurrence: Recurrence) => void
 }
 
 function InstallmentRow({
@@ -611,33 +619,34 @@ function InstallmentRow({
   onRemove,
   chainedLocked = false,
   onUnlock,
+  onPeriodicityChange,
 }: InstallmentRowProps) {
   const kind = (schedule?.kind ?? fallbackKind) as InstallmentKind
   const recurrence = schedule?.recurrence_type as Recurrence | null | undefined
-  const usesSpecificDate = kind === 'key_delivery'
-  const recurrenceDay = schedule?.recurrence_day
-  const recurrenceMonth = schedule?.recurrence_month
-
-  // Sazonalidade editável no card, só para reforços/balões (parcela é sempre mensal).
+  const isKeyDelivery = kind === 'key_delivery'
+  const isMonthly = kind === 'regular'
+  // Reforço/balão tem a sazonalidade editável no card (parcela é sempre mensal).
   const isBalloon = kind === 'balloon'
-  const handlePeriodicityChange = (value: string) => {
-    const rec = value as Recurrence
-    const month = rec === 'yearly' ? (recurrenceMonth ?? 12) : null
-    form.setValue(`installment_schedules.${index}.recurrence_type`, rec)
-    form.setValue(`installment_schedules.${index}.recurrence_month`, month)
-    const next = computeDefaultStartDate(rec, recurrenceDay, month)
-    form.setValue(`installment_schedules.${index}.start_date`, next || null)
-  }
+
+  // Densidade por tipo: chaves dispensa quantidade; reforço encaixa a data na linha.
+  const valorSpan = isKeyDelivery ? 'col-span-1 sm:col-span-4' : 'col-span-1 sm:col-span-3'
+  const formaSpan = isKeyDelivery ? 'col-span-1 sm:col-span-3' : 'col-span-1 sm:col-span-2'
+  const dateSpan = isKeyDelivery
+    ? 'col-span-1 sm:col-span-5'
+    : isMonthly
+      ? 'col-span-2 sm:col-span-6'
+      : 'col-span-1 sm:col-span-4'
 
   return (
     <div className={`space-y-3 p-3 sm:p-4 ${REVEAL}`}>
       <RowStrip
+        kind={kind}
         label={periodicityChip(kind, recurrence)}
         control={
           isBalloon && !disabled ? (
             <PeriodicityChipSelect
               value={recurrence ?? 'yearly'}
-              onChange={handlePeriodicityChange}
+              onChange={(v) => onPeriodicityChange(v as Recurrence)}
             />
           ) : undefined
         }
@@ -646,35 +655,37 @@ function InstallmentRow({
       />
 
       <div className="grid grid-cols-2 items-start gap-3 sm:grid-cols-12">
-        <FormField
-          control={form.control}
-          name={`installment_schedules.${index}.quantity`}
-          render={({ field: f, fieldState }) => (
-            <FormItem className="col-span-1 sm:col-span-3">
-              <FormLabel className={CONSOLE_LABEL}>Qtd. *</FormLabel>
-              <FormControl>
-                <NumberStepper
-                  value={f.value}
-                  onChange={f.onChange}
-                  onBlur={f.onBlur}
-                  min={1}
-                  bigStep={installmentsPerYear(recurrence)}
-                  stepLabel={recurrence === 'monthly' ? 'mês' : 'parcela'}
-                  bigStepLabel="ano"
-                  disabled={disabled}
-                  aria-invalid={!!fieldState.error}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!isKeyDelivery && (
+          <FormField
+            control={form.control}
+            name={`installment_schedules.${index}.quantity`}
+            render={({ field: f, fieldState }) => (
+              <FormItem className="col-span-1 sm:col-span-3">
+                <FormLabel className={CONSOLE_LABEL}>Quantidade *</FormLabel>
+                <FormControl>
+                  <NumberStepper
+                    value={f.value}
+                    onChange={f.onChange}
+                    onBlur={f.onBlur}
+                    min={1}
+                    bigStep={isMonthly ? 12 : undefined}
+                    stepLabel={isMonthly ? 'mês' : 'parcela'}
+                    bigStepLabel="ano"
+                    disabled={disabled}
+                    aria-invalid={!!fieldState.error}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
           name={`installment_schedules.${index}.amount`}
           render={({ field: f }) => (
-            <FormItem className="col-span-1 sm:col-span-3">
+            <FormItem className={valorSpan}>
               <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
               <FormControl>
                 <CurrencyInput value={f.value} onChange={f.onChange} disabled={disabled} />
@@ -688,7 +699,7 @@ function InstallmentRow({
           control={form.control}
           name={`installment_schedules.${index}.payment_method`}
           render={({ field: f }) => (
-            <FormItem className="col-span-1 sm:col-span-2">
+            <FormItem className={formaSpan}>
               <FormLabel className={CONSOLE_LABEL}>Forma *</FormLabel>
               <Select value={f.value} onValueChange={f.onChange} disabled={disabled}>
                 <FormControl>
@@ -709,15 +720,20 @@ function InstallmentRow({
           )}
         />
 
-        {usesSpecificDate ? (
+        {isKeyDelivery ? (
           <FormField
             control={form.control}
             name={`installment_schedules.${index}.specific_date`}
             render={({ field: f }) => (
-              <FormItem className="col-span-1 sm:col-span-4">
-                <FormLabel className={CONSOLE_LABEL}>Entrega *</FormLabel>
+              <FormItem className={dateSpan}>
+                <FormLabel className={CONSOLE_LABEL}>Data *</FormLabel>
                 <FormControl>
-                  <DatePicker value={f.value} onChange={f.onChange} disabled={disabled} />
+                  <DatePicker
+                    value={f.value}
+                    onChange={f.onChange}
+                    disabled={disabled}
+                    monthYearNav
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -728,7 +744,7 @@ function InstallmentRow({
             control={form.control}
             name={`installment_schedules.${index}.start_date`}
             render={({ field: f }) => (
-              <FormItem className="col-span-2 sm:col-span-6">
+              <FormItem className={dateSpan}>
                 <FormLabel className={CONSOLE_LABEL}>Início *</FormLabel>
                 {chainedLocked ? (
                   <div className="flex items-center gap-2">
@@ -753,6 +769,7 @@ function InstallmentRow({
                     <DatePicker
                       value={f.value}
                       disabled={disabled}
+                      monthYearNav
                       onChange={(v) => {
                         f.onChange(v)
                         if (v && recurrence) {
@@ -824,8 +841,9 @@ function PeriodicityChipSelect({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger
         aria-label="Sazonalidade do reforço"
-        className="h-6 w-auto gap-1 rounded-full border-0 bg-muted px-2.5 py-0 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-muted-foreground shadow-none transition-colors hover:bg-accent hover:text-foreground focus:ring-1 data-[state=open]:bg-accent data-[state=open]:text-foreground [&>svg]:size-3 [&>svg]:opacity-70"
+        className="h-6 w-auto gap-1.5 rounded-full border-0 bg-amber-400/15 px-2.5 py-0 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-amber-300 shadow-none transition-colors hover:bg-amber-400/25 focus:ring-1 data-[state=open]:bg-amber-400/25 [&>svg]:size-3 [&>svg]:opacity-70"
       >
+        <span className="size-1.5 shrink-0 rounded-full bg-amber-400" />
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="start">
@@ -836,5 +854,102 @@ function PeriodicityChipSelect({
         ))}
       </SelectContent>
     </Select>
+  )
+}
+
+/** Formata uma porcentagem sem zeros à direita, com vírgula decimal (pt-BR). */
+function formatPct(n: number): string {
+  return n
+    .toFixed(2)
+    .replace(/\.?0+$/, '')
+    .replace('.', ',')
+}
+
+/**
+ * Valor da entrada com toggle R$/% (segmented control compacto). Em modo %, o valor
+ * é digitado como porcentagem do valor da proposta; os centavos seguem sendo a fonte
+ * da verdade no form (a % é só uma forma de entrada).
+ */
+function EntryAmountField({
+  value,
+  onChange,
+  disabled,
+  baseCents,
+}: {
+  value: number
+  onChange: (cents: number) => void
+  disabled?: boolean
+  baseCents: number
+}) {
+  const [mode, setMode] = React.useState<'value' | 'percent'>('value')
+  return (
+    <div className="grid gap-2">
+      <div className="flex h-7 items-center justify-between gap-2">
+        <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
+        <SegmentedControl
+          size="sm"
+          aria-label="Entrada em valor ou porcentagem"
+          options={[
+            { value: 'value', label: 'R$' },
+            { value: 'percent', label: '%' },
+          ]}
+          value={mode}
+          onChange={(v) => setMode(v as 'value' | 'percent')}
+        />
+      </div>
+      {mode === 'value' ? (
+        <CurrencyInput value={value} onChange={onChange} disabled={disabled} />
+      ) : (
+        <PercentInput value={value} onChange={onChange} disabled={disabled} baseCents={baseCents} />
+      )}
+    </div>
+  )
+}
+
+/** Input em % do valor da proposta; converte para centavos no onChange. */
+function PercentInput({
+  value,
+  onChange,
+  disabled,
+  baseCents,
+}: {
+  value: number
+  onChange: (cents: number) => void
+  disabled?: boolean
+  baseCents: number
+}) {
+  const [text, setText] = React.useState(() =>
+    baseCents > 0 ? formatPct((value / baseCents) * 100) : ''
+  )
+
+  React.useEffect(() => {
+    setText(baseCents > 0 ? formatPct((value / baseCents) * 100) : '')
+  }, [value, baseCents])
+
+  return (
+    <div className="relative">
+      <Input
+        type="text"
+        inputMode="decimal"
+        aria-label="Entrada em porcentagem"
+        disabled={disabled || baseCents <= 0}
+        placeholder={baseCents > 0 ? '0' : 'Defina o valor da proposta'}
+        value={text}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^\d,.]/g, '').replace('.', ',')
+          setText(raw)
+          if (raw === '') {
+            onChange(0)
+            return
+          }
+          const num = Number.parseFloat(raw.replace(',', '.'))
+          if (!Number.isNaN(num) && baseCents > 0) onChange(Math.round((num / 100) * baseCents))
+        }}
+        className="pr-7 tabular-nums"
+      />
+      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
+        %
+      </span>
+    </div>
   )
 }
