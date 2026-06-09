@@ -1,163 +1,77 @@
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataTableInfinite } from '@/components/ui/data-table-infinite'
 import type { InstallmentSummaryItemResponse } from '@/hooks/use-installments'
-import { cn } from '@/lib/utils'
-import {
-  type InstallmentsTableMeta,
-  installmentsColumns,
-  isInstallmentOverdue,
-} from './installments-columns'
+import { isInstallmentOverdue } from '@/lib/installment-overdue'
+import { type InstallmentsTableMeta, installmentsColumns } from './installments-columns'
 
 interface InstallmentsTableProps {
   data: InstallmentSummaryItemResponse[]
   isLoading: boolean
+  isError?: boolean
+  onRetry?: () => void
   hasActiveFilters: boolean
   onClearFilters: () => void
-  onPayInstallment: (installment: InstallmentSummaryItemResponse) => void
-  onIssueBoleto: (installment: InstallmentSummaryItemResponse) => void
   onViewDetails: (installment: InstallmentSummaryItemResponse) => void
+  selectedId?: string
   sort: string
   onSort: (value: string) => void
+  total: number
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  onReachEnd?: () => void
 }
-
-const SKELETON_ROWS = 10
 
 export function InstallmentsTable({
   data,
   isLoading,
+  isError,
+  onRetry,
   hasActiveFilters,
   onClearFilters,
-  onPayInstallment,
-  onIssueBoleto,
   onViewDetails,
+  selectedId,
   sort,
   onSort,
+  total,
+  hasNextPage,
+  isFetchingNextPage,
+  onReachEnd,
 }: InstallmentsTableProps) {
-  const table = useReactTable({
-    data,
-    columns: installmentsColumns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    manualSorting: true,
-    meta: {
-      onPayInstallment,
-      onIssueBoleto,
-      onViewDetails,
-      sort,
-      onSort,
-    } satisfies InstallmentsTableMeta,
-  })
-
   return (
-    <Table>
-      <TableHeader>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
-            {headerGroup.headers.map((header) => (
-              <TableHead
-                key={header.id}
-                className="px-6 text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground"
-              >
-                {header.isPlaceholder
-                  ? null
-                  : flexRender(header.column.columnDef.header, header.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {isLoading ? (
-          Array.from({ length: SKELETON_ROWS }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no meaningful key
-            <TableRow key={i}>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-5 w-14 rounded-md" />
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-4 w-28" />
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <div className="flex flex-col gap-1.5">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-4 w-20" />
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <div className="flex flex-col gap-1.5">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-3 w-28" />
-                </div>
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <div className="flex flex-col gap-1.5">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-5 w-24 rounded-full" />
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-7 w-7 rounded-md" />
-              </TableCell>
-            </TableRow>
-          ))
-        ) : table.getRowModel().rows.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={installmentsColumns.length} className="py-12 text-center">
-              <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                <Receipt className="size-10 opacity-40" />
-                <p className="text-sm">
-                  {hasActiveFilters
-                    ? 'Nenhuma parcela encontrada com os filtros aplicados.'
-                    : 'Nenhuma parcela cadastrada.'}
-                </p>
-                {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" onClick={onClearFilters}>
-                    Limpar filtros
-                  </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ) : (
-          table.getRowModel().rows.map((row) => {
-            const overdue = isInstallmentOverdue(row.original)
-            return (
-              <TableRow
-                key={row.id}
-                className={cn(
-                  'cursor-pointer',
-                  overdue
-                    ? 'bg-destructive/[0.04] hover:bg-destructive/[0.08]'
-                    : 'hover:bg-muted/50'
-                )}
-                onClick={() => onViewDetails(row.original)}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="px-6 py-3">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            )
-          })
-        )}
-      </TableBody>
-    </Table>
+    <DataTableInfinite
+      aria-label="Parcelas da carteira"
+      columns={installmentsColumns}
+      data={data}
+      isLoading={isLoading}
+      isError={isError}
+      onRetry={onRetry}
+      meta={{ sort, onSort } satisfies InstallmentsTableMeta}
+      onRowClick={onViewDetails}
+      getRowId={(installment) => installment.id}
+      isRowSelected={(installment) => installment.id === selectedId}
+      rowClassName={(installment) =>
+        isInstallmentOverdue(installment) ? 'bg-destructive/[0.04] hover:bg-destructive/[0.08]' : ''
+      }
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      onReachEnd={onReachEnd}
+      endLabel={total > 0 ? `Fim da lista · ${total} parcelas` : undefined}
+      empty={
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Receipt className="size-10 opacity-40" />
+          <p className="text-sm">
+            {hasActiveFilters
+              ? 'Nenhuma parcela com os filtros aplicados.'
+              : 'Nenhuma parcela na carteira.'}
+          </p>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={onClearFilters}>
+              Limpar filtros
+            </Button>
+          )}
+        </div>
+      }
+    />
   )
 }
