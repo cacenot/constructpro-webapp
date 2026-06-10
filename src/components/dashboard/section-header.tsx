@@ -15,7 +15,7 @@ export function SectionHeader({ title, href, linkLabel }: SectionHeaderProps) {
         {title}
       </h2>
       <a href={href} className="text-xs font-medium text-primary hover:underline">
-        {linkLabel} →
+        {linkLabel} <span aria-hidden="true">→</span>
       </a>
     </div>
   )
