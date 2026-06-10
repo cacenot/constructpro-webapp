@@ -97,9 +97,14 @@ export default function FinanceiroPage() {
 
       return response
     },
-    onSuccess: () => {
+    onSuccess: (_data, installmentId) => {
       toast.success('Boleto emitido com sucesso')
+      // Emitir boleto muda status (→ invoiced) e gera boleto_url. A aba Parcelas
+      // lê de `summary` (tabela) e o painel de `detail` — `lists()` (prefixo
+      // distinto) não os alcança, então sem estas duas a UI ficava velha.
       queryClient.invalidateQueries({ queryKey: installmentKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: installmentKeys.summaries() })
+      queryClient.invalidateQueries({ queryKey: installmentKeys.detail(installmentId) })
     },
     onError: (error) => handleApiError(error, 'Erro ao emitir boleto'),
   })
