@@ -328,6 +328,15 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     setQueryState({ tab: 'parcelas', project: projectId })
   }
 
+  // Estável (setQueryState do nuqs é estável): permite useCallback a jusante e
+  // preserva a memoização por linha da tabela (DataTableRow).
+  const setSelectedInstallmentId = useCallback(
+    (id: string) => {
+      setQueryState({ parcela: id })
+    },
+    [setQueryState]
+  )
+
   return {
     data: rows,
     isLoading,
@@ -381,6 +390,6 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     applyMonthFilter,
     applyProjectFilter,
     selectedInstallmentId: parcela,
-    setSelectedInstallmentId: (id: string) => setQueryState({ parcela: id }),
+    setSelectedInstallmentId,
   }
 }

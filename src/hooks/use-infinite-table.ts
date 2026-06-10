@@ -1,4 +1,5 @@
 import { type QueryKey, useInfiniteQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 
 /** Uma página de uma lista paginada por offset (page/page_size) do backend. */
 export interface TablePage<TItem, TResponse = unknown> {
@@ -40,7 +41,9 @@ export function useInfiniteTable<TItem, TResponse = unknown>({
     enabled,
   })
 
-  const rows = query.data?.pages.flatMap((page) => page.items) ?? []
+  // Referência estável entre renders: o TanStack Table só recria as instâncias de
+  // linha quando `data` muda, o que preserva a memoização por linha do DataTable.
+  const rows = useMemo(() => query.data?.pages.flatMap((page) => page.items) ?? [], [query.data])
   const total = query.data?.pages[0]?.total ?? 0
   const firstResponse = query.data?.pages[0]?.response
 

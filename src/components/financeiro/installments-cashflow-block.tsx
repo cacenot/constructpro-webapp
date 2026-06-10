@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { Bar, BarChart, CartesianGrid, Label, ReferenceLine, XAxis, YAxis } from 'recharts'
 import { Card } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
+import { LegendDot } from '@/components/ui/legend-dot'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInstallmentsCashflow } from '@/hooks/use-installments'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -147,15 +148,6 @@ export function InstallmentsCashflowBlock({
   )
 }
 
-function LegendDot({ className, label }: { className: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className={cn('size-2 rounded-full', className)} />
-      {label}
-    </span>
-  )
-}
-
 function CashflowNote({ children }: { children: React.ReactNode }) {
   return (
     <div className="px-5 pb-5">
@@ -179,7 +171,7 @@ function CashflowTooltip({
   const fullMonth = format(parseISO(datum.monthIso), "MMMM 'de' yyyy", { locale: ptBR })
 
   return (
-    <div className="min-w-44 rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
+    <div className="min-w-44 rounded-lg border border-border bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md">
       <p className="mb-1.5 font-medium capitalize">{fullMonth}</p>
       <div className="flex flex-col gap-1">
         <TooltipRow dotClass="bg-success" label="Recebido" value={datum.received} />

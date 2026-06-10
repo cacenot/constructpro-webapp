@@ -6,13 +6,18 @@ import {
 } from '@cacenot/construct-pro-api-client/enums'
 import { format, formatDistanceToNow, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Calendar, CreditCard, ExternalLink, Receipt, X } from 'lucide-react'
+import { ExternalLink, Receipt, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
+import { LegendDot } from '@/components/ui/legend-dot'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useContractDetail } from '@/hooks/use-contract-detail'
-import type { InstallmentDetailResponse } from '@/hooks/use-installments'
+import type {
+  InstallmentDetailResponse,
+  InstallmentSummaryItemResponse,
+} from '@/hooks/use-installments'
 import { useInstallment, useInstallments } from '@/hooks/use-installments'
 import { installmentDaysOverdue, isInstallmentOverdue } from '@/lib/installment-overdue'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -29,7 +34,7 @@ const BOLETO_STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  scheduled: 'Agendada',
+  scheduled: 'Pendente',
   invoiced: 'Faturada',
   partial: 'Parcial',
   paid: 'Paga',
@@ -46,30 +51,6 @@ interface InstallmentDetailPanelProps {
 
 function pctOf(rate: string | undefined): number {
   return Math.min(100, Math.max(0, Number(rate ?? 0) || 0))
-}
-
-function DetailItem({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon?: React.ComponentType<{ className?: string }>
-  label: string
-  value: React.ReactNode
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      {Icon && (
-        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/60">
-          <Icon className="size-4 text-muted-foreground" />
-        </div>
-      )}
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="text-sm font-medium">{value}</span>
-      </div>
-    </div>
-  )
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -139,7 +120,7 @@ function ContractScheduleStrip({
         {items.map((inst) => {
           const overdue = isInstallmentOverdue(inst)
           const isCurrent = inst.id === currentId
-          const statusLabel = overdue ? 'Vencida' : (STATUS_LABEL[inst.status ?? ''] ?? '—')
+          const statusLabel = overdue ? 'Em atraso' : (STATUS_LABEL[inst.status ?? ''] ?? '—')
           const tone =
             inst.status === 'paid'
               ? 'bg-success/15 text-success'
@@ -151,26 +132,33 @@ function ContractScheduleStrip({
                     ? 'bg-muted text-muted-foreground/50 line-through'
                     : 'bg-muted text-muted-foreground'
           return (
-            <button
-              key={inst.id}
-              type="button"
-              aria-current={isCurrent ? 'true' : undefined}
-              title={`Parcela ${inst.installment_number ?? '—'} · vence ${format(parseISO(inst.due_date), 'dd/MM/yyyy')} · ${formatCurrency(inst.current_amount.cents / 100)} · ${statusLabel}`}
-              onClick={() => onSelect(inst.id)}
-              className={cn(
-                'flex size-7 items-center justify-center rounded-md text-[0.625rem] font-medium tabular-nums transition-colors',
-                tone,
-                isCurrent && 'ring-2 ring-primary'
-              )}
-            >
-              {inst.installment_number ?? '·'}
-            </button>
+            <HoverCard key={inst.id} openDelay={150} closeDelay={75}>
+              <HoverCardTrigger asChild>
+                <button
+                  type="button"
+                  aria-current={isCurrent ? 'true' : undefined}
+                  aria-label={`Parcela ${inst.installment_number ?? '—'} · vence ${format(parseISO(inst.due_date), 'dd/MM/yyyy')} · ${formatCurrency(inst.current_amount.cents / 100)} · ${statusLabel}`}
+                  onClick={() => onSelect(inst.id)}
+                  className={cn(
+                    'flex size-8 items-center justify-center rounded-md text-[0.625rem] font-medium tabular-nums transition-colors sm:size-7',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    tone,
+                    isCurrent && 'ring-2 ring-primary'
+                  )}
+                >
+                  {inst.installment_number ?? '·'}
+                </button>
+              </HoverCardTrigger>
+              <HoverCardContent side="top" sideOffset={6} className="w-60 p-3">
+                <ScheduleCellDetails inst={inst} />
+              </HoverCardContent>
+            </HoverCard>
           )
         })}
       </div>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[0.6875rem] text-muted-foreground">
         <LegendDot className="bg-success" label="Paga" />
-        <LegendDot className="bg-destructive" label="Vencida" />
+        <LegendDot className="bg-destructive" label="Em atraso" />
         <LegendDot className="bg-warning" label="Parcial" />
         <LegendDot className="bg-muted-foreground/40" label="A vencer" />
       </div>
@@ -178,12 +166,54 @@ function ContractScheduleStrip({
   )
 }
 
-function LegendDot({ className, label }: { className: string; label: string }) {
+/** Conteúdo do popover de uma célula da agenda: a parcela em miniatura (valor,
+ * status com glow, vencimento) + pago/restante quando há pagamento em aberto. */
+function ScheduleCellDetails({ inst }: { inst: InstallmentSummaryItemResponse }) {
+  const overdue = isInstallmentOverdue(inst)
+  const days = installmentDaysOverdue(inst)
+  const hasOpenPayment = inst.paid_amount.cents > 0 && inst.status !== 'paid'
+
   return (
-    <span className="flex items-center gap-1.5">
-      <span className={cn('size-2 rounded-full', className)} />
-      {label}
-    </span>
+    <>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-sm font-medium">Parcela {inst.installment_number ?? '—'}</span>
+        <span className="text-xs text-muted-foreground">
+          {translateInstallmentKind(inst.kind, 'pt-BR')}
+        </span>
+      </div>
+      <p className="mt-1 text-lg font-semibold tracking-tight tabular-nums">
+        {formatCurrency(inst.current_amount.cents / 100)}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        {inst.status && (
+          <InstallmentStatusBadge status={inst.status} overdue={overdue} daysOverdue={days} />
+        )}
+        <span
+          className={cn(
+            'text-xs',
+            overdue ? 'font-medium text-destructive' : 'text-muted-foreground'
+          )}
+        >
+          Vence {format(parseISO(inst.due_date), 'dd/MM/yyyy')}
+        </span>
+      </div>
+      {hasOpenPayment && (
+        <div className="mt-2.5 space-y-1.5 border-t pt-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Pago</span>
+            <span className="font-medium tabular-nums">
+              {formatCurrency(inst.paid_amount.cents / 100)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Restante</span>
+            <span className="font-medium tabular-nums">
+              {formatCurrency(inst.remaining_amount.cents / 100)}
+            </span>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -229,6 +259,10 @@ function PanelHeader({
               </span>
               <span aria-hidden>·</span>
               <span>{translateInstallmentKind(installment.kind, 'pt-BR')}</span>
+              <span aria-hidden>·</span>
+              <span>
+                {PAYMENT_METHOD_LABELS[installment.payment_method] ?? installment.payment_method}
+              </span>
             </div>
             <span className="text-2xl font-semibold tracking-tight tabular-nums">
               {formatCurrency(installment.current_amount.cents / 100)}
@@ -246,6 +280,17 @@ function PanelHeader({
               >
                 Vence{' '}
                 {format(parseISO(installment.due_date), "dd 'de' MMM 'de' yyyy", { locale: ptBR })}
+                {/* O relativo só quando não vencida: em atraso o badge já traz os dias. */}
+                {!overdue && (
+                  <span className="text-muted-foreground">
+                    {' '}
+                    ·{' '}
+                    {formatDistanceToNow(parseISO(installment.due_date), {
+                      addSuffix: true,
+                      locale: ptBR,
+                    })}
+                  </span>
+                )}
               </span>
             </div>
           </>
@@ -297,8 +342,6 @@ export function InstallmentDetailPanel({
     )
   }
 
-  const dueDate = parseISO(installment.due_date)
-  const overdue = isInstallmentOverdue(installment)
   const hasCorrectionDiff = installment.current_amount.cents !== installment.base_amount.cents
   const canPay = installment.status !== 'paid' && installment.status !== 'canceled'
   const canIssueBoleto =
@@ -351,52 +394,19 @@ export function InstallmentDetailPanel({
                 </span>
               </div>
             )}
+            {/* Sem cor nos valores: a sinalização de atraso já mora no cabeçalho. */}
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Pago</span>
-              <span className="text-sm font-medium text-success tabular-nums">
+              <span className="text-sm font-medium tabular-nums">
                 {formatCurrency(installment.paid_amount.cents / 100)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Restante</span>
-              <span
-                className={cn(
-                  'text-sm font-medium tabular-nums',
-                  overdue && installment.remaining_amount.cents > 0 && 'text-destructive'
-                )}
-              >
+              <span className="text-sm font-medium tabular-nums">
                 {formatCurrency(installment.remaining_amount.cents / 100)}
               </span>
             </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Forma de pagamento e vencimento (tipo e nº já no cabeçalho). */}
-        <div className="px-4 py-4">
-          <SectionLabel>Dados</SectionLabel>
-          <div className="grid grid-cols-2 gap-4">
-            <DetailItem
-              icon={CreditCard}
-              label="Forma de pagamento"
-              value={
-                PAYMENT_METHOD_LABELS[installment.payment_method] ?? installment.payment_method
-              }
-            />
-            <DetailItem
-              icon={Calendar}
-              label="Vencimento"
-              value={
-                <span className={overdue ? 'text-destructive' : ''}>
-                  {format(dueDate, 'dd/MM/yyyy', { locale: ptBR })}
-                  <br />
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {formatDistanceToNow(dueDate, { addSuffix: true, locale: ptBR })}
-                  </span>
-                </span>
-              }
-            />
           </div>
         </div>
 
@@ -473,16 +483,17 @@ export function InstallmentDetailPanel({
                                   isCurrentInstallment && 'font-medium'
                                 )}
                               >
-                                <span
-                                  className={cn(
-                                    'text-muted-foreground',
-                                    isCurrentInstallment && 'text-foreground'
-                                  )}
-                                >
-                                  {isCurrentInstallment
-                                    ? 'Esta parcela'
-                                    : `Parcela ${alloc.installment_id.slice(0, 8)}…`}
-                                </span>
+                                {isCurrentInstallment ? (
+                                  <span className="text-foreground">Esta parcela</span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => onSelectInstallment(alloc.installment_id)}
+                                    className="rounded-sm text-left text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                  >
+                                    Outra parcela
+                                  </button>
+                                )}
                                 <span className="tabular-nums">
                                   {formatCurrency(alloc.amount.cents / 100)}
                                 </span>

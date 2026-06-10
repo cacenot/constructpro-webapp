@@ -2,12 +2,13 @@ import {
   type ColumnDef,
   flexRender,
   getCoreRowModel,
+  type Row,
   type RowData,
   type TableMeta,
   useReactTable,
 } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
-import type { ReactNode, RefObject } from 'react'
+import { memo, type ReactNode, type RefObject } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -111,7 +112,7 @@ export function DataTable<TData>({
                   <th
                     key={header.id}
                     className={cn(
-                      'h-11 px-4 align-middle text-[0.6875rem] font-medium uppercase tracking-[0.08em] whitespace-nowrap text-muted-foreground',
+                      'h-11 px-2 align-middle text-[0.6875rem] font-medium uppercase tracking-[0.08em] whitespace-nowrap text-muted-foreground sm:px-4',
                       ALIGN[align],
                       header.column.columnDef.meta?.headClassName
                     )}
@@ -160,49 +161,16 @@ export function DataTable<TData>({
               </td>
             </tr>
           ) : (
-            rows.map((row) => {
-              const clickable = !!onRowClick
-              return (
-                <tr
-                  key={row.id}
-                  data-state={isRowSelected?.(row.original) ? 'selected' : undefined}
-                  tabIndex={clickable ? 0 : undefined}
-                  onClick={clickable ? () => onRowClick(row.original) : undefined}
-                  onKeyDown={
-                    clickable
-                      ? (event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault()
-                            onRowClick(row.original)
-                          }
-                        }
-                      : undefined
-                  }
-                  className={cn(
-                    'border-b transition-colors outline-none',
-                    clickable && 'cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50',
-                    'data-[state=selected]:bg-muted',
-                    rowClassName?.(row.original)
-                  )}
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    const align = cell.column.columnDef.meta?.align ?? 'left'
-                    return (
-                      <td
-                        key={cell.id}
-                        className={cn(
-                          'px-4 py-3.5 align-middle',
-                          ALIGN[align],
-                          cell.column.columnDef.meta?.className
-                        )}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    )
-                  })}
-                </tr>
-              )
-            })
+            rows.map((row) => (
+              <DataTableRow
+                key={row.id}
+                row={row}
+                clickable={!!onRowClick}
+                selected={isRowSelected?.(row.original) ?? false}
+                extraClass={rowClassName?.(row.original)}
+                onRowClick={onRowClick}
+              />
+            ))
           )}
         </tbody>
       </table>
@@ -211,3 +179,67 @@ export function DataTable<TData>({
     </div>
   )
 }
+
+interface DataTableRowProps<TData> {
+  row: Row<TData>
+  clickable: boolean
+  selected: boolean
+  extraClass?: string
+  onRowClick?: (row: TData) => void
+}
+
+/**
+ * Linha memoizada: com `data`/`columns` estáveis, o TanStack mantém a identidade
+ * de `row`, então mudar a seleção re-renderiza só as 2 linhas afetadas em vez da
+ * lista inteira (custo dominante com infinite scroll + popovers por célula).
+ * Requer `onRowClick` estável no chamador (useCallback) para o memo valer.
+ */
+function DataTableRowInner<TData>({
+  row,
+  clickable,
+  selected,
+  extraClass,
+  onRowClick,
+}: DataTableRowProps<TData>) {
+  return (
+    <tr
+      data-state={selected ? 'selected' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={clickable ? () => onRowClick?.(row.original) : undefined}
+      onKeyDown={
+        clickable
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onRowClick?.(row.original)
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        'border-b transition-colors outline-none',
+        clickable && 'cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50',
+        'data-[state=selected]:bg-muted',
+        extraClass
+      )}
+    >
+      {row.getVisibleCells().map((cell) => {
+        const align = cell.column.columnDef.meta?.align ?? 'left'
+        return (
+          <td
+            key={cell.id}
+            className={cn(
+              'px-2 py-3.5 align-middle sm:px-4',
+              ALIGN[align],
+              cell.column.columnDef.meta?.className
+            )}
+          >
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </td>
+        )
+      })}
+    </tr>
+  )
+}
+
+const DataTableRow = memo(DataTableRowInner) as typeof DataTableRowInner

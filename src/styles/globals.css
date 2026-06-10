@@ -872,6 +872,29 @@
   --color-warning-foreground: var(--color-warning-fg);
   --color-info:               var(--color-info);
   --color-info-foreground:    var(--color-info-fg);
+
+  /* --- Motion ------------------------------------------------------------------ */
+  --animate-detail-in: detail-in 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-detail-out: detail-out 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Painel de detalhe (master-detail): entra/sai deslizando pela borda direita.
+   Só transform/opacity (compositor): zero reflow da tabela durante a animação —
+   ela ajusta a largura uma única vez, no mount/unmount do aside. A saída usa
+   `forwards` para segurar o frame final até o unmount (presença na página).
+   Neutralizado em reduced-motion pela regra global no fim do arquivo. */
+@keyframes detail-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes detail-out {
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
 @layer base {

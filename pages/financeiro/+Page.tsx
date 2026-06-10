@@ -1,7 +1,7 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { LayoutDashboard, ReceiptText } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
 import { CarteiraCompositionBar } from '@/components/financeiro/carteira-composition-bar'
@@ -59,6 +59,26 @@ export default function FinanceiroPage() {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const detailOpen = !!selectedInstallmentId
 
+  // Presença do aside: ao fechar, segura o painel montado por um ciclo de animação
+  // (detail-out) antes de desmontar; o conteúdo congela na última parcela vista.
+  const [detailExiting, setDetailExiting] = useState(false)
+  const lastInstallmentIdRef = useRef('')
+  if (selectedInstallmentId) lastInstallmentIdRef.current = selectedInstallmentId
+  const prevDetailOpenRef = useRef(detailOpen)
+  useEffect(() => {
+    const wasOpen = prevDetailOpenRef.current
+    prevDetailOpenRef.current = detailOpen
+    if (detailOpen) {
+      setDetailExiting(false)
+      return
+    }
+    if (wasOpen) {
+      setDetailExiting(true)
+      const timer = window.setTimeout(() => setDetailExiting(false), 220)
+      return () => window.clearTimeout(timer)
+    }
+  }, [detailOpen])
+
   type Installment = InstallmentSummaryItemResponse | InstallmentDetailResponse
 
   const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null)
@@ -93,13 +113,18 @@ export default function FinanceiroPage() {
     issueBoletoMutation.mutate(installment.id)
   }
 
-  const handleViewDetails = (installment: InstallmentSummaryItemResponse) => {
-    setSelectedInstallmentId(installment.id)
-  }
+  // Estável: é o onRowClick da tabela — referência nova quebraria a memoização
+  // por linha (DataTableRow) e voltaria a re-renderizar a lista inteira ao selecionar.
+  const handleViewDetails = useCallback(
+    (installment: InstallmentSummaryItemResponse) => {
+      setSelectedInstallmentId(installment.id)
+    },
+    [setSelectedInstallmentId]
+  )
 
-  const handleCloseDrawer = () => {
+  const handleCloseDrawer = useCallback(() => {
     setSelectedInstallmentId('')
-  }
+  }, [setSelectedInstallmentId])
 
   return (
     <AppLayout fillHeight>
@@ -163,7 +188,8 @@ export default function FinanceiroPage() {
               onClearFilters={handleClearFilters}
             />
 
-            <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-stretch">
+            {/* overflow-x-clip: o aside anima com translateX e não pode vazar do layout */}
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-x-clip lg:flex-row lg:items-stretch">
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
                 <InstallmentsTable
                   data={data}
@@ -184,16 +210,26 @@ export default function FinanceiroPage() {
               </div>
 
               {/* Painel inline (master-detail) só em telas largas; abaixo de lg
-                  o mesmo painel vira drawer (ver abaixo). */}
-              {detailOpen && isDesktop && (
-                <aside className="flex w-full min-h-0 shrink-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm lg:w-[27rem]">
-                  <InstallmentDetailPanel
-                    installmentId={selectedInstallmentId}
-                    onClose={handleCloseDrawer}
-                    onSelectInstallment={setSelectedInstallmentId}
-                    onPayInstallment={handlePayInstallment}
-                    onIssueBoleto={handleIssueBoleto}
-                  />
+                  o mesmo painel vira drawer (ver abaixo). Entra e sai deslizando
+                  pela borda direita (transform-only, sem reflow da tabela durante
+                  a animação); na saída fica montado até o fim do detail-out. */}
+              {(detailOpen || detailExiting) && isDesktop && (
+                <aside
+                  className={`flex min-h-0 w-[27rem] shrink-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm ${
+                    detailOpen ? 'animate-detail-in' : 'animate-detail-out'
+                  }`}
+                >
+                  <div className="flex h-full w-[27rem] shrink-0 flex-col">
+                    <InstallmentDetailPanel
+                      installmentId={
+                        detailOpen ? selectedInstallmentId : lastInstallmentIdRef.current
+                      }
+                      onClose={handleCloseDrawer}
+                      onSelectInstallment={setSelectedInstallmentId}
+                      onPayInstallment={handlePayInstallment}
+                      onIssueBoleto={handleIssueBoleto}
+                    />
+                  </div>
                 </aside>
               )}
             </div>

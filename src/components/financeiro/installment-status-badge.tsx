@@ -47,7 +47,9 @@ export function InstallmentStatusBadge({
         />
         Em atraso
         {daysOverdue && daysOverdue > 0 ? (
-          <span className="tabular-nums opacity-80">· {daysOverdue}d</span>
+          // Em telas estreitas o sufixo sai para o badge caber na viewport;
+          // os dias seguem visíveis no painel de detalhe.
+          <span className="hidden tabular-nums opacity-80 sm:inline">· {daysOverdue}d</span>
         ) : null}
       </Badge>
     )

@@ -101,7 +101,7 @@ function ProjectRow({
     <button
       type="button"
       onClick={() => onSelect(item.project.id)}
-      className="group flex items-center gap-4 rounded-md px-2 py-3 text-left transition-colors hover:bg-muted/50"
+      className="group flex items-center gap-4 rounded-md px-2 py-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Building2 className="size-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
@@ -122,14 +122,14 @@ function ProjectRow({
         <div className="text-sm font-medium tabular-nums">{formatCurrency(remaining / 100)}</div>
         {overdue > 0 ? (
           <div className="text-xs text-destructive tabular-nums">
-            {formatCurrency(overdue / 100)} vencido
+            {formatCurrency(overdue / 100)} em atraso
           </div>
         ) : (
           <div className="text-xs text-muted-foreground">em dia</div>
         )}
       </div>
       <ChevronRight className="hidden size-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-60 sm:block" />
-      {overdueCount > 0 && <span className="sr-only">{overdueCount} parcelas vencidas</span>}
+      {overdueCount > 0 && <span className="sr-only">{overdueCount} parcelas em atraso</span>}
     </button>
   )
 }
