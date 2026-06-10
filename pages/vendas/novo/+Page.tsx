@@ -14,6 +14,7 @@ import { ProposalPartiesCreate } from '@/components/vendas/proposal/proposal-par
 import { ProposalWorkbench } from '@/components/vendas/proposal/proposal-workbench'
 import { useProposalData } from '@/hooks/use-proposal-data'
 import { handleApiError, throwApiError } from '@/lib/api-error'
+import { deriveRecurrenceFields } from '@/lib/installment-utils'
 import { rateToWireString } from '@/lib/utils'
 import { type SaleFormData, saleFormSchema } from '@/schemas/sale.schema'
 
@@ -56,30 +57,39 @@ export default function SaleNewPage() {
           index_type_code: formData.same_index_for_all
             ? (formData.index_type_code ?? '')
             : (firstNonEntryIndex ?? ''),
-          installment_schedules: formData.installment_schedules.map((schedule) => ({
-            kind: schedule.kind,
-            payment_method: schedule.payment_method,
-            quantity: schedule.quantity,
-            amount: schedule.amount,
-            specific_date: schedule.specific_date ?? undefined,
-            recurrence_type: schedule.recurrence_type ?? undefined,
-            recurrence_day: schedule.recurrence_day ?? undefined,
-            recurrence_month: schedule.recurrence_month ?? undefined,
-            start_date: schedule.start_date ?? undefined,
-            ...(!formData.same_index_for_all &&
-            schedule.kind !== 'entry' &&
-            schedule.index_type_code
-              ? { index_type_code: schedule.index_type_code }
-              : {}),
-            ...(schedule.payment_method === 'asset' && schedule.asset_proposal
-              ? {
-                  asset_proposal: schedule.asset_proposal as {
-                    type: string
-                    asset_metadata: Record<string, unknown>
-                  },
-                }
-              : {}),
-          })),
+          installment_schedules: formData.installment_schedules.map((schedule) => {
+            const derived =
+              schedule.recurrence_type && schedule.start_date
+                ? deriveRecurrenceFields(schedule.start_date, schedule.recurrence_type)
+                : {
+                    recurrence_day: schedule.recurrence_day ?? undefined,
+                    recurrence_month: schedule.recurrence_month ?? undefined,
+                  }
+            return {
+              kind: schedule.kind,
+              payment_method: schedule.payment_method,
+              quantity: schedule.quantity,
+              amount: schedule.amount,
+              specific_date: schedule.specific_date ?? undefined,
+              recurrence_type: schedule.recurrence_type ?? undefined,
+              recurrence_day: derived.recurrence_day ?? undefined,
+              recurrence_month: derived.recurrence_month ?? undefined,
+              start_date: schedule.start_date ?? undefined,
+              ...(!formData.same_index_for_all &&
+              schedule.kind !== 'entry' &&
+              schedule.index_type_code
+                ? { index_type_code: schedule.index_type_code }
+                : {}),
+              ...(schedule.payment_method === 'asset' && schedule.asset_proposal
+                ? {
+                    asset_proposal: schedule.asset_proposal as {
+                      type: string
+                      asset_metadata: Record<string, unknown>
+                    },
+                  }
+                : {}),
+            }
+          }),
           broker_id: formData.broker_id ?? undefined,
           commission_broker_rate: formData.commission_broker_rate
             ? rateToWireString(formData.commission_broker_rate)

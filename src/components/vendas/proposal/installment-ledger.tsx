@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, Lock, Plus, Trash2 } from 'lucide-react'
 import * as React from 'react'
 import type {
   FieldArrayWithId,
@@ -6,6 +6,7 @@ import type {
   UseFieldArrayRemove,
   UseFormReturn,
 } from 'react-hook-form'
+import { SegmentedControl } from '@/components/configuracoes/segmented-control'
 import { Button } from '@/components/ui/button'
 import { CurrencyInput, formatCentsToDisplay } from '@/components/ui/currency-input'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -28,10 +29,13 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
-  computeAllowedDates,
-  computeDefaultStartDate,
-  formatDateISO,
+  computeChainedStart,
+  deriveRecurrenceFields,
+  formatBRDate,
+  planAppendedSchedule,
+  recomputeGroupForPeriodicity,
 } from '@/lib/installment-utils'
+import { cn } from '@/lib/utils'
 import {
   INSTALLMENT_PERIODICITY_LABELS,
   type InstallmentKind,
@@ -44,30 +48,14 @@ import {
   BALLOON_PERIODICITY_OPTIONS,
   createEntrySchedule,
   GROUP_LABELS,
+  KIND_BADGE,
+  KIND_DOT,
   NON_ENTRY_KINDS,
   PAYMENT_METHOD_OPTIONS,
 } from './constants'
 import { CONSOLE_LABEL, REVEAL } from './section'
 
 type Recurrence = 'monthly' | 'bimonthly' | 'quarterly' | 'semestral' | 'yearly'
-
-// Cache por sessão: mesmo conjunto de datas permitidas → mesma lista de bloqueadas.
-const _disabledDatesCache = new Map<string, string[]>()
-function getDisabledDates(allowedDates: string[]): string[] {
-  if (!allowedDates.length) return []
-  const key = allowedDates.join(',')
-  const cached = _disabledDatesCache.get(key)
-  if (cached) return cached
-  const today = new Date()
-  const result = Array.from({ length: 10957 }, (_, i) => {
-    const d = new Date(today)
-    d.setDate(d.getDate() + i)
-    const iso = formatDateISO(d.getFullYear(), d.getMonth() + 1, d.getDate())
-    return allowedDates.includes(iso) ? '' : iso
-  }).filter(Boolean)
-  _disabledDatesCache.set(key, result)
-  return result
-}
 
 function formatMonthBR(yearMonth: string): string {
   const [year, month] = yearMonth.split('-')
@@ -82,22 +70,6 @@ function periodicityChip(kind: InstallmentKind, recurrence?: string | null): str
   if (recurrence) return INSTALLMENT_PERIODICITY_LABELS[recurrence as InstallmentPeriodicity] ?? ''
   if (kind === 'balloon') return 'Balão'
   return GROUP_LABELS[kind]
-}
-
-/** Quantas parcelas dessa periodicidade cabem em um ano (atalho "±1 ano" do stepper). */
-function installmentsPerYear(recurrence?: Recurrence | null): number {
-  switch (recurrence) {
-    case 'monthly':
-      return 12
-    case 'bimonthly':
-      return 6
-    case 'quarterly':
-      return 4
-    case 'semestral':
-      return 2
-    default:
-      return 1
-  }
 }
 
 interface InstallmentLedgerProps {
@@ -115,6 +87,9 @@ interface InstallmentLedgerProps {
   indexTypesLoading?: boolean
   violations?: { month: string; count: number }[]
   maxInstallmentsPerMonth?: number
+  saldo?: number
+  /** Valor da proposta (centavos), base para entrada digitada em %. */
+  valorPropostaCents?: number
 }
 
 export function InstallmentLedger({
@@ -129,6 +104,8 @@ export function InstallmentLedger({
   indexTypesLoading = false,
   violations = [],
   maxInstallmentsPerMonth,
+  saldo = 0,
+  valorPropostaCents = 0,
 }: InstallmentLedgerProps) {
   // Índices de cada kind dentro do field array.
   const groupedIndices = React.useMemo(() => {
@@ -157,26 +134,73 @@ export function InstallmentLedger({
     [groupedIndices, watchedSchedules]
   )
 
+  const [unlocked, setUnlocked] = React.useState<Set<number>>(new Set())
+
+  // Keeps chained monthly group starts in sync when an earlier group is edited.
+  // Safety: the `expected !== current` guard means once all starts are correct
+  // the effect fires no setValue calls, so no further re-renders are triggered —
+  // preventing an infinite loop.
+  React.useEffect(() => {
+    if (!watchedSchedules) return
+
+    // Build ordered list of field-array indices that are monthly regular schedules.
+    const monthlyIndices: number[] = []
+    watchedSchedules.forEach((s, i) => {
+      if (s?.kind === 'regular' && s?.recurrence_type === 'monthly') {
+        monthlyIndices.push(i)
+      }
+    })
+    // monthlyIndices is already in ascending order because forEach preserves order.
+
+    if (monthlyIndices.length < 2) return
+
+    for (let pos = 1; pos < monthlyIndices.length; pos++) {
+      const idx = monthlyIndices[pos] as number
+      if (unlocked.has(idx)) continue // user broke the chain for this group
+
+      const prevIdx = monthlyIndices[pos - 1] as number
+      const prev = watchedSchedules[prevIdx]
+      if (!prev?.start_date) continue // can't compute without anchor
+
+      const day = new Date(`${prev.start_date}T12:00:00`).getDate()
+      const expected = computeChainedStart(prev, day)
+      if (!expected) continue
+
+      const current = watchedSchedules[idx]?.start_date
+      if (expected !== current) {
+        form.setValue(`installment_schedules.${idx}.start_date`, expected)
+        form.setValue(
+          `installment_schedules.${idx}.recurrence_day`,
+          deriveRecurrenceFields(expected, 'monthly').recurrence_day
+        )
+      }
+    }
+  }, [watchedSchedules, unlocked, form])
+
   const addRecurring = React.useCallback(
     (kind: 'regular' | 'balloon' | 'extra', recurrence: Recurrence) => {
-      const isYearly = recurrence === 'yearly'
-      const recurrenceDay = isYearly ? 15 : 10
-      const recurrenceMonth = isYearly ? 12 : null
-      const startDate = computeDefaultStartDate(recurrence, recurrenceDay, recurrenceMonth)
-      append({
-        kind,
-        payment_method: 'boleto',
-        quantity: 1,
-        amount: 0,
-        specific_date: null,
-        recurrence_type: recurrence,
-        recurrence_day: recurrenceDay,
-        recurrence_month: recurrenceMonth,
-        start_date: startDate || null,
-        asset_proposal: null,
-      })
+      const list = (watchedSchedules ?? []) as InstallmentScheduleFormData[]
+      append(planAppendedSchedule(kind, recurrence, list, saldo))
     },
-    [append]
+    [append, watchedSchedules, saldo]
+  )
+
+  // Trocar a sazonalidade de um reforço redistribui o grupo até a data final das
+  // mensais: recalcula a quantidade pelo novo span e reparte o total (muda o valor).
+  const handlePeriodicityChange = React.useCallback(
+    (index: number, rec: Recurrence) => {
+      const list = (watchedSchedules ?? []) as InstallmentScheduleFormData[]
+      const row = list[index]
+      if (!row) return
+      const next = recomputeGroupForPeriodicity(row, rec, list)
+      form.setValue(`installment_schedules.${index}.recurrence_type`, next.recurrence_type)
+      form.setValue(`installment_schedules.${index}.quantity`, next.quantity)
+      form.setValue(`installment_schedules.${index}.amount`, next.amount)
+      form.setValue(`installment_schedules.${index}.start_date`, next.start_date)
+      form.setValue(`installment_schedules.${index}.recurrence_day`, next.recurrence_day)
+      form.setValue(`installment_schedules.${index}.recurrence_month`, next.recurrence_month)
+    },
+    [watchedSchedules, form]
   )
 
   const addKeyDelivery = React.useCallback(() => {
@@ -225,6 +249,7 @@ export function InstallmentLedger({
                 className={`space-y-3 p-3 sm:p-4 ${entryIdx > 0 ? REVEAL : ''}`}
               >
                 <RowStrip
+                  kind="entry"
                   label={`Entrada ${entryIdx + 1}`}
                   onRemove={canRemove ? () => remove(realIndex) : undefined}
                   removeTooltip="Remover entrada"
@@ -236,14 +261,12 @@ export function InstallmentLedger({
                     name={`installment_schedules.${realIndex}.amount`}
                     render={({ field: f }) => (
                       <FormItem className="col-span-2 sm:col-span-4">
-                        <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
-                        <FormControl>
-                          <CurrencyInput
-                            value={f.value}
-                            onChange={f.onChange}
-                            disabled={disabled}
-                          />
-                        </FormControl>
+                        <EntryAmountField
+                          value={f.value}
+                          onChange={f.onChange}
+                          disabled={disabled}
+                          baseCents={valorPropostaCents}
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -254,7 +277,9 @@ export function InstallmentLedger({
                     name={`installment_schedules.${realIndex}.payment_method`}
                     render={({ field: f }) => (
                       <FormItem className="col-span-1 sm:col-span-4">
-                        <FormLabel className={CONSOLE_LABEL}>Forma *</FormLabel>
+                        <FormLabel className={cn(CONSOLE_LABEL, 'flex h-7 items-center')}>
+                          Forma *
+                        </FormLabel>
                         <Select
                           value={f.value}
                           onValueChange={(val) => {
@@ -290,7 +315,9 @@ export function InstallmentLedger({
                     name={`installment_schedules.${realIndex}.specific_date`}
                     render={({ field: f }) => (
                       <FormItem className="col-span-1 sm:col-span-4">
-                        <FormLabel className={CONSOLE_LABEL}>Vencimento *</FormLabel>
+                        <FormLabel className={cn(CONSOLE_LABEL, 'flex h-7 items-center')}>
+                          Vencimento *
+                        </FormLabel>
                         <FormControl>
                           <DatePicker value={f.value} onChange={f.onChange} disabled={disabled} />
                         </FormControl>
@@ -374,33 +401,38 @@ export function InstallmentLedger({
             {NON_ENTRY_KINDS.map((kind) => {
               const indices = groupedIndices.get(kind) ?? []
               if (indices.length === 0) return null
+              const firstMonthlyIndex = groupedIndices.get('regular')?.[0]
               return (
                 <div key={kind} className="space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xs font-medium text-foreground">
-                      {GROUP_LABELS[kind]}
-                    </span>
-                    <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                      R$ {formatCentsToDisplay(subtotal(kind)) || '0,00'}
-                    </span>
-                  </div>
+                  <div className="text-xs font-medium text-foreground">{GROUP_LABELS[kind]}</div>
 
                   <div className="divide-y divide-border overflow-hidden rounded-md border border-border">
-                    {indices.map((index) => (
-                      <InstallmentRow
-                        key={fields[index]?.id ?? index}
-                        form={form}
-                        index={index}
-                        schedule={watchedSchedules?.[index]}
-                        // biome-ignore lint/suspicious/noExplicitAny: field genérico
-                        fallbackKind={(fields[index] as any)?.kind as InstallmentKind}
-                        disabled={disabled}
-                        sameIndexForAll={sameIndexForAll}
-                        indexTypes={indexTypes}
-                        indexTypesLoading={indexTypesLoading}
-                        onRemove={() => remove(index)}
-                      />
-                    ))}
+                    {indices.map((index) => {
+                      const schedule = watchedSchedules?.[index]
+                      const isMonthly =
+                        schedule?.kind === 'regular' && schedule?.recurrence_type === 'monthly'
+                      const chainedLocked =
+                        isMonthly && index !== firstMonthlyIndex && !unlocked.has(index)
+                      return (
+                        <InstallmentRow
+                          key={fields[index]?.id ?? index}
+                          form={form}
+                          index={index}
+                          schedule={schedule}
+                          // biome-ignore lint/suspicious/noExplicitAny: field genérico
+                          fallbackKind={(fields[index] as any)?.kind as InstallmentKind}
+                          disabled={disabled}
+                          sameIndexForAll={sameIndexForAll}
+                          indexTypes={indexTypes}
+                          indexTypesLoading={indexTypesLoading}
+                          onRemove={() => remove(index)}
+                          chainedLocked={chainedLocked}
+                          onUnlock={() => setUnlocked((s) => new Set(s).add(index))}
+                          onPeriodicityChange={(rec) => handlePeriodicityChange(index, rec)}
+                          valorPropostaCents={valorPropostaCents}
+                        />
+                      )
+                    })}
                   </div>
                 </div>
               )
@@ -440,11 +472,14 @@ function GroupHeader({
 
 function RowStrip({
   label,
+  kind,
   control,
   onRemove,
   removeTooltip,
 }: {
   label: string
+  /** Tipo da parcela — colore o badge na mesma família do mapa mensal. */
+  kind?: InstallmentKind
   /** Substitui o chip estático por um controle (ex.: select de sazonalidade do reforço). */
   control?: React.ReactNode
   onRemove?: () => void
@@ -453,7 +488,13 @@ function RowStrip({
   return (
     <div className="flex items-center justify-between">
       {control ?? (
-        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.6875rem] font-medium uppercase tracking-[0.06em]',
+            kind ? KIND_BADGE[kind] : 'bg-muted text-muted-foreground'
+          )}
+        >
+          {kind && <span className={cn('size-1.5 rounded-full', KIND_DOT[kind])} />}
           {label}
         </span>
       )}
@@ -490,6 +531,11 @@ interface InstallmentRowProps {
   indexTypes: { code: string }[]
   indexTypesLoading: boolean
   onRemove: () => void
+  chainedLocked?: boolean
+  onUnlock?: () => void
+  onPeriodicityChange: (recurrence: Recurrence) => void
+  /** Base (centavos) para o input em % da entrega das chaves. */
+  valorPropostaCents?: number
 }
 
 function InstallmentRow({
@@ -502,46 +548,37 @@ function InstallmentRow({
   indexTypes,
   indexTypesLoading,
   onRemove,
+  chainedLocked = false,
+  onUnlock,
+  onPeriodicityChange,
+  valorPropostaCents = 0,
 }: InstallmentRowProps) {
   const kind = (schedule?.kind ?? fallbackKind) as InstallmentKind
   const recurrence = schedule?.recurrence_type as Recurrence | null | undefined
-  const usesSpecificDate = kind === 'key_delivery'
-  const recurrenceDay = schedule?.recurrence_day
-  const recurrenceMonth = schedule?.recurrence_month
-  const isYearly = recurrence === 'yearly'
-
-  const dateDisabled = usesSpecificDate
-    ? false
-    : isYearly
-      ? !recurrenceDay || !recurrenceMonth
-      : !recurrenceDay
-
-  const allowedDates =
-    !usesSpecificDate && recurrence && !dateDisabled
-      ? computeAllowedDates(recurrence, recurrenceDay, recurrenceMonth)
-      : []
-  const disabledDates = getDisabledDates(allowedDates)
-
-  // Sazonalidade editável no card, só para reforços/balões (parcela é sempre mensal).
+  const isKeyDelivery = kind === 'key_delivery'
+  const isMonthly = kind === 'regular'
+  // Reforço/balão tem a sazonalidade editável no card (parcela é sempre mensal).
   const isBalloon = kind === 'balloon'
-  const handlePeriodicityChange = (value: string) => {
-    const rec = value as Recurrence
-    const month = rec === 'yearly' ? (recurrenceMonth ?? 12) : null
-    form.setValue(`installment_schedules.${index}.recurrence_type`, rec)
-    form.setValue(`installment_schedules.${index}.recurrence_month`, month)
-    const next = computeDefaultStartDate(rec, recurrenceDay, month)
-    form.setValue(`installment_schedules.${index}.start_date`, next || null)
-  }
+
+  // Densidade por tipo: chaves dispensa quantidade; reforço encaixa a data na linha.
+  const valorSpan = isKeyDelivery ? 'col-span-1 sm:col-span-4' : 'col-span-1 sm:col-span-3'
+  const formaSpan = isKeyDelivery ? 'col-span-1 sm:col-span-3' : 'col-span-1 sm:col-span-2'
+  const dateSpan = isKeyDelivery
+    ? 'col-span-1 sm:col-span-5'
+    : isMonthly
+      ? 'col-span-2 sm:col-span-6'
+      : 'col-span-1 sm:col-span-4'
 
   return (
     <div className={`space-y-3 p-3 sm:p-4 ${REVEAL}`}>
       <RowStrip
+        kind={kind}
         label={periodicityChip(kind, recurrence)}
         control={
           isBalloon && !disabled ? (
             <PeriodicityChipSelect
               value={recurrence ?? 'yearly'}
-              onChange={handlePeriodicityChange}
+              onChange={(v) => onPeriodicityChange(v as Recurrence)}
             />
           ) : undefined
         }
@@ -550,39 +587,52 @@ function InstallmentRow({
       />
 
       <div className="grid grid-cols-2 items-start gap-3 sm:grid-cols-12">
-        <FormField
-          control={form.control}
-          name={`installment_schedules.${index}.quantity`}
-          render={({ field: f, fieldState }) => (
-            <FormItem className="col-span-1 sm:col-span-3">
-              <FormLabel className={CONSOLE_LABEL}>Qtd. *</FormLabel>
-              <FormControl>
-                <NumberStepper
-                  value={f.value}
-                  onChange={f.onChange}
-                  onBlur={f.onBlur}
-                  min={1}
-                  bigStep={installmentsPerYear(recurrence)}
-                  stepLabel={recurrence === 'monthly' ? 'mês' : 'parcela'}
-                  bigStepLabel="ano"
-                  disabled={disabled}
-                  aria-invalid={!!fieldState.error}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {!isKeyDelivery && (
+          <FormField
+            control={form.control}
+            name={`installment_schedules.${index}.quantity`}
+            render={({ field: f, fieldState }) => (
+              <FormItem className="col-span-1 sm:col-span-3">
+                <FormLabel className={CONSOLE_LABEL}>Quantidade *</FormLabel>
+                <FormControl>
+                  <NumberStepper
+                    value={f.value}
+                    onChange={f.onChange}
+                    onBlur={f.onBlur}
+                    min={1}
+                    bigStep={isMonthly ? 12 : undefined}
+                    stepLabel={isMonthly ? 'mês' : 'parcela'}
+                    bigStepLabel="ano"
+                    disabled={disabled}
+                    aria-invalid={!!fieldState.error}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
           name={`installment_schedules.${index}.amount`}
           render={({ field: f }) => (
-            <FormItem className="col-span-1 sm:col-span-3">
-              <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
-              <FormControl>
-                <CurrencyInput value={f.value} onChange={f.onChange} disabled={disabled} />
-              </FormControl>
+            <FormItem className={valorSpan}>
+              {isKeyDelivery ? (
+                <EntryAmountField
+                  value={f.value}
+                  onChange={f.onChange}
+                  disabled={disabled}
+                  baseCents={valorPropostaCents}
+                />
+              ) : (
+                <>
+                  <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
+                  <FormControl>
+                    <CurrencyInput value={f.value} onChange={f.onChange} disabled={disabled} />
+                  </FormControl>
+                </>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -592,8 +642,10 @@ function InstallmentRow({
           control={form.control}
           name={`installment_schedules.${index}.payment_method`}
           render={({ field: f }) => (
-            <FormItem className="col-span-1 sm:col-span-2">
-              <FormLabel className={CONSOLE_LABEL}>Forma *</FormLabel>
+            <FormItem className={formaSpan}>
+              <FormLabel className={cn(CONSOLE_LABEL, isKeyDelivery && 'flex h-7 items-center')}>
+                Forma *
+              </FormLabel>
               <Select value={f.value} onValueChange={f.onChange} disabled={disabled}>
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -613,106 +665,77 @@ function InstallmentRow({
           )}
         />
 
-        {usesSpecificDate ? (
+        {isKeyDelivery ? (
           <FormField
             control={form.control}
             name={`installment_schedules.${index}.specific_date`}
             render={({ field: f }) => (
-              <FormItem className="col-span-1 sm:col-span-4">
-                <FormLabel className={CONSOLE_LABEL}>Entrega *</FormLabel>
+              <FormItem className={dateSpan}>
+                <FormLabel className={cn(CONSOLE_LABEL, 'flex h-7 items-center')}>Data *</FormLabel>
                 <FormControl>
-                  <DatePicker value={f.value} onChange={f.onChange} disabled={disabled} />
+                  <DatePicker
+                    value={f.value}
+                    onChange={f.onChange}
+                    disabled={disabled}
+                    monthYearNav
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         ) : (
-          <>
-            <FormField
-              control={form.control}
-              name={`installment_schedules.${index}.recurrence_day`}
-              render={({ field: f }) => (
-                <FormItem className="col-span-1 sm:col-span-1">
-                  <FormLabel className={CONSOLE_LABEL}>Dia *</FormLabel>
+          <FormField
+            control={form.control}
+            name={`installment_schedules.${index}.start_date`}
+            render={({ field: f }) => (
+              <FormItem className={dateSpan}>
+                <FormLabel className={CONSOLE_LABEL}>Início *</FormLabel>
+                {chainedLocked ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 flex-1 items-center gap-2 rounded-md border border-dashed border-border px-3 text-sm text-muted-foreground">
+                      <Lock className="size-3.5" />
+                      <span className="tabular-nums">
+                        {f.value ? formatBRDate(new Date(`${f.value}T12:00:00`)) : '—'}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={onUnlock}
+                    >
+                      Destravar
+                    </Button>
+                  </div>
+                ) : (
                   <FormControl>
-                    <Input
-                      type="number"
-                      inputMode="numeric"
-                      min="1"
-                      max="31"
-                      className="tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    <DatePicker
+                      value={f.value}
                       disabled={disabled}
-                      value={f.value ?? ''}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        const val = e.target.value ? Number.parseInt(e.target.value, 10) : null
-                        f.onChange(val)
-                        if (recurrence) {
-                          const next = computeDefaultStartDate(recurrence, val, recurrenceMonth)
-                          form.setValue(`installment_schedules.${index}.start_date`, next || null)
+                      monthYearNav
+                      onChange={(v) => {
+                        f.onChange(v)
+                        if (v && recurrence) {
+                          const d = deriveRecurrenceFields(v, recurrence)
+                          form.setValue(
+                            `installment_schedules.${index}.recurrence_day`,
+                            d.recurrence_day
+                          )
+                          form.setValue(
+                            `installment_schedules.${index}.recurrence_month`,
+                            d.recurrence_month
+                          )
                         }
                       }}
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {isYearly && (
-              <FormField
-                control={form.control}
-                name={`installment_schedules.${index}.recurrence_month`}
-                render={({ field: f }) => (
-                  <FormItem className="col-span-1 sm:col-span-2">
-                    <FormLabel className={CONSOLE_LABEL}>Mês *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        max="12"
-                        className="tabular-nums"
-                        disabled={disabled}
-                        value={f.value ?? ''}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          const val = e.target.value ? Number.parseInt(e.target.value, 10) : null
-                          f.onChange(val)
-                          const next = computeDefaultStartDate('yearly', recurrenceDay, val)
-                          form.setValue(`installment_schedules.${index}.start_date`, next || null)
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
                 )}
-              />
+                <FormMessage />
+              </FormItem>
             )}
-
-            <FormField
-              control={form.control}
-              name={`installment_schedules.${index}.start_date`}
-              render={({ field: f }) => (
-                <FormItem className="col-span-2 sm:col-span-3">
-                  <FormLabel className={CONSOLE_LABEL}>Início *</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      value={f.value}
-                      onChange={f.onChange}
-                      disabled={dateDisabled || disabled}
-                      disabledDates={disabledDates}
-                    />
-                  </FormControl>
-                  {dateDisabled && !disabled && (
-                    <p className="text-[0.6875rem] text-muted-foreground">
-                      Preencha o dia{isYearly ? ' e o mês' : ''} de vencimento primeiro
-                    </p>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
+          />
         )}
 
         {/* Índice por grupo (toggle "mesmo índice" desligado), nunca para entradas. */}
@@ -763,8 +786,9 @@ function PeriodicityChipSelect({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger
         aria-label="Sazonalidade do reforço"
-        className="h-6 w-auto gap-1 rounded-full border-0 bg-muted px-2.5 py-0 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-muted-foreground shadow-none transition-colors hover:bg-accent hover:text-foreground focus:ring-1 data-[state=open]:bg-accent data-[state=open]:text-foreground [&>svg]:size-3 [&>svg]:opacity-70"
+        className="h-6 w-auto gap-1.5 rounded-full border-0 bg-amber-400/15 px-2.5 py-0 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-amber-300 shadow-none transition-colors hover:bg-amber-400/25 focus:ring-1 data-[state=open]:bg-amber-400/25 [&>svg]:size-3 [&>svg]:opacity-70"
       >
+        <span className="size-1.5 shrink-0 rounded-full bg-amber-400" />
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="start">
@@ -775,5 +799,102 @@ function PeriodicityChipSelect({
         ))}
       </SelectContent>
     </Select>
+  )
+}
+
+/** Formata uma porcentagem sem zeros à direita, com vírgula decimal (pt-BR). */
+function formatPct(n: number): string {
+  return n
+    .toFixed(2)
+    .replace(/\.?0+$/, '')
+    .replace('.', ',')
+}
+
+/**
+ * Valor da entrada com toggle R$/% (segmented control compacto). Em modo %, o valor
+ * é digitado como porcentagem do valor da proposta; os centavos seguem sendo a fonte
+ * da verdade no form (a % é só uma forma de entrada).
+ */
+function EntryAmountField({
+  value,
+  onChange,
+  disabled,
+  baseCents,
+}: {
+  value: number
+  onChange: (cents: number) => void
+  disabled?: boolean
+  baseCents: number
+}) {
+  const [mode, setMode] = React.useState<'value' | 'percent'>('value')
+  return (
+    <div className="grid gap-2">
+      <div className="flex h-7 items-center justify-between gap-2">
+        <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
+        <SegmentedControl
+          size="sm"
+          aria-label="Entrada em valor ou porcentagem"
+          options={[
+            { value: 'value', label: 'R$' },
+            { value: 'percent', label: '%' },
+          ]}
+          value={mode}
+          onChange={(v) => setMode(v as 'value' | 'percent')}
+        />
+      </div>
+      {mode === 'value' ? (
+        <CurrencyInput value={value} onChange={onChange} disabled={disabled} />
+      ) : (
+        <PercentInput value={value} onChange={onChange} disabled={disabled} baseCents={baseCents} />
+      )}
+    </div>
+  )
+}
+
+/** Input em % do valor da proposta; converte para centavos no onChange. */
+function PercentInput({
+  value,
+  onChange,
+  disabled,
+  baseCents,
+}: {
+  value: number
+  onChange: (cents: number) => void
+  disabled?: boolean
+  baseCents: number
+}) {
+  const [text, setText] = React.useState(() =>
+    baseCents > 0 ? formatPct((value / baseCents) * 100) : ''
+  )
+
+  React.useEffect(() => {
+    setText(baseCents > 0 ? formatPct((value / baseCents) * 100) : '')
+  }, [value, baseCents])
+
+  return (
+    <div className="relative">
+      <Input
+        type="text"
+        inputMode="decimal"
+        aria-label="Entrada em porcentagem"
+        disabled={disabled || baseCents <= 0}
+        placeholder={baseCents > 0 ? '0' : 'Defina o valor da proposta'}
+        value={text}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^\d,.]/g, '').replace('.', ',')
+          setText(raw)
+          if (raw === '') {
+            onChange(0)
+            return
+          }
+          const num = Number.parseFloat(raw.replace(',', '.'))
+          if (!Number.isNaN(num) && baseCents > 0) onChange(Math.round((num / 100) * baseCents))
+        }}
+        className="pr-7 tabular-nums"
+      />
+      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">
+        %
+      </span>
+    </div>
   )
 }

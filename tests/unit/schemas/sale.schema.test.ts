@@ -37,6 +37,7 @@ const validBalloonSchedule = {
 const validSale = {
   unit_id: 1,
   customer_id: 1,
+  same_index_for_all: true,
   index_type_code: 'IGPM',
   installment_schedules: [validEntrySchedule],
 }

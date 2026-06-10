@@ -9,7 +9,7 @@ describe('loginSchema', () => {
   it('rejeita email inválido', () => {
     const result = loginSchema.safeParse({ email: 'not-an-email', password: 'Abc123' })
     expect(result.success).toBe(false)
-    expect(result.error?.issues[0]?.message).toBe('Email inválido')
+    expect(result.error?.issues[0]?.message).toBe('E-mail inválido')
   })
 
   it('rejeita senha com menos de 6 caracteres', () => {

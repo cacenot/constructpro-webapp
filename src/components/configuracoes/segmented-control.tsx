@@ -13,6 +13,8 @@ interface SegmentedControlProps {
   value: string | number
   onChange: (value: string | number) => void
   className?: string
+  /** Tamanho compacto para uso inline (ex.: toggle R$/% dentro de um campo). */
+  size?: 'default' | 'sm'
   /** Rótulo acessível do grupo, lido por leitores de tela. */
   'aria-label'?: string
 }
@@ -32,6 +34,7 @@ export function SegmentedControl({
   value,
   onChange,
   className,
+  size = 'default',
   'aria-label': ariaLabel,
 }: SegmentedControlProps) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
@@ -76,16 +79,21 @@ export function SegmentedControl({
             onClick={() => onChange(option.value)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={cn(
-              'flex items-center justify-center gap-2 whitespace-nowrap rounded-[5px] px-3 py-1.5 text-sm transition-colors',
+              'flex items-center justify-center whitespace-nowrap transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              size === 'sm'
+                ? 'gap-1 rounded-[4px] px-2 py-0.5 text-xs'
+                : 'gap-2 rounded-[5px] px-3 py-1.5 text-sm',
               selected
                 ? 'bg-elevated font-medium text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            {Icon && <Icon className="size-4" />}
+            {Icon && <Icon className={size === 'sm' ? 'size-3.5' : 'size-4'} />}
             {option.label}
-            {selected && <Check className="size-3.5 text-primary" />}
+            {selected && (
+              <Check className={cn(size === 'sm' ? 'size-3' : 'size-3.5', 'text-primary')} />
+            )}
           </button>
         )
       })}

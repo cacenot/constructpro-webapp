@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { SaleEditWorkbench } from '@/components/vendas/proposal/sale-edit-workbench'
 import { handleApiError, throwApiError } from '@/lib/api-error'
+import { deriveRecurrenceFields } from '@/lib/installment-utils'
 import { rateToWireString } from '@/lib/utils'
 import type { SaleEditFormData } from '@/schemas/sale.schema'
 
@@ -27,30 +28,39 @@ export default function SaleEditPage() {
         body: {
           // Toggle ON: usa global. Toggle OFF: envia null (PATCH aceita optional)
           index_type_code: data.same_index_for_all ? (data.index_type_code ?? undefined) : null,
-          installment_schedules: data.installment_schedules.map((s) => ({
-            kind: s.kind,
-            payment_method: s.payment_method,
-            quantity: s.quantity,
-            amount: s.amount,
-            specific_date: s.specific_date ?? undefined,
-            recurrence_type: s.recurrence_type ?? undefined,
-            recurrence_day: s.recurrence_day ?? undefined,
-            recurrence_month: s.recurrence_month ?? undefined,
-            start_date: s.start_date ?? undefined,
-            // Per-group index quando toggle OFF, apenas para grupos não-entry
-            ...(!data.same_index_for_all && s.kind !== 'entry' && s.index_type_code
-              ? { index_type_code: s.index_type_code }
-              : {}),
-            // asset_proposal para entradas via bem; API aceita asset_proposal; client não reflete ainda
-            ...(s.payment_method === 'asset' && s.asset_proposal
-              ? {
-                  asset_proposal: s.asset_proposal as {
-                    type: string
-                    asset_metadata: Record<string, unknown>
-                  },
-                }
-              : {}),
-          })),
+          installment_schedules: data.installment_schedules.map((s) => {
+            const derived =
+              s.recurrence_type && s.start_date
+                ? deriveRecurrenceFields(s.start_date, s.recurrence_type)
+                : {
+                    recurrence_day: s.recurrence_day ?? undefined,
+                    recurrence_month: s.recurrence_month ?? undefined,
+                  }
+            return {
+              kind: s.kind,
+              payment_method: s.payment_method,
+              quantity: s.quantity,
+              amount: s.amount,
+              specific_date: s.specific_date ?? undefined,
+              recurrence_type: s.recurrence_type ?? undefined,
+              recurrence_day: derived.recurrence_day ?? undefined,
+              recurrence_month: derived.recurrence_month ?? undefined,
+              start_date: s.start_date ?? undefined,
+              // Per-group index quando toggle OFF, apenas para grupos não-entry
+              ...(!data.same_index_for_all && s.kind !== 'entry' && s.index_type_code
+                ? { index_type_code: s.index_type_code }
+                : {}),
+              // asset_proposal para entradas via bem; API aceita asset_proposal; client não reflete ainda
+              ...(s.payment_method === 'asset' && s.asset_proposal
+                ? {
+                    asset_proposal: s.asset_proposal as {
+                      type: string
+                      asset_metadata: Record<string, unknown>
+                    },
+                  }
+                : {}),
+            }
+          }),
           broker_id: data.broker_id ?? null,
           commission_broker_rate:
             data.broker_id && data.commission_broker_rate

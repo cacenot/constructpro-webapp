@@ -1,9 +1,21 @@
 import { ArrowDown, ArrowUp, CalendarClock, Equal, Gauge } from 'lucide-react'
+import * as React from 'react'
+import { AnimatedNumber } from '@/components/ui/animated-number'
+import { Button } from '@/components/ui/button'
 import { formatCentsToDisplay } from '@/components/ui/currency-input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { formatBRDate } from '@/lib/installment-utils'
-import type { ProposalVitals as Vitals } from '@/lib/proposal-vitals'
+import { isProposalBalanced, type ProposalVitals as Vitals } from '@/lib/proposal-vitals'
 import { cn } from '@/lib/utils'
+import type { InstallmentKind, SaleFormData } from '@/schemas/sale.schema'
 import { GROUP_LABELS } from './constants'
+import { InstallmentCalendar } from './installment-calendar'
 import { CONSOLE_LABEL } from './section'
 
 const money = (cents: number) => `R$ ${formatCentsToDisplay(cents) || '0,00'}`
@@ -14,6 +26,11 @@ interface ProposalVitalsProps {
   /** Há unidade selecionada (preço de tabela disponível)? */
   hasUnit: boolean
   className?: string
+  schedules?: SaleFormData['installment_schedules']
+  /** Índice global da proposta (quando "mesmo índice"), para o calendário exibir o índice por parcela. */
+  globalIndexCode?: string | null
+  /** Para o controle "Distribuir": delega ao workbench/ledger que tem acesso ao form. */
+  onDistribute?: (groupKind: InstallmentKind) => void
 }
 
 /**
@@ -21,10 +38,27 @@ interface ProposalVitalsProps {
  * (superfície bg-border, células bg-card separadas por gap-px), adaptado
  * à coluna estreita. Confronta o total contra o preço de tabela em tempo real.
  */
-export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsProps) {
+export function ProposalVitals({
+  vitals,
+  hasUnit,
+  className,
+  schedules,
+  globalIndexCode = null,
+  onDistribute,
+}: ProposalVitalsProps) {
   const { total, diff, diffPercent, entryTotal, entryPercent, financed, count, contractEnd } =
     vitals
   const hasPlan = total > 0
+
+  // Índice de correção efetivo por grupo (o do grupo, senão o global). Entrada = sem índice.
+  const indexByKind = React.useMemo(() => {
+    const map = new Map<InstallmentKind, string | null>()
+    for (const s of schedules ?? []) {
+      if (s.kind === 'entry' || map.has(s.kind)) continue
+      map.set(s.kind, s.index_type_code ?? globalIndexCode ?? null)
+    }
+    return map
+  }, [schedules, globalIndexCode])
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -33,23 +67,61 @@ export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsPro
         <h2 className="text-sm font-semibold tracking-tight">Resumo</h2>
       </div>
 
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border">
-        {/* Total da proposta — hero */}
-        <div className="col-span-2 flex flex-col gap-1.5 bg-card p-4">
-          <span className={CONSOLE_LABEL}>Total da proposta</span>
-          <span className="text-2xl font-semibold leading-none tracking-tight tabular-nums">
-            {money(total)}
-          </span>
+      {/* Total + reconciliação — merge do antigo "Total" com "Saldo da proposta" */}
+      <div className="rounded-lg border border-border bg-card p-4">
+        <span className={CONSOLE_LABEL}>Total da proposta</span>
+        <AnimatedNumber
+          value={total}
+          format={money}
+          className="mt-1.5 block text-2xl font-semibold leading-none tracking-tight"
+        />
+        <div className="mt-1.5">
           <DiffChip total={total} diff={diff} diffPercent={diffPercent} hasUnit={hasUnit} />
         </div>
+        {vitals.valorPropostaCents > 0 && (
+          <div className="mt-3 space-y-2 border-t border-border pt-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs text-muted-foreground">Valor da proposta</span>
+              <AnimatedNumber
+                value={vitals.valorPropostaCents}
+                format={money}
+                className="text-sm font-medium"
+              />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-medium">
+                {isProposalBalanced(vitals)
+                  ? 'Saldo'
+                  : vitals.saldo > 0
+                    ? 'Falta distribuir'
+                    : 'Sobra'}
+              </span>
+              <AnimatedNumber
+                value={Math.abs(vitals.saldo)}
+                format={money}
+                className={cn(
+                  'text-base font-semibold',
+                  isProposalBalanced(vitals) ? 'text-success' : 'text-warning'
+                )}
+              />
+            </div>
+            {!isProposalBalanced(vitals) && onDistribute && vitals.groups.length > 0 && (
+              <DistributeControl groups={vitals.groups} onDistribute={onDistribute} />
+            )}
+          </div>
+        )}
+      </div>
 
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border">
         {/* Preço de tabela — referência */}
         <div className="col-span-2 flex flex-col gap-1 bg-card p-4">
           <span className={CONSOLE_LABEL}>Preço de tabela</span>
           {hasUnit ? (
-            <span className="text-sm font-medium tabular-nums text-muted-foreground">
-              {money(vitals.unitPriceCents)}
-            </span>
+            <AnimatedNumber
+              value={vitals.unitPriceCents}
+              format={money}
+              className="text-sm font-medium text-muted-foreground"
+            />
           ) : (
             <span className="text-sm text-muted-foreground">Selecione a unidade</span>
           )}
@@ -58,7 +130,7 @@ export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsPro
         {/* Entrada / Financiado */}
         <div className="flex flex-col gap-1 bg-card p-4">
           <span className={CONSOLE_LABEL}>Entrada</span>
-          <span className="text-sm font-medium tabular-nums">{money(entryTotal)}</span>
+          <AnimatedNumber value={entryTotal} format={money} className="text-sm font-medium" />
           {hasPlan && (
             <div className="mt-1 space-y-1">
               <div
@@ -77,10 +149,20 @@ export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsPro
             </div>
           )}
         </div>
-        <Cell label="Financiado" value={money(financed)} />
+        <div className="flex flex-col gap-1 bg-card p-4">
+          <span className={CONSOLE_LABEL}>Financiado</span>
+          <AnimatedNumber value={financed} format={money} className="text-sm font-medium" />
+        </div>
 
         {/* Parcelas / Término */}
-        <Cell label="Parcelas" value={count > 0 ? String(count) : '—'} />
+        <div className="flex flex-col gap-1 bg-card p-4">
+          <span className={CONSOLE_LABEL}>Parcelas</span>
+          {count > 0 ? (
+            <AnimatedNumber value={count} className="text-sm font-medium" />
+          ) : (
+            <span className="text-sm font-medium tabular-nums text-muted-foreground">—</span>
+          )}
+        </div>
         <div className="flex flex-col gap-1 bg-card p-4">
           <span className={CONSOLE_LABEL}>Término</span>
           {contractEnd.endDate ? (
@@ -107,9 +189,11 @@ export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsPro
           <div className="col-span-2 flex flex-col gap-1 bg-card p-4">
             <span className={CONSOLE_LABEL}>Comissão de mediação</span>
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-sm font-medium tabular-nums">
-                {money(vitals.commission.amountCents)}
-              </span>
+              <AnimatedNumber
+                value={vitals.commission.amountCents}
+                format={money}
+                className="text-sm font-medium"
+              />
               <span
                 className={cn(
                   'text-xs tabular-nums',
@@ -139,25 +223,59 @@ export function ProposalVitals({ vitals, hasUnit, className }: ProposalVitalsPro
                 <dt className="text-xs text-muted-foreground">
                   {GROUP_LABELS[g.kind]}
                   <span className="ml-1.5 tabular-nums text-muted-foreground/70">×{g.count}</span>
+                  {indexByKind.get(g.kind) && (
+                    <span className="ml-1.5 font-mono text-[0.625rem] uppercase text-muted-foreground/70">
+                      {indexByKind.get(g.kind)}
+                    </span>
+                  )}
                 </dt>
-                <dd className="text-xs font-medium tabular-nums">{money(g.subtotal)}</dd>
+                <dd className="text-xs font-medium">
+                  <AnimatedNumber value={g.subtotal} format={money} />
+                </dd>
               </div>
             ))}
           </dl>
+        </div>
+      )}
+
+      {/* Calendário de parcelas */}
+      {vitals.count > 0 && (
+        <div className="space-y-2">
+          <span className={CONSOLE_LABEL}>Calendário de parcelas</span>
+          <InstallmentCalendar schedules={schedules} globalIndexCode={globalIndexCode} />
         </div>
       )}
     </div>
   )
 }
 
-function Cell({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function DistributeControl({
+  groups,
+  onDistribute,
+}: {
+  groups: Vitals['groups']
+  onDistribute: (kind: InstallmentKind) => void
+}) {
+  const targets = groups.filter((g) => g.kind !== 'entry')
+  const [kind, setKind] = React.useState(targets[0]?.kind)
+  if (!targets.length || !kind) return null
   return (
-    <div className="flex flex-col gap-1 bg-card p-4">
-      <span className={CONSOLE_LABEL}>{label}</span>
-      <span className="text-sm font-medium tabular-nums">{value}</span>
-      {sub != null && (
-        <span className="text-[0.6875rem] tabular-nums text-muted-foreground">{sub}</span>
-      )}
+    <div className="mt-1 flex gap-2">
+      <Select value={kind} onValueChange={(v) => setKind(v as typeof kind)}>
+        <SelectTrigger className="h-8 flex-1 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {targets.map((g) => (
+            <SelectItem key={g.kind} value={g.kind} className="text-xs">
+              {GROUP_LABELS[g.kind]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button type="button" size="sm" className="h-8" onClick={() => onDistribute(kind)}>
+        Distribuir
+      </Button>
     </div>
   )
 }
