@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Costara — Preview Dashboard (mock)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ===== Tokens (extraídos de src/styles/globals.css — dark mode) ===== */
+  :root {
+    --bg-page:      oklch(0.175 0.006 75);
+    --bg-surface:   oklch(0.215 0.007 75);
+    --bg-elevated:  oklch(0.255 0.008 75);
+    --bg-sunken:    oklch(0.145 0.005 75);
+    --border-subtle:  oklch(1 0 0 / 0.06);
+    --border-default: oklch(1 0 0 / 0.10);
+    --border-strong:  oklch(1 0 0 / 0.18);
+    --text-primary:   oklch(0.95 0.006 80);
+    --text-secondary: oklch(0.72 0.008 78);
+    --text-tertiary:  oklch(0.56 0.008 78);
+    --lime:    oklch(0.84 0.190 128);
+    --coral:   oklch(0.68 0.190 22);
+    --emerald: oklch(0.80 0.130 160);
+    --amber:   oklch(0.85 0.130 70);
+    --sky:     oklch(0.74 0.140 240);
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    padding: 32px 24px 64px;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ===== Header ===== */
+  .page-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 24px; }
+  .page-header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .page-header .date { color: var(--text-tertiary); font-size: 13px; }
+
+  /* ===== Vitals strip (hero) ===== */
+  .vitals {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border-default);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+  .vital { background: var(--bg-surface); padding: 18px 20px; }
+  .vital .label { font-size: 11.5px; font-weight: 500; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .vital .value { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+  .vital .sub { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+  .tone-success { color: var(--emerald); }
+  .tone-destructive { color: var(--coral); }
+  .sub .up { color: var(--emerald); }
+  .sub .down { color: var(--coral); }
+
+  /* ===== Sections ===== */
+  .section { margin-bottom: 36px; }
+  .section-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .section-header h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); }
+  .section-header a { font-size: 12.5px; color: var(--lime); text-decoration: none; font-weight: 500; }
+  .section-header a:hover { text-decoration: underline; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 880px) { .grid-2 { grid-template-columns: 1fr; } .vitals { grid-template-columns: repeat(2, 1fr); } }
+
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .card h3 { font-size: 13px; font-weight: 600; margin-bottom: 16px; color: var(--text-primary); }
+  .card h3 .hint { font-weight: 400; color: var(--text-tertiary); font-size: 12px; margin-left: 6px; }
+
+  /* ===== Aging ===== */
+  .aging-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px; margin: 0 -8px; border-radius: 6px; cursor: pointer;
+  }
+  .aging-row:hover { background: var(--bg-elevated); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
+  .aging-row .bucket { width: 64px; font-size: 12.5px; color: var(--text-secondary); }
+  .aging-bar-track { flex: 1; height: 5px; background: var(--bg-sunken); border-radius: 3px; overflow: hidden; }
+  .aging-bar { height: 100%; border-radius: 3px; }
+  .aging-row .count { width: 22px; text-align: right; font-size: 12px; color: var(--text-tertiary); }
+  .aging-row .amount { width: 84px; text-align: right; font-size: 13px; font-weight: 500; }
+
+  .divider { border-top: 1px solid var(--border-subtle); margin: 16px 0 14px; }
+  .mini-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); margin-bottom: 10px; }
+
+  .debtor-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; margin: 0 -8px; border-radius: 6px; cursor: pointer; }
+  .debtor-row:hover { background: var(--bg-elevated); }
+  .debtor-row .who { font-size: 13px; }
+  .debtor-row .days { font-size: 11.5px; color: var(--coral); margin-left: 8px; }
+  .debtor-row .val { font-weight: 500; font-size: 13px; }
+
+  /* ===== Cashflow mini chart ===== */
+  .chart { display: flex; align-items: flex-end; gap: 18px; height: 150px; padding: 8px 4px 0; }
+  .month { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .bars { display: flex; gap: 4px; align-items: flex-end; height: 100%; width: 100%; justify-content: center; }
+  .bar { width: 14px; border-radius: 3px 3px 0 0; }
+  .bar.received { background: var(--emerald); opacity: 0.9; }
+  .bar.projected { background: transparent; border: 1px dashed oklch(1 0 0 / 0.28); border-bottom: none; }
+  .month .m-label { font-size: 11px; color: var(--text-tertiary); }
+  .month.current .m-label { color: var(--lime); font-weight: 600; }
+  .legend { display: flex; gap: 16px; margin-top: 14px; }
+  .legend span { font-size: 11.5px; color: var(--text-tertiary); display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; }
+  .swatch.received { background: var(--emerald); }
+  .swatch.projected { border: 1px dashed oklch(1 0 0 / 0.35); }
+
+  /* ===== Funil de vendas ===== */
+  .funnel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border-subtle); border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+  .stage { background: var(--bg-sunken); padding: 12px 12px 10px; }
+  .stage .s-count { font-size: 19px; font-weight: 600; }
+  .stage .s-label { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .kpi-pair { display: flex; gap: 24px; margin-bottom: 4px; }
+  .kpi-pair .kp .k-label { font-size: 11.5px; color: var(--text-tertiary); }
+  .kpi-pair .kp .k-value { font-size: 15px; font-weight: 600; margin-top: 2px; }
+
+  .sale-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 8px; margin: 0 -8px; border-radius: 6px; cursor: pointer; }
+  .sale-row:hover { background: var(--bg-elevated); }
+  .sale-row .s-who { font-size: 13px; }
+  .sale-row .s-unit { font-size: 11.5px; color: var(--text-tertiary); }
+  .sale-row .right { display: flex; align-items: center; gap: 10px; }
+  .sale-row .s-val { font-size: 13px; font-weight: 500; }
+  .badge { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid; }
+  .badge.proposta  { color: var(--amber);   border-color: oklch(0.85 0.130 70 / 0.35);  background: oklch(0.85 0.130 70 / 0.08); }
+  .badge.fechado   { color: var(--emerald); border-color: oklch(0.80 0.130 160 / 0.35); background: oklch(0.80 0.130 160 / 0.08); }
+  .badge.reservado { color: var(--sky);     border-color: oklch(0.74 0.140 240 / 0.35); background: oklch(0.74 0.140 240 / 0.08); }
+
+  /* ===== Estoque / operacional ===== */
+  .stock { display: flex; gap: 1px; background: var(--border-subtle); border: 1px solid var(--border-subtle); border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
+  .stock .st { flex: 1; background: var(--bg-sunken); padding: 12px; }
+  .stock .st-count { font-size: 19px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .stock .st-label { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .stock-sub { font-size: 12px; color: var(--text-tertiary); margin-bottom: 16px; margin-top: 10px; }
+  .stock-sub b { color: var(--text-secondary); font-weight: 600; }
+
+  .proj-row { display: flex; align-items: center; gap: 12px; padding: 8px 8px; margin: 0 -8px; border-radius: 6px; cursor: pointer; }
+  .proj-row:hover { background: var(--bg-elevated); }
+  .proj-row .p-name { width: 150px; font-size: 13px; }
+  .proj-track { flex: 1; height: 5px; background: var(--bg-sunken); border-radius: 3px; overflow: hidden; }
+  .proj-fill { height: 100%; background: var(--emerald); opacity: 0.85; border-radius: 3px; }
+  .proj-row .p-frac { width: 64px; text-align: right; font-size: 12px; color: var(--text-tertiary); }
+  .proj-row .p-pct { width: 38px; text-align: right; font-size: 12.5px; font-weight: 500; }
+
+  .preview-note { text-align: center; color: var(--text-tertiary); font-size: 11.5px; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Bom dia, Fernando</h1>
+    <span class="date">terça-feira, 10 de junho de 2026</span>
+  </div>
+
+  <!-- HERO — VitalsStrip -->
+  <div class="vitals">
+    <div class="vital">
+      <div class="label">Carteira a receber</div>
+      <div class="value num">R$ 4.218.430</div>
+      <div class="sub">89 contratos · corrigida</div>
+    </div>
+    <div class="vital">
+      <div class="label">Inadimplência</div>
+      <div class="value num tone-destructive">3,2%</div>
+      <div class="sub num">R$ 134.910 vencidos</div>
+    </div>
+    <div class="vital">
+      <div class="label">Recebido no mês</div>
+      <div class="value num tone-success">R$ 342.580</div>
+      <div class="sub"><span class="up">▲ 12%</span> vs maio</div>
+    </div>
+    <div class="vital">
+      <div class="label">A receber no mês</div>
+      <div class="value num">R$ 418.200</div>
+      <div class="sub num">31 parcelas vencem em junho</div>
+    </div>
+    <div class="vital">
+      <div class="label">Contratos ativos</div>
+      <div class="value num">89</div>
+      <div class="sub"><span class="down">3 inadimplentes</span></div>
+    </div>
+  </div>
+
+  <!-- SEÇÃO FINANCEIRO -->
+  <div class="section">
+    <div class="section-header">
+      <h2>Financeiro</h2>
+      <a href="#">Ver financeiro →</a>
+    </div>
+    <div class="grid-2">
+
+      <!-- Aging compacto + maiores atrasos -->
+      <div class="card">
+        <h3>Parcelas vencidas <span class="hint">por tempo de atraso</span></h3>
+
+        <div class="aging-row">
+          <span class="dot" style="color: oklch(0.68 0.190 22 / 0.55); background: currentColor;"></span>
+          <span class="bucket">1–30 dias</span>
+          <div class="aging-bar-track"><div class="aging-bar" style="width: 61%; background: oklch(0.68 0.190 22 / 0.55);"></div></div>
+          <span class="count num">5</span>
+          <span class="amount num">R$ 82.450</span>
+        </div>
+        <div class="aging-row">
+          <span class="dot" style="color: oklch(0.68 0.190 22 / 0.75); background: currentColor;"></span>
+          <span class="bucket">31–60 dias</span>
+          <div class="aging-bar-track"><div class="aging-bar" style="width: 21%; background: oklch(0.68 0.190 22 / 0.75);"></div></div>
+          <span class="count num">2</span>
+          <span class="amount num">R$ 28.760</span>
+        </div>
+        <div class="aging-row">
+          <span class="dot" style="color: oklch(0.68 0.190 22 / 0.90); background: currentColor;"></span>
+          <span class="bucket">61–90 dias</span>
+          <div class="aging-bar-track"><div class="aging-bar" style="width: 11%; background: oklch(0.68 0.190 22 / 0.90);"></div></div>
+          <span class="count num">1</span>
+          <span class="amount num">R$ 14.200</span>
+        </div>
+        <div class="aging-row">
+          <span class="dot" style="color: var(--coral); background: currentColor;"></span>
+          <span class="bucket">90+ dias</span>
+          <div class="aging-bar-track"><div class="aging-bar" style="width: 7%; background: var(--coral);"></div></div>
+          <span class="count num">1</span>
+          <span class="amount num">R$ 9.500</span>
+        </div>
+
+        <div class="divider"></div>
+        <div class="mini-label">Maiores atrasos</div>
+        <div class="debtor-row">
+          <span class="who">João Silva <span class="days num">38 dias</span></span>
+          <span class="val num">R$ 18.420</span>
+        </div>
+        <div class="debtor-row">
+          <span class="who">Maria Lopes <span class="days num">52 dias</span></span>
+          <span class="val num">R$ 12.300</span>
+        </div>
+        <div class="debtor-row">
+          <span class="who">Pedro Martins <span class="days num">95 dias</span></span>
+          <span class="val num">R$ 8.150</span>
+        </div>
+      </div>
+
+      <!-- Recebimento 6m -->
+      <div class="card">
+        <h3>Recebimento <span class="hint">realizado vs projetado · 6 meses</span></h3>
+        <div class="chart">
+          <div class="month">
+            <div class="bars"><div class="bar received" style="height: 71%;"></div></div>
+            <span class="m-label">mar</span>
+          </div>
+          <div class="month">
+            <div class="bars"><div class="bar received" style="height: 75%;"></div></div>
+            <span class="m-label">abr</span>
+          </div>
+          <div class="month">
+            <div class="bars"><div class="bar received" style="height: 69%;"></div></div>
+            <span class="m-label">mai</span>
+          </div>
+          <div class="month current">
+            <div class="bars">
+              <div class="bar received" style="height: 82%;"></div>
+              <div class="bar projected" style="height: 100%;"></div>
+            </div>
+            <span class="m-label">jun</span>
+          </div>
+          <div class="month">
+            <div class="bars"><div class="bar projected" style="height: 95%;"></div></div>
+            <span class="m-label">jul</span>
+          </div>
+          <div class="month">
+            <div class="bars"><div class="bar projected" style="height: 97%;"></div></div>
+            <span class="m-label">ago</span>
+          </div>
+        </div>
+        <div class="legend">
+          <span><span class="swatch received"></span> Recebido</span>
+          <span><span class="swatch projected"></span> Projetado (a vencer)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEÇÕES VENDAS + OPERACIONAL -->
+  <div class="grid-2">
+
+    <div class="section" style="margin-bottom: 0;">
+      <div class="section-header">
+        <h2>Vendas</h2>
+        <a href="#">Ver vendas →</a>
+      </div>
+      <div class="card">
+        <div class="funnel">
+          <div class="stage"><div class="s-count num">8</div><div class="s-label">Propostas</div></div>
+          <div class="stage"><div class="s-count num">3</div><div class="s-label">Ag. assinatura</div></div>
+          <div class="stage"><div class="s-count num">2</div><div class="s-label">Ag. pagamento</div></div>
+          <div class="stage"><div class="s-count num tone-success">3</div><div class="s-label">Fechadas no mês</div></div>
+        </div>
+        <div class="kpi-pair">
+          <div class="kp"><div class="k-label">VGV em negociação</div><div class="k-value num">R$ 3.950.000</div></div>
+          <div class="kp"><div class="k-label">VGV fechado no mês</div><div class="k-value num tone-success">R$ 1.195.000</div></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="mini-label">Recentes</div>
+        <div class="sale-row">
+          <div><div class="s-who">Ana Souza</div><div class="s-unit">Apt 302-B · Residencial Aurora</div></div>
+          <div class="right"><span class="s-val num">R$ 412.000</span><span class="badge proposta">Proposta</span></div>
+        </div>
+        <div class="sale-row">
+          <div><div class="s-who">Carlos Lima</div><div class="s-unit">Casa 14 · Vila Verde</div></div>
+          <div class="right"><span class="s-val num">R$ 385.000</span><span class="badge fechado">Fechado</span></div>
+        </div>
+        <div class="sale-row">
+          <div><div class="s-who">Beatriz Nunes</div><div class="s-unit">Apt 105-A · Residencial Aurora</div></div>
+          <div class="right"><span class="s-val num">R$ 298.000</span><span class="badge reservado">Reservado</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-bottom: 0;">
+      <div class="section-header">
+        <h2>Operacional</h2>
+        <a href="#">Ver empreendimentos →</a>
+      </div>
+      <div class="card">
+        <div class="stock">
+          <div class="st">
+            <div class="st-count num"><span class="dot" style="color: var(--emerald); background: currentColor;"></span>47</div>
+            <div class="st-label">Disponíveis</div>
+          </div>
+          <div class="st">
+            <div class="st-count num"><span class="dot" style="color: var(--amber); background: currentColor;"></span>12</div>
+            <div class="st-label">Reservadas</div>
+          </div>
+          <div class="st">
+            <div class="st-count num"><span class="dot" style="color: var(--coral); background: currentColor;"></span>89</div>
+            <div class="st-label">Vendidas</div>
+          </div>
+        </div>
+        <div class="stock-sub">Estoque a vender: <b class="num">R$ 18.400.000</b> em VGV</div>
+
+        <div class="mini-label">Empreendimentos</div>
+        <div class="proj-row">
+          <span class="p-name">Residencial Aurora</span>
+          <div class="proj-track"><div class="proj-fill" style="width: 80%;"></div></div>
+          <span class="p-frac num">64/80</span>
+          <span class="p-pct num">80%</span>
+        </div>
+        <div class="proj-row">
+          <span class="p-name">Vila Verde</span>
+          <div class="proj-track"><div class="proj-fill" style="width: 56%;"></div></div>
+          <span class="p-frac num">18/32</span>
+          <span class="p-pct num">56%</span>
+        </div>
+        <div class="proj-row">
+          <span class="p-name">Costa Azul</span>
+          <div class="proj-track"><div class="proj-fill" style="width: 29%;"></div></div>
+          <span class="p-frac num">7/24</span>
+          <span class="p-pct num">29%</span>
+        </div>
+        <div class="proj-row">
+          <span class="p-name">Parque das Águas</span>
+          <div class="proj-track"><div class="proj-fill" style="width: 0%;"></div></div>
+          <span class="p-frac num">0/12</span>
+          <span class="p-pct num">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="preview-note">Preview estático · dados fictícios · tokens do design system Costara (dark mode)</p>
+</div>
+</body>
+</html>
