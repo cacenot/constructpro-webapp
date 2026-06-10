@@ -102,7 +102,7 @@ export function DashboardVitals() {
       tone: 'success',
       sub:
         change == null ? (
-          <span className="first-letter:capitalize">{monthName}</span>
+          <span className="inline-block first-letter:capitalize">{monthName}</span>
         ) : (
           <span className={change >= 0 ? 'text-success' : 'text-destructive'}>
             <span aria-hidden="true">{change >= 0 ? '▲' : '▼'}</span>

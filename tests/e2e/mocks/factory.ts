@@ -19,7 +19,7 @@ export interface Money {
   brl: string
 }
 
-const money = (cents: number): Money => ({
+export const money = (cents: number): Money => ({
   cents,
   decimal: (cents / 100).toFixed(2),
   brl: (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
