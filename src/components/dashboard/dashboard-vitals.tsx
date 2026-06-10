@@ -27,11 +27,18 @@ const VITAL_LABELS = [
  * Responde "como está minha carteira?" em uma olhada; o detalhe fica nas seções.
  */
 export function DashboardVitals() {
-  const win = useMemo(() => cashflowWindow(), [])
+  // Congela a data no mount — evita divergência de labels/dados na virada de mês.
+  const today = useMemo(() => new Date(), [])
+  const win = useMemo(() => cashflowWindow(today), [today])
   const monthBounds = useMemo(() => {
-    const start = startOfMonth(new Date())
+    const start = startOfMonth(today)
     return { min: format(start, 'yyyy-MM-dd'), max: format(endOfMonth(start), 'yyyy-MM-dd') }
-  }, [])
+  }, [today])
+  const monthName = useMemo(() => format(today, 'MMMM', { locale: ptBR }), [today])
+  const prevMonthName = useMemo(
+    () => format(subMonths(today, 1), 'MMMM', { locale: ptBR }),
+    [today]
+  )
 
   const financial = useInstallmentsFinancialSummary({})
   const portfolio = useInstallmentsSummary({ page_size: 1 })
@@ -48,7 +55,8 @@ export function DashboardVitals() {
       <VitalsStrip
         vitals={VITAL_LABELS.map((label) => ({
           label,
-          value: <Skeleton className="h-7 w-24" />,
+          value: <Skeleton className="h-6 w-24" />,
+          sub: <Skeleton className="h-3.5 w-32" />,
         }))}
       />
     )
@@ -63,8 +71,6 @@ export function DashboardVitals() {
   const prevReceived = currentIdx > 0 ? (months[currentIdx - 1]?.received?.cents ?? 0) : 0
   const dueProjected = currentIdx >= 0 ? (months[currentIdx]?.due_projected?.cents ?? 0) : 0
   const change = percentChange(received, prevReceived)
-  const prevMonthName = format(subMonths(new Date(), 1), 'MMMM', { locale: ptBR })
-  const monthName = format(new Date(), 'MMMM', { locale: ptBR })
 
   const overdueCents = summary?.total_overdue_amount?.cents ?? 0
   const remainingCents = summary?.total_remaining_amount?.cents ?? 0
@@ -99,14 +105,18 @@ export function DashboardVitals() {
           <span className="first-letter:capitalize">{monthName}</span>
         ) : (
           <span className={change >= 0 ? 'text-success' : 'text-destructive'}>
-            {change >= 0 ? '▲' : '▼'} {formatPercent(Math.abs(change), 0)}% vs {prevMonthName}
+            <span aria-hidden="true">{change >= 0 ? '▲' : '▼'}</span>
+            <span className="sr-only">{change >= 0 ? 'alta de' : 'queda de'}</span>{' '}
+            {formatPercent(Math.abs(change), 0)}% vs {prevMonthName}
           </span>
         ),
     },
     {
       label: 'A receber no mês',
       value: <AnimatedNumber value={dueProjected} format={fromCents} />,
-      sub: `${monthOpenCount} ${monthOpenCount === 1 ? 'parcela vence' : 'parcelas vencem'} em ${monthName}`,
+      sub: monthOpen.isPending
+        ? undefined
+        : `${monthOpenCount} ${monthOpenCount === 1 ? 'parcela vence' : 'parcelas vencem'} em ${monthName}`,
     },
     {
       label: 'Contratos ativos',
