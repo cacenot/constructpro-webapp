@@ -9,6 +9,13 @@ const OPTIONS = [
   { value: 'c', label: 'Opção C' },
 ]
 
+/** Acesso type-safe a um radio por posição (evita o `T | undefined` da indexação). */
+function radioAt(index: number): HTMLElement {
+  const el = screen.getAllByRole('radio')[index]
+  if (!el) throw new Error(`radio no índice ${index} não encontrado`)
+  return el
+}
+
 describe('SegmentedControl', () => {
   // ── Estrutura / renderização ──────────────────────────────────────────────
 
@@ -36,31 +43,27 @@ describe('SegmentedControl', () => {
 
   it('opção com value === value tem aria-checked="true"', () => {
     render(<SegmentedControl options={OPTIONS} value="b" onChange={vi.fn()} />)
-    const buttons = screen.getAllByRole('radio')
-    expect(buttons[1].getAttribute('aria-checked')).toBe('true')
+    expect(radioAt(1).getAttribute('aria-checked')).toBe('true')
   })
 
   it('outras opções têm aria-checked="false"', () => {
     render(<SegmentedControl options={OPTIONS} value="b" onChange={vi.fn()} />)
-    const buttons = screen.getAllByRole('radio')
-    expect(buttons[0].getAttribute('aria-checked')).toBe('false')
-    expect(buttons[2].getAttribute('aria-checked')).toBe('false')
+    expect(radioAt(0).getAttribute('aria-checked')).toBe('false')
+    expect(radioAt(2).getAttribute('aria-checked')).toBe('false')
   })
 
   it('opção ativa tem tabIndex=0, inativas têm tabIndex=-1', () => {
     render(<SegmentedControl options={OPTIONS} value="b" onChange={vi.fn()} />)
-    const buttons = screen.getAllByRole('radio')
-    expect(buttons[0].getAttribute('tabindex')).toBe('-1')
-    expect(buttons[1].getAttribute('tabindex')).toBe('0')
-    expect(buttons[2].getAttribute('tabindex')).toBe('-1')
+    expect(radioAt(0).getAttribute('tabindex')).toBe('-1')
+    expect(radioAt(1).getAttribute('tabindex')).toBe('0')
+    expect(radioAt(2).getAttribute('tabindex')).toBe('-1')
   })
 
   it('sem seleção válida: primeiro item tem tabIndex=0', () => {
     render(<SegmentedControl options={OPTIONS} value="nenhum" onChange={vi.fn()} />)
-    const buttons = screen.getAllByRole('radio')
-    expect(buttons[0].getAttribute('tabindex')).toBe('0')
-    expect(buttons[1].getAttribute('tabindex')).toBe('-1')
-    expect(buttons[2].getAttribute('tabindex')).toBe('-1')
+    expect(radioAt(0).getAttribute('tabindex')).toBe('0')
+    expect(radioAt(1).getAttribute('tabindex')).toBe('-1')
+    expect(radioAt(2).getAttribute('tabindex')).toBe('-1')
   })
 
   // ── Click ─────────────────────────────────────────────────────────────────
@@ -69,8 +72,7 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="a" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    await user.click(buttons[1])
+    await user.click(radioAt(1))
     expect(onChange).toHaveBeenCalledWith('b')
   })
 
@@ -82,8 +84,7 @@ describe('SegmentedControl', () => {
       { value: 2, label: 'Dois' },
     ]
     render(<SegmentedControl options={numericOptions} value={1} onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    await user.click(buttons[1])
+    await user.click(radioAt(1))
     expect(onChange).toHaveBeenCalledWith(2)
   })
 
@@ -93,8 +94,7 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="a" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    buttons[0].focus()
+    radioAt(0).focus()
     await user.keyboard('{ArrowRight}')
     expect(onChange).toHaveBeenCalledWith('b')
   })
@@ -103,8 +103,7 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="c" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    buttons[2].focus()
+    radioAt(2).focus()
     await user.keyboard('{ArrowRight}')
     expect(onChange).toHaveBeenCalledWith('a')
   })
@@ -113,8 +112,7 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="b" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    buttons[1].focus()
+    radioAt(1).focus()
     await user.keyboard('{ArrowLeft}')
     expect(onChange).toHaveBeenCalledWith('a')
   })
@@ -123,8 +121,7 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="a" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    buttons[0].focus()
+    radioAt(0).focus()
     await user.keyboard('{ArrowLeft}')
     expect(onChange).toHaveBeenCalledWith('c')
   })
@@ -133,8 +130,7 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="c" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    buttons[2].focus()
+    radioAt(2).focus()
     await user.keyboard('{Home}')
     expect(onChange).toHaveBeenCalledWith('a')
   })
@@ -143,8 +139,7 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="a" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    buttons[0].focus()
+    radioAt(0).focus()
     await user.keyboard('{End}')
     expect(onChange).toHaveBeenCalledWith('c')
   })
@@ -153,8 +148,7 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="a" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    buttons[0].focus()
+    radioAt(0).focus()
     await user.keyboard('{ArrowDown}')
     expect(onChange).toHaveBeenCalledWith('b')
   })
@@ -163,9 +157,22 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<SegmentedControl options={OPTIONS} value="b" onChange={onChange} />)
-    const buttons = screen.getAllByRole('radio')
-    buttons[1].focus()
+    radioAt(1).focus()
     await user.keyboard('{ArrowUp}')
     expect(onChange).toHaveBeenCalledWith('a')
+  })
+
+  // ── Tamanho (size) ──────────────────────────────────────────────────────────
+
+  it('size="sm" aplica a tipografia compacta (text-xs)', () => {
+    render(<SegmentedControl options={OPTIONS} value="a" onChange={vi.fn()} size="sm" />)
+    expect(radioAt(0).className).toContain('text-xs')
+    expect(radioAt(0).className).not.toContain('text-sm')
+  })
+
+  it('size padrão usa a tipografia default (text-sm)', () => {
+    render(<SegmentedControl options={OPTIONS} value="a" onChange={vi.fn()} />)
+    expect(radioAt(0).className).toContain('text-sm')
+    expect(radioAt(0).className).not.toContain('text-xs')
   })
 })
