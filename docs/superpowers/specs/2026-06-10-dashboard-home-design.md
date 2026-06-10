@@ -88,25 +88,29 @@ Se julgado caro na implementação, degradar o sub para "vencem em {mês}" sem c
 
 ## Seção Vendas
 
-Requer `GET /sales/summary` (novo — contrato completo na issue #157).
+Requer **extensão** do `GET /sales/summary` existente com bloco `summary` agregado (padrão
+`/installments/summary`; o path já existe como lista paginada leve — contrato na issue #157,
+revisada). Uma chamada (`page_size=3`) cobre funil + VGV + recentes.
 
 - **Funil compacto** (4 células hairline): Propostas, Ag. assinatura, Ag. pagamento — counts do
-  `pipeline` — e "Fechadas no mês" (count, tom success) do bloco `month`.
+  `summary.pipeline` — e "Fechadas no mês" (count, tom success) do bloco `summary.month`.
 - **Par de KPIs**: "VGV em negociação" (`pipeline.total_open_amount`) e "VGV fechado no mês"
   (`month.closed_amount`, tom success).
-- **Recentes** (3): cliente, unidade · empreendimento, valor, badge de status (tokens pipeline
-  existentes). Fonte: `GET /sales?sort_by=created_at:desc&page_size=3` (existe).
+- **Recentes** (3): os `items` da mesma chamada — cliente, unidade · empreendimento, valor
+  (`amount`, campo novo no item — issue #157), badge de status (`SaleStatusBadge` existente).
   Linha → `/vendas/{id}`.
 
 ## Seção Operacional
 
-Requer `GET /units/summary` (novo — contrato completo na issue #157).
-
 - **Estoque** (3 células hairline): Disponíveis / Reservadas / Vendidas com dots na paleta
-  "semáforo imobiliário" (emerald / amber / coral) + glow.
-- **Sub-linha**: "Estoque a vender: R$ {totals.available.vgv} em VGV".
+  "semáforo imobiliário" (emerald / amber / coral) + glow. Fonte: **extensão** do
+  `GET /units/summary` existente com bloco `summary.by_status` (counts + VGV por status —
+  issue #157, revisada); dashboard chama com `page_size=1`.
+- **Sub-linha**: "Estoque a vender: R$ {by_status.available.vgv} em VGV".
 - **Empreendimentos** (top 4 por `sold_percentage`): nome + barra de progresso de vendas +
-  fração vendidas/total + %. Linha → `/empreendimentos/{id}`.
+  fração vendidas/total + %. Fonte: `GET /projects/summary` (**existe** — já retorna
+  sold_count/total_units/total_vgv/sold_percentage por projeto; hook `useProjectsSummary`
+  pronto). Linha → `/empreendimentos/{id}`.
 
 ## Remoção da aba Resumo do `/financeiro`
 
@@ -141,9 +145,9 @@ vendas).
 | Hero: carteira, contratos | `GET /installments/financial-summary` | existe |
 | Hero: inadimplência · Aging · Maiores atrasos | `GET /installments/summary` (com variações de params) | existe |
 | Hero: recebido/a receber mês · Recebimento 6m | `GET /installments/cashflow` | existe (verificar roteamento — issue #157) |
-| Vendas: funil + VGV | `GET /sales/summary` | **novo** — issue #157 |
-| Vendas: recentes | `GET /sales?sort_by=created_at:desc&page_size=3` | existe |
-| Operacional: estoque + por empreendimento | `GET /units/summary` | **novo** — issue #157 |
+| Vendas: funil + VGV + recentes | `GET /sales/summary?page_size=3` | **estender** com bloco `summary` — issue #157 |
+| Operacional: estoque | `GET /units/summary?page_size=1` | **estender** com bloco `summary` — issue #157 |
+| Operacional: por empreendimento | `GET /projects/summary` | existe (`useProjectsSummary`) |
 
 Valores monetários seguem WireMoney (`{cents, decimal, brl}`); exibição via `formatCurrency()` +
 `tabular-nums`.
@@ -190,9 +194,10 @@ src/lib/installment-aging.ts         — agingDueRange extraído (compartilhado 
 
 ## Sequenciamento
 
-1. **Backend** (issue construct-pro-api#157): `/sales/summary` + `/units/summary` + verificações
-   (cashflow/by-project roteados; `sort_by=current_amount` na whitelist; semântica de
-   `due_projected`). Executado no repo da API.
+1. **Backend** (issue construct-pro-api#157, revisada): estender `/sales/summary` e
+   `/units/summary` com blocos `summary` agregados (+ `amount` no `SaleSummaryResponse`) +
+   verificações (cashflow/by-project roteados; `sort_by=current_amount` na whitelist; semântica
+   de `due_projected`). Executado no repo da API.
 2. **api-client**: regenerar e publicar `@cacenot/construct-pro-api-client`.
 3. **Front A** (não depende de 1–2): hero + seção Financeiro + remoção da aba Resumo do
    `/financeiro` — só endpoints existentes.
