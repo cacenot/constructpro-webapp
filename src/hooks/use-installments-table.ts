@@ -1,9 +1,10 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
-import { endOfMonth, format, parseISO, subDays } from 'date-fns'
+import { endOfMonth, format, parseISO } from 'date-fns'
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs'
 import { useCallback, useMemo } from 'react'
 import type { CustomerFilterValue } from '@/components/ui/customer-filter'
 import { computeDateRangePreset, type DateRangeValue } from '@/components/ui/date-range-filter'
+import { type AgingBucketKey, agingDueRange, OPEN_STATUSES } from '@/lib/installment-aging'
 import { useInfiniteTable } from './use-infinite-table'
 import {
   type InstallmentListSummary,
@@ -19,30 +20,7 @@ const DEFAULT_SORT = 'due_date:asc'
 const DEFAULT_DUE_PRESET = ''
 const DEFAULT_TAB = 'resumo'
 
-/** Faixas de envelhecimento da inadimplência (espelham InstallmentAging do backend). */
-export type AgingBucketKey = 'not_due' | 'd1_30' | 'd31_60' | 'd61_90' | 'd90_plus'
-
-// Parcelas com saldo em aberto (não pagas, não canceladas) — o recorte que o
-// aging mede. Usado no cross-filter de uma faixa para a tabela.
-const OPEN_STATUSES = 'scheduled,invoiced,partial'
-
-/** Traduz a faixa de aging em intervalo de vencimento (due_date) relativo a hoje. */
-function agingDueRange(bucket: AgingBucketKey): { min: string; max: string } {
-  const today = new Date()
-  const fmt = (date: Date) => format(date, 'yyyy-MM-dd')
-  switch (bucket) {
-    case 'not_due':
-      return { min: fmt(today), max: '' }
-    case 'd1_30':
-      return { min: fmt(subDays(today, 30)), max: fmt(subDays(today, 1)) }
-    case 'd31_60':
-      return { min: fmt(subDays(today, 60)), max: fmt(subDays(today, 31)) }
-    case 'd61_90':
-      return { min: fmt(subDays(today, 90)), max: fmt(subDays(today, 61)) }
-    case 'd90_plus':
-      return { min: '', max: fmt(subDays(today, 91)) }
-  }
-}
+export type { AgingBucketKey }
 
 export interface InstallmentsTableFilters {
   statusFilter: string[]
