@@ -1,16 +1,18 @@
+import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { endOfMonth, format, parseISO, subDays } from 'date-fns'
 import { parseAsInteger, parseAsString, useQueryStates } from 'nuqs'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { CustomerFilterValue } from '@/components/ui/customer-filter'
 import { computeDateRangePreset, type DateRangeValue } from '@/components/ui/date-range-filter'
+import { useInfiniteTable } from './use-infinite-table'
 import {
   type InstallmentListSummary,
   type InstallmentSummaryItemResponse,
   type InstallmentsQuery,
-  useInstallmentsSummary,
+  installmentKeys,
 } from './use-installments'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 20
 const DEFAULT_SORT = 'due_date:asc'
 // Sem filtro de vencimento por padrão: o console abre sobre a carteira inteira
 // (Pulso e Aging agregam toda a base). O usuário recorta a partir daí.
@@ -46,6 +48,7 @@ export interface InstallmentsTableFilters {
   statusFilter: string[]
   kindFilter: string[]
   paymentMethodFilter: string[]
+  overdueOnly: boolean
   dueDateRange: DateRangeValue | null
   paidAtRange: DateRangeValue | null
   customerFilter: CustomerFilterValue | null
@@ -53,19 +56,11 @@ export interface InstallmentsTableFilters {
   setStatusFilter: (value: string[]) => void
   setKindFilter: (value: string[]) => void
   setPaymentMethodFilter: (value: string[]) => void
+  setOverdueOnly: (value: boolean) => void
   setDueDateRange: (value: DateRangeValue | null) => void
   setPaidAtRange: (value: DateRangeValue | null) => void
   setCustomerFilter: (value: CustomerFilterValue | null) => void
   setProjectFilter: (value: number | null) => void
-}
-
-export interface InstallmentsTablePagination {
-  page: number
-  totalPages: number
-  total: number
-  pageSize: number
-  isLoading: boolean
-  setPage: (page: number) => void
 }
 
 export interface InstallmentsTableSort {
@@ -81,12 +76,16 @@ export interface InstallmentsTableView {
 export interface UseInstallmentsTableReturn {
   data: InstallmentSummaryItemResponse[]
   isLoading: boolean
+  isError: boolean
+  refetch: () => void
   total: number
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
   summary: InstallmentListSummary | null
   hasActiveFilters: boolean
   handleClearFilters: () => void
   filters: InstallmentsTableFilters
-  pagination: InstallmentsTablePagination
   sort: InstallmentsTableSort
   view: InstallmentsTableView
   queryParams: InstallmentsQuery
@@ -101,6 +100,7 @@ const installmentsQueryParsers = {
   status: parseAsString.withDefault(''),
   kind: parseAsString.withDefault(''),
   method: parseAsString.withDefault(''),
+  overdue: parseAsString.withDefault(''),
   duePreset: parseAsString.withDefault(DEFAULT_DUE_PRESET),
   dueMin: parseAsString.withDefault(''),
   dueMax: parseAsString.withDefault(''),
@@ -112,7 +112,6 @@ const installmentsQueryParsers = {
   project: parseAsInteger.withDefault(0),
   sort: parseAsString.withDefault(DEFAULT_SORT),
   tab: parseAsString.withDefault(DEFAULT_TAB),
-  page: parseAsInteger.withDefault(1),
   parcela: parseAsString.withDefault(''),
 }
 
@@ -132,6 +131,7 @@ function buildDateRange(preset: string, min: string, max: string): DateRangeValu
 }
 
 export function useInstallmentsTable(): UseInstallmentsTableReturn {
+  const { client } = useApiClient()
   const [queryState, setQueryState] = useQueryStates(installmentsQueryParsers, {
     history: 'push',
   })
@@ -140,6 +140,7 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     status,
     kind,
     method,
+    overdue,
     duePreset,
     dueMin,
     dueMax,
@@ -151,13 +152,13 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     project,
     sort,
     tab,
-    page,
     parcela,
   } = queryState
 
   const statusFilter = useMemo(() => csvToArray(status), [status])
   const kindFilter = useMemo(() => csvToArray(kind), [kind])
   const paymentMethodFilter = useMemo(() => csvToArray(method), [method])
+  const overdueOnly = overdue === 'true'
   const dueDateRange = useMemo(
     () => buildDateRange(duePreset, dueMin, dueMax),
     [duePreset, dueMin, dueMax]
@@ -172,8 +173,9 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
   )
   const projectFilter = project > 0 ? project : null
 
-  const queryParams = useMemo(() => {
-    const params: InstallmentsQuery = { page, page_size: PAGE_SIZE }
+  // Parâmetros de filtro (sem page) — chave do infinite query e base do by-project.
+  const filterParams = useMemo(() => {
+    const params: InstallmentsQuery = {}
 
     if (statusFilter.length > 0)
       params.status = statusFilter as NonNullable<InstallmentsQuery['status']>
@@ -187,16 +189,22 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     if (dueDateRange?.max) params['due_date[max]'] = dueDateRange.max
     if (paidAtRange?.min) params['paid_at[min]'] = paidAtRange.min
     if (paidAtRange?.max) params['paid_at[max]'] = paidAtRange.max
+
+    // "Em atraso": filtro nativo do backend (construct-pro-api #145) — due_date < hoje
+    // ∧ não-cancelada ∧ restante > 0, combinável com os demais filtros e reconciliando
+    // com `overdue_count` do summary. O back é a verdade; sem fallback derivado.
+    if (overdueOnly) params.overdue = true
+
     if (customer > 0) params.customer_id = customer
     if (project > 0) params.project_id = project
     if (sort) params.sort_by = [sort]
 
     return params
   }, [
-    page,
     statusFilter,
     kindFilter,
     paymentMethodFilter,
+    overdueOnly,
     dueDateRange,
     paidAtRange,
     customer,
@@ -204,17 +212,44 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     sort,
   ])
 
-  const { data, isLoading } = useInstallmentsSummary(queryParams)
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const { data, error } = await client.GET('/api/v1/installments/summary', {
+        params: { query: { ...filterParams, page, page_size: PAGE_SIZE } },
+      })
+      if (error) throw new Error('Falha ao carregar parcelas')
+      return {
+        items: data?.items ?? [],
+        total: data?.total ?? 0,
+        response: data?.summary ?? null,
+      }
+    },
+    [client, filterParams]
+  )
 
-  const installments = data?.items ?? []
-  const total = data?.total ?? 0
-  const summary = data?.summary ?? null
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const {
+    rows,
+    total,
+    firstResponse,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+    isError,
+    refetch,
+  } = useInfiniteTable<InstallmentSummaryItemResponse, InstallmentListSummary | null>({
+    queryKey: installmentKeys.summary(filterParams),
+    fetchPage,
+    pageSize: PAGE_SIZE,
+  })
+
+  const summary = firstResponse ?? null
 
   const hasActiveFilters = !!(
     statusFilter.length > 0 ||
     kindFilter.length > 0 ||
     paymentMethodFilter.length > 0 ||
+    overdueOnly ||
     (duePreset && duePreset !== DEFAULT_DUE_PRESET) ||
     paidPreset ||
     customer > 0 ||
@@ -226,6 +261,7 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       status: '',
       kind: '',
       method: '',
+      overdue: '',
       duePreset: DEFAULT_DUE_PRESET,
       dueMin: '',
       dueMax: '',
@@ -236,7 +272,6 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       customerName: '',
       project: 0,
       sort: DEFAULT_SORT,
-      page: 1,
     })
   }
 
@@ -248,13 +283,12 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     ) =>
     (value: DateRangeValue | null) => {
       if (!value) {
-        setQueryState({ [presetKey]: '', [minKey]: '', [maxKey]: '', page: 1 })
+        setQueryState({ [presetKey]: '', [minKey]: '', [maxKey]: '' })
       } else {
         setQueryState({
           [presetKey]: value.preset,
           [minKey]: value.preset === 'custom' ? value.min : '',
           [maxKey]: value.preset === 'custom' ? value.max : '',
-          page: 1,
         })
       }
     }
@@ -266,10 +300,10 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     setQueryState({
       tab: 'parcelas',
       status: OPEN_STATUSES,
+      overdue: '',
       duePreset: 'custom',
       dueMin: min,
       dueMax: max,
-      page: 1,
     })
   }
 
@@ -281,23 +315,41 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
     setQueryState({
       tab: 'parcelas',
       status: '',
+      overdue: '',
       duePreset: 'custom',
       dueMin: format(start, 'yyyy-MM-dd'),
       dueMax: format(endOfMonth(start), 'yyyy-MM-dd'),
-      page: 1,
     })
   }
 
   // Cross-filter: clicar num empreendimento recorta a aba Parcelas para a carteira
   // daquele projeto (dimensão ortogonal, não mexe nos demais filtros ativos).
   const applyProjectFilter = (projectId: number) => {
-    setQueryState({ tab: 'parcelas', project: projectId, page: 1 })
+    setQueryState({ tab: 'parcelas', project: projectId })
   }
 
+  // Estável (setQueryState do nuqs é estável): permite useCallback a jusante e
+  // preserva a memoização por linha da tabela (DataTableRow).
+  const setSelectedInstallmentId = useCallback(
+    (id: string) => {
+      setQueryState({ parcela: id })
+    },
+    [setQueryState]
+  )
+
   return {
-    data: installments,
+    data: rows,
     isLoading,
+    isError,
+    refetch: () => {
+      refetch()
+    },
     total,
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage: () => {
+      fetchNextPage()
+    },
     summary,
     hasActiveFilters,
     handleClearFilters,
@@ -305,45 +357,39 @@ export function useInstallmentsTable(): UseInstallmentsTableReturn {
       statusFilter,
       kindFilter,
       paymentMethodFilter,
+      overdueOnly,
       dueDateRange,
       paidAtRange,
       customerFilter,
       projectFilter,
-      setStatusFilter: (value) => setQueryState({ status: arrayToCsv(value), page: 1 }),
-      setKindFilter: (value) => setQueryState({ kind: arrayToCsv(value), page: 1 }),
-      setPaymentMethodFilter: (value) => setQueryState({ method: arrayToCsv(value), page: 1 }),
+      setStatusFilter: (value) => setQueryState({ status: arrayToCsv(value) }),
+      setKindFilter: (value) => setQueryState({ kind: arrayToCsv(value) }),
+      setPaymentMethodFilter: (value) => setQueryState({ method: arrayToCsv(value) }),
+      setOverdueOnly: (value) => setQueryState({ overdue: value ? 'true' : '' }),
       setDueDateRange: setDateRange('duePreset', 'dueMin', 'dueMax'),
       setPaidAtRange: setDateRange('paidPreset', 'paidMin', 'paidMax'),
       setCustomerFilter: (value) => {
         if (!value) {
-          setQueryState({ customer: 0, customerName: '', page: 1 })
+          setQueryState({ customer: 0, customerName: '' })
         } else {
-          setQueryState({ customer: value.id, customerName: value.full_name, page: 1 })
+          setQueryState({ customer: value.id, customerName: value.full_name })
         }
       },
-      setProjectFilter: (value) => setQueryState({ project: value ?? 0, page: 1 }),
-    },
-    pagination: {
-      page,
-      totalPages,
-      total,
-      pageSize: PAGE_SIZE,
-      isLoading,
-      setPage: (value) => setQueryState({ page: value }),
+      setProjectFilter: (value) => setQueryState({ project: value ?? 0 }),
     },
     sort: {
       sort,
-      setSort: (value) => setQueryState({ sort: value, page: 1 }),
+      setSort: (value) => setQueryState({ sort: value }),
     },
     view: {
       tab,
       setTab: (value: string) => setQueryState({ tab: value }),
     },
-    queryParams,
+    queryParams: filterParams,
     applyAgingBucket,
     applyMonthFilter,
     applyProjectFilter,
     selectedInstallmentId: parcela,
-    setSelectedInstallmentId: (id: string) => setQueryState({ parcela: id }),
+    setSelectedInstallmentId,
   }
 }

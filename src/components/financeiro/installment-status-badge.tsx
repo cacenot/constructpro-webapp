@@ -20,11 +20,41 @@ const statusStyles: Record<InstallmentStatusValue, { badge: string; glow: boolea
   canceled: { badge: 'border-border bg-muted text-muted-foreground', glow: false },
 }
 
+const OVERDUE_BADGE = 'border-destructive/30 bg-destructive/10 text-destructive'
+
 interface InstallmentStatusBadgeProps {
   status: InstallmentStatusValue
+  /**
+   * Inadimplência derivada (ver lib/installment-overdue). Quando `true`, o badge
+   * vira "Em atraso" (coral) no lugar do status base — pendente continua pendente,
+   * mas quando vence em aberto a comunicação muda. Não há status `overdue` no back.
+   */
+  overdue?: boolean
+  daysOverdue?: number
 }
 
-export function InstallmentStatusBadge({ status }: InstallmentStatusBadgeProps) {
+export function InstallmentStatusBadge({
+  status,
+  overdue,
+  daysOverdue,
+}: InstallmentStatusBadgeProps) {
+  if (overdue) {
+    return (
+      <Badge variant="ghost" className={cn('gap-1.5 rounded-full border', OVERDUE_BADGE)}>
+        <span
+          aria-hidden
+          className="size-1.5 rounded-full bg-current shadow-[0_0_5px_currentColor]"
+        />
+        Em atraso
+        {daysOverdue && daysOverdue > 0 ? (
+          // Em telas estreitas o sufixo sai para o badge caber na viewport;
+          // os dias seguem visíveis no painel de detalhe.
+          <span className="hidden tabular-nums opacity-80 sm:inline">· {daysOverdue}d</span>
+        ) : null}
+      </Badge>
+    )
+  }
+
   const { badge, glow } = statusStyles[status]
   return (
     <Badge variant="ghost" className={cn('gap-1.5 rounded-full border', badge)}>

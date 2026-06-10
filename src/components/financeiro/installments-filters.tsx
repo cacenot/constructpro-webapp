@@ -16,24 +16,22 @@ import { PAYMENT_METHOD_LABELS } from '@/schemas/sale.schema'
 const statusOptions = getInstallmentStatusOptions('pt-BR')
 const kindOptions = getInstallmentKindOptions('pt-BR')
 
-const statusLabelOverrides: Partial<Record<string, string>> = {
-  overdue: 'Em atraso',
-}
+// "Em atraso" não é status do backend (é condição derivada, filtro `overdue`),
+// mas para o usuário é um recorte de status como outro qualquer: entra como
+// pseudo-opção no mesmo select e é separado de volta no onChange.
+const OVERDUE_OPTION = 'overdue'
 
-const statusSelectOptions: MultiSelectOption[] = Object.values(InstallmentStatus).map((value) => {
-  const option = statusOptions.find((opt) => opt.value === value)
-  return {
-    value,
-    label: statusLabelOverrides[value] ?? option?.label ?? value,
-  }
-})
+const statusSelectOptions: MultiSelectOption[] = [
+  { value: OVERDUE_OPTION, label: 'Em atraso' },
+  ...Object.values(InstallmentStatus).map((value) => {
+    const option = statusOptions.find((opt) => opt.value === value)
+    return { value: value as string, label: option?.label ?? value }
+  }),
+]
 
 const kindSelectOptions: MultiSelectOption[] = Object.values(InstallmentKind).map((value) => {
   const option = kindOptions.find((opt) => opt.value === value)
-  return {
-    value,
-    label: option?.label || value,
-  }
+  return { value, label: option?.label || value }
 })
 
 const methodSelectOptions: MultiSelectOption[] = Object.entries(PAYMENT_METHOD_LABELS).map(
@@ -49,6 +47,7 @@ export function InstallmentsFilters({
   statusFilter,
   kindFilter,
   paymentMethodFilter,
+  overdueOnly,
   dueDateRange,
   paidAtRange,
   customerFilter,
@@ -56,6 +55,7 @@ export function InstallmentsFilters({
   setStatusFilter,
   setKindFilter,
   setPaymentMethodFilter,
+  setOverdueOnly,
   setDueDateRange,
   setPaidAtRange,
   setCustomerFilter,
@@ -64,45 +64,44 @@ export function InstallmentsFilters({
   onClearFilters,
 }: InstallmentsFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex shrink-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0 sm:flex-wrap sm:overflow-visible">
       <ProjectFilter value={projectFilter} onChange={setProjectFilter} />
-
       <CustomerFilter value={customerFilter} onChange={setCustomerFilter} />
 
       <MultiSelectFilter
         options={statusSelectOptions}
-        value={statusFilter}
-        onChange={setStatusFilter}
+        value={overdueOnly ? [OVERDUE_OPTION, ...statusFilter] : statusFilter}
+        onChange={(next) => {
+          const wantsOverdue = next.includes(OVERDUE_OPTION)
+          if (wantsOverdue !== overdueOnly) setOverdueOnly(wantsOverdue)
+          const statuses = next.filter((v) => v !== OVERDUE_OPTION)
+          if (statuses.join(',') !== statusFilter.join(',')) setStatusFilter(statuses)
+        }}
         placeholder="Status"
-        className="w-44"
       />
-
       <MultiSelectFilter
         options={kindSelectOptions}
         value={kindFilter}
         onChange={setKindFilter}
         placeholder="Tipo"
-        className="w-40"
       />
-
       <MultiSelectFilter
         options={methodSelectOptions}
         value={paymentMethodFilter}
         onChange={setPaymentMethodFilter}
-        placeholder="Forma de pagamento"
-        className="w-52"
+        placeholder="Forma"
       />
 
-      <DateRangeFilter value={dueDateRange} onChange={setDueDateRange} placeholder="Vencimento" />
+      <span className="hidden h-5 w-px shrink-0 bg-border sm:block" aria-hidden />
 
+      <DateRangeFilter value={dueDateRange} onChange={setDueDateRange} placeholder="Vencimento" />
       <DateRangeFilter value={paidAtRange} onChange={setPaidAtRange} placeholder="Recebido em" />
 
       {hasActiveFilters && onClearFilters && (
         <Button
           variant="ghost"
-          size="sm"
           onClick={onClearFilters}
-          className="h-9 gap-1.5 text-muted-foreground"
+          className="ml-auto gap-1.5 text-muted-foreground"
         >
           <X className="size-3.5" />
           Limpar

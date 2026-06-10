@@ -60,7 +60,7 @@ export function InstallmentsAgingBlock({
         <div>
           <h3 className="text-sm font-semibold">Inadimplência por idade</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Recebíveis vencidos por faixa de atraso
+            Recebíveis em atraso por faixa de idade
           </p>
         </div>
         {hasOverdue && (
@@ -69,7 +69,7 @@ export function InstallmentsAgingBlock({
               {formatCurrency(overdueTotal / 100)}
             </div>
             <div className="mt-1 text-xs text-muted-foreground tabular-nums">
-              {overdueCount} {plural(overdueCount)} {overdueCount === 1 ? 'vencida' : 'vencidas'}
+              {overdueCount} {plural(overdueCount)} em atraso
             </div>
           </div>
         )}
@@ -116,7 +116,7 @@ export function InstallmentsAgingBlock({
             <ShieldCheck className="size-5 shrink-0 text-success" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-success">Carteira em dia</p>
-              <p className="text-xs text-muted-foreground">Nenhuma parcela vencida no período.</p>
+              <p className="text-xs text-muted-foreground">Nenhuma parcela em atraso no período.</p>
             </div>
           </div>
         )}
@@ -161,7 +161,7 @@ function AgingRow({
     <button
       type="button"
       onClick={onSelect}
-      className="group flex items-center gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-muted/50"
+      className="group flex items-center gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span
         aria-hidden

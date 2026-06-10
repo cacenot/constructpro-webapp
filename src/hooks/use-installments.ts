@@ -19,6 +19,8 @@ interface InstallmentsQuery {
   kind?: components['schemas']['InstallmentKind'][] | null
   status?: components['schemas']['InstallmentStatus'][] | null
   payment_method?: components['schemas']['PaymentMethod'][] | null
+  /** Filtro de inadimplência server-side (construct-pro-api #145, client ≥ 1.5.0). */
+  overdue?: boolean | null
   'due_date[min]'?: string | null
   'due_date[max]'?: string | null
   'paid_at[min]'?: string | null
