@@ -34,13 +34,13 @@ export function FinancialOverviewSection({ data }: FinancialOverviewSectionProps
           >
             {data.settled_contracts} quitados
           </Badge>
-          {data.defaulting_contracts > 0 && (
+          {data.overdue_contracts > 0 && (
             <Badge
               variant="outline"
               className="bg-pipeline-perdido text-pipeline-perdido-fg border-pipeline-perdido-dot/30 font-semibold"
             >
               <AlertTriangle className="mr-1 size-3" />
-              {data.defaulting_contracts} inadimplentes
+              {data.overdue_contracts} inadimplentes
             </Badge>
           )}
           <Badge variant="outline">{data.total_contracts} contratos</Badge>

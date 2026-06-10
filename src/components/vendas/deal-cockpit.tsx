@@ -1,6 +1,7 @@
 import type { components } from '@cacenot/construct-pro-api-client'
 import { Building2, UserRound, UsersRound } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { ContractOverdueBadge } from '@/components/contratos/contract-overdue-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ContractStatusBadge } from '@/components/vendas/contract-status-badge'
 import { StatLabel } from '@/components/vendas/data-row'
@@ -57,7 +58,7 @@ export function DealCockpit({
   // já mostra o estado de erro com "Tentar novamente".
   const financialUnavailable = stageClosed && !!isContractError && !fin
   const contractStatus = contractDetail?.status
-  const isActiveContract = contractStatus === 'active' || contractStatus === 'in_default'
+  const isActiveContract = contractStatus === 'active'
 
   // Headline + estatísticas de apoio, adaptados ao estado.
   let headlineLabel: string
@@ -191,7 +192,10 @@ export function DealCockpit({
             <div className="flex items-center justify-between gap-2">
               <StatLabel>{headlineLabel}</StatLabel>
               {financialMode && contractDetail?.status && (
-                <ContractStatusBadge status={contractDetail.status} />
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <ContractStatusBadge status={contractDetail.status} />
+                  <ContractOverdueBadge isOverdue={contractDetail.is_overdue} />
+                </div>
               )}
             </div>
             <p className="tabular-nums text-2xl font-semibold leading-none tracking-tight">

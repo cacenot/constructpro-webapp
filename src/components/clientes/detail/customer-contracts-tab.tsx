@@ -24,10 +24,6 @@ const STATUS_CONFIG: Record<ContractStatus, { label: string; className: string }
     label: 'Quitado',
     className: 'border-info/30 bg-info/10 text-info',
   },
-  in_default: {
-    label: 'Inadimplente',
-    className: 'border-destructive/30 bg-destructive/10 text-destructive',
-  },
   pending: {
     label: 'Pendente',
     className: 'border-warning/30 bg-warning/10 text-warning',

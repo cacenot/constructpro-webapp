@@ -43,6 +43,7 @@ export default function ContratosPage() {
   const [indexTypeFilter, setIndexTypeFilter] = useState<string>('all')
   const [periodFilter, setPeriodFilter] = useState<string>('all')
   const [onlyPendingContracts, setOnlyPendingContracts] = useState(false)
+  const [onlyOverdueContracts, setOnlyOverdueContracts] = useState(false)
   const [page, setPage] = useState(1)
 
   useEffect(() => {
@@ -61,8 +62,9 @@ export default function ContratosPage() {
       page: number
       page_size: number
       sale_id?: number | null
-      status?: ('active' | 'settled' | 'pending' | 'in_default' | 'canceled' | 'terminated')[]
+      status?: ('active' | 'settled' | 'pending' | 'canceled' | 'terminated')[]
       index_type_code?: string
+      overdue?: boolean
       'signed_at[min]'?: string
       'signed_at[max]'?: string
     } = {
@@ -83,6 +85,10 @@ export default function ContratosPage() {
 
     if (onlyPendingContracts) {
       params.status = ['pending']
+    }
+
+    if (onlyOverdueContracts) {
+      params.overdue = true
     }
 
     if (indexTypeFilter !== 'all') {
@@ -108,6 +114,7 @@ export default function ContratosPage() {
     debouncedSearch,
     statusFilter,
     onlyPendingContracts,
+    onlyOverdueContracts,
     indexTypeFilter,
     periodFilter,
   ])
@@ -149,7 +156,8 @@ export default function ContratosPage() {
     statusFilter !== 'all' ||
     indexTypeFilter !== 'all' ||
     periodFilter !== 'all' ||
-    onlyPendingContracts
+    onlyPendingContracts ||
+    onlyOverdueContracts
 
   const handleClearFilters = () => {
     setSearch('')
@@ -157,6 +165,7 @@ export default function ContratosPage() {
     setIndexTypeFilter('all')
     setPeriodFilter('all')
     setOnlyPendingContracts(false)
+    setOnlyOverdueContracts(false)
     setPage(1)
   }
 
@@ -254,6 +263,19 @@ export default function ContratosPage() {
             />
             <Label htmlFor="only-pending" className="text-sm cursor-pointer">
               Apenas contratos pendentes
+            </Label>
+          </div>
+          <div className="flex items-center gap-2 border rounded-lg px-3 py-2">
+            <Switch
+              id="only-overdue"
+              checked={onlyOverdueContracts}
+              onCheckedChange={(checked) => {
+                setOnlyOverdueContracts(checked)
+                setPage(1)
+              }}
+            />
+            <Label htmlFor="only-overdue" className="text-sm cursor-pointer">
+              Apenas inadimplentes
             </Label>
           </div>
         </div>

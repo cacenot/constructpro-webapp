@@ -19,6 +19,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { ContractResponse } from '@/hooks/useContracts'
 import { formatCurrency, formatId } from '@/lib/utils'
+import { ContractOverdueBadge } from './contract-overdue-badge'
 import { ContractStatusBadge } from './contract-status-badge'
 
 interface ContractRowProps {
@@ -53,9 +54,10 @@ export function ContractRow({ contract, sale }: ContractRowProps) {
         </span>
       </div>
 
-      {/* Status */}
-      <div className="w-32 shrink-0">
+      {/* Status + inadimplência */}
+      <div className="flex w-44 shrink-0 flex-wrap items-center gap-1.5">
         <ContractStatusBadge status={contract.status || 'pending'} />
+        <ContractOverdueBadge isOverdue={contract.is_overdue} />
       </div>
 
       {/* Data de Assinatura (hidden xl:block) */}

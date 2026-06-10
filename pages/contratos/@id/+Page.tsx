@@ -10,6 +10,7 @@ import { navigate } from 'vike/client/router'
 import { usePageContext } from 'vike-react/usePageContext'
 import { AppLayout } from '@/components/app-layout'
 import { BalanceTimelineChart } from '@/components/contratos/balance-timeline-chart'
+import { ContractOverdueBadge } from '@/components/contratos/contract-overdue-badge'
 import { ContractStatusBadge } from '@/components/contratos/contract-status-badge'
 import { CorrectionChart } from '@/components/contratos/correction-chart'
 import { Badge } from '@/components/ui/badge'
@@ -95,7 +96,7 @@ export default function ContractDetailPage() {
   const outstandingBalanceColor =
     contract.status === 'settled'
       ? 'text-emerald-600 dark:text-emerald-400'
-      : contract.status === 'in_default'
+      : contract.is_overdue
         ? 'text-red-600 dark:text-red-400'
         : ''
 
@@ -130,6 +131,7 @@ export default function ContractDetailPage() {
                   Contrato {formatId(contract.id)}
                 </span>
                 {contract.status && <ContractStatusBadge status={contract.status} />}
+                <ContractOverdueBadge isOverdue={contract.is_overdue} />
               </div>
               <p className="text-xs text-muted-foreground">
                 Criado em {formatDate(contract.created_at)}
