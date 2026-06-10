@@ -22,6 +22,8 @@ test.describe('Dashboard — Início', () => {
     await expect(page.getByText('Maiores atrasos')).toBeVisible()
     await expect(page.getByText('João Silva')).toBeVisible()
     await expect(page.getByText('Recebimento', { exact: true })).toBeVisible()
+    // Garante que o gráfico de cashflow renderizou barras de verdade (não só o título).
+    await expect(page.locator('.recharts-bar-rectangle').first()).toBeVisible()
   })
 
   test('faixa de aging deep-linka o financeiro filtrado', async ({

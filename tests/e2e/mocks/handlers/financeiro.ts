@@ -7,7 +7,10 @@ import * as factory from '../factory'
  */
 export async function registerFinanceiroHandlers(page: Page) {
   // GET /api/v1/installments — listagem paginada (regex cobre query params)
-  // ATENÇÃO: regex não captura /summary, /financial-summary, /cashflow — ok.
+  // A regex exige fim-de-string ou '?' logo após /installments, por isso não captura subpaths
+  // (/summary, /financial-summary, /cashflow, /:id, etc.).
+  // STALE: payload no contrato antigo (pré-WireMoney). Nenhum teste atual abre o
+  // painel de detalhe; quem for testar isso precisa migrar para InstallmentDetailResponse.
   await page.route(/\/api\/v1\/installments(?:[?]|$)/, async (route) => {
     if (route.request().method() !== 'GET') return route.continue()
 
@@ -30,7 +33,10 @@ export async function registerFinanceiroHandlers(page: Page) {
   })
 
   // GET /api/v1/installments/:id — detalhe de parcela
-  await page.route(/\/api\/v1\/installments\/[^/]+$/, async (route) => {
+  // Negative lookahead garante que não casa com /summary, /financial-summary ou /cashflow.
+  // STALE: payload no contrato antigo (pré-WireMoney). Nenhum teste atual abre o
+  // painel de detalhe; quem for testar isso precisa migrar para InstallmentDetailResponse.
+  await page.route(/\/api\/v1\/installments\/(?!summary|financial-summary|cashflow)[^/]+$/, async (route) => {
     if (route.request().method() !== 'GET') return route.continue()
     await route.fulfill({
       status: 200,
@@ -101,21 +107,15 @@ export async function registerFinanceiroHandlers(page: Page) {
 
   // GET /api/v1/installments/summary — resumo de parcelas (brancheia por overdue)
   // ATENÇÃO: registrado POR ÚLTIMO pois o Playwright dá precedência à rota mais recente.
-  // A rota de lista acima (regex) não captura /summary (não é dígito após /installments/).
+  // A rota de lista acima não captura /summary porque sua regex exige fim-de-string ou '?'
+  // logo após /installments, sem aceitar subpaths adicionais.
   await page.route('**/api/v1/installments/summary*', async (route) => {
     const url = new URL(route.request().url())
     const overdueOnly = url.searchParams.get('overdue') === 'true'
 
+    // Ordem: mais atrasados primeiro (contrato real: overdue=true&sort_by=due_date:asc)
     const items = overdueOnly
       ? [
-          summaryItem(),
-          summaryItem({
-            id: 'b9f7a2c4-0000-4000-8000-000000000002',
-            customer: { id: 8, full_name: 'Maria Lopes', cpf_cnpj: '987.654.321-00' },
-            days_overdue: 52,
-            remaining_amount: factory.money(1_230_000),
-            current_amount: factory.money(1_230_000),
-          }),
           summaryItem({
             id: 'b9f7a2c4-0000-4000-8000-000000000003',
             customer: { id: 9, full_name: 'Pedro Martins', cpf_cnpj: '111.222.333-44' },
@@ -123,10 +123,32 @@ export async function registerFinanceiroHandlers(page: Page) {
             remaining_amount: factory.money(815_000),
             current_amount: factory.money(815_000),
           }),
+          summaryItem({
+            id: 'b9f7a2c4-0000-4000-8000-000000000002',
+            customer: { id: 8, full_name: 'Maria Lopes', cpf_cnpj: '987.654.321-00' },
+            days_overdue: 52,
+            remaining_amount: factory.money(1_230_000),
+            current_amount: factory.money(1_230_000),
+          }),
+          summaryItem(),
         ]
       : [
-          summaryItem({ id: 'b9f7a2c4-0000-4000-8000-000000000010', is_overdue: false, days_overdue: 0, status: 'invoiced' }),
-          summaryItem({ id: 'b9f7a2c4-0000-4000-8000-000000000011', is_overdue: false, days_overdue: 0, status: 'scheduled' }),
+          summaryItem({
+            id: 'b9f7a2c4-0000-4000-8000-000000000010',
+            is_overdue: false,
+            days_overdue: 0,
+            due_date: '2026-07-15',
+            status: 'invoiced',
+            customer: { id: 10, full_name: 'Ana Souza', cpf_cnpj: '222.333.444-55' },
+          }),
+          summaryItem({
+            id: 'b9f7a2c4-0000-4000-8000-000000000011',
+            is_overdue: false,
+            days_overdue: 0,
+            due_date: '2026-08-15',
+            status: 'scheduled',
+            customer: { id: 11, full_name: 'Carlos Lima', cpf_cnpj: '333.444.555-66' },
+          }),
         ]
 
     await route.fulfill({

@@ -24,7 +24,8 @@ test.describe('Financeiro — Parcelas', () => {
 
   test('exibe itens na tabela com dados do mock', async ({ authenticatedPage: page }) => {
     await page.goto('/financeiro')
-    // O mock de summary (branch base) retorna 2 summaryItem não-overdue.
-    await expect(page.getByRole('row').nth(1)).toBeVisible()
+    // O mock de summary (branch base) retorna 2 itens não-overdue com customers distintos.
+    // Assert de conteúdo garante que dados reais do mock chegaram — não passa com skeleton/erro/vazio.
+    await expect(page.getByRole('row', { name: /Ana Souza/ })).toBeVisible()
   })
 })
