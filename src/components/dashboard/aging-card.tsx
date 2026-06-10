@@ -27,7 +27,9 @@ export function AgingCard() {
   const { data, isLoading, isError } = useInstallmentsSummary({ page_size: 1 })
   const topOverdue = useInstallmentsSummary({
     overdue: true,
-    sort_by: ['current_amount:desc'],
+    // due_date:asc com overdue=true ⇒ vencidas mais antigas primeiro (maior atraso em dias).
+    // Ordenar por valor exigiria campo de amount na whitelist de sort do backend (#157).
+    sort_by: ['due_date:asc'],
     page_size: 3,
   })
 
@@ -85,10 +87,11 @@ export function AgingCard() {
 
             <div className="-mx-2 flex flex-col">
               {buckets.map((bucket) => (
+                // href recalculado por render: mantém o recorte de datas fresco (refetch-on-focus re-renderiza).
                 <a
                   key={bucket.key}
                   href={agingBucketHref(bucket.key)}
-                  className="group flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-muted/50"
+                  className="group flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <span
                     aria-hidden
@@ -102,6 +105,7 @@ export function AgingCard() {
                   <span className="ml-auto flex items-baseline gap-3">
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                       {bucket.count}
+                      <span className="sr-only"> {plural(bucket.count)}</span>
                     </span>
                     <span
                       className={cn(
@@ -128,7 +132,17 @@ export function AgingCard() {
         )}
       </div>
 
-      {hasOverdue && topItems.length > 0 && (
+      {/* Erro do topOverdue degrada silencioso (mesmo endpoint do summary — falhas
+          correlacionadas; o estado de erro do card principal já cobre o usuário). */}
+      {hasOverdue && topOverdue.isLoading && (
+        <div className="space-y-1.5 border-t px-5 py-3">
+          <Skeleton className="h-3 w-24" />
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-7 w-full" />
+          ))}
+        </div>
+      )}
+      {hasOverdue && !topOverdue.isLoading && topItems.length > 0 && (
         <div className="border-t px-5 py-3">
           <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
             Maiores atrasos
@@ -138,7 +152,7 @@ export function AgingCard() {
               <a
                 key={item.id}
                 href={`/financeiro?parcela=${item.id}`}
-                className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50"
+                className="flex items-center justify-between gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span className="min-w-0 truncate text-sm">
                   {item.customer?.full_name ?? 'Cliente'}
