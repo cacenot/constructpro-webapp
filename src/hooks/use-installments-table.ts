@@ -14,7 +14,8 @@ import {
 const PAGE_SIZE = 20
 const DEFAULT_SORT = 'due_date:asc'
 // Sem filtro de vencimento por padrão: o console abre sobre a carteira inteira
-// (Pulso e Aging agregam toda a base). O usuário recorta a partir daí.
+// (o Pulso agrega toda a base; os deep-links do dashboard chegam por cima deste default).
+// O usuário recorta a partir daí.
 const DEFAULT_DUE_PRESET = ''
 
 export interface InstallmentsTableFilters {

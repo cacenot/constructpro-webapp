@@ -76,6 +76,7 @@ export function CashflowCard() {
             className="h-44 w-full [&_.recharts-bar_path]:cursor-pointer"
           >
             <BarChart
+              accessibilityLayer
               data={chartData}
               margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
               onClick={(state) => {
@@ -169,7 +170,7 @@ function CashflowCardSkeleton() {
         </div>
       </header>
       <div className="px-5 pb-5 pt-2">
-        <div className="flex h-36 items-end gap-3">
+        <div className="flex h-40 items-end gap-3">
           {[55, 70, 45, 85, 60, 75].map((h, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: skeleton bars
             <Skeleton key={i} className="flex-1 rounded-t" style={{ height: `${h}%` }} />
