@@ -10,9 +10,16 @@ import {
   useInstallmentsSummary,
 } from '@/hooks/use-installments'
 import { cashflowWindow, delinquencyRate, percentChange } from '@/lib/dashboard-metrics'
-import { formatCurrency, formatPercent } from '@/lib/utils'
+import { formatPercent } from '@/lib/utils'
 
-const fromCents = (cents: number) => formatCurrency(cents / 100)
+// Valores do hero sem centavos: em números de carteira os centavos não carregam
+// leitura e estouram a célula do strip (clipping verificado em 1280px).
+const fromCents = (cents: number) =>
+  new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  }).format(cents / 100)
 
 const VITAL_LABELS = [
   'Carteira a receber',
