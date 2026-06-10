@@ -29,13 +29,11 @@ import {
 } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
-  balanceGroupAmount,
   computeChainedStart,
-  computeDefaultStartDate,
-  computeMonthlySpan,
   deriveRecurrenceFields,
-  deriveRecurringFromSpan,
   formatBRDate,
+  planAppendedSchedule,
+  recomputeGroupForPeriodicity,
 } from '@/lib/installment-utils'
 import { cn } from '@/lib/utils'
 import {
@@ -72,15 +70,6 @@ function periodicityChip(kind: InstallmentKind, recurrence?: string | null): str
   if (recurrence) return INSTALLMENT_PERIODICITY_LABELS[recurrence as InstallmentPeriodicity] ?? ''
   if (kind === 'balloon') return 'Balão'
   return GROUP_LABELS[kind]
-}
-
-/** Meses entre ocorrências de cada periodicidade (fonte única do span/derivação). */
-const PERIOD_MONTHS: Record<Recurrence, number> = {
-  monthly: 1,
-  bimonthly: 2,
-  quarterly: 3,
-  semestral: 6,
-  yearly: 12,
 }
 
 interface InstallmentLedgerProps {
@@ -190,56 +179,8 @@ export function InstallmentLedger({
 
   const addRecurring = React.useCallback(
     (kind: 'regular' | 'balloon' | 'extra', recurrence: Recurrence) => {
-      const isYearly = recurrence === 'yearly'
-      const day = isYearly ? 15 : 10
-
-      // Mensais encadeiam (sem sobreposição) após o último grupo mensal.
-      if (kind === 'regular' && recurrence === 'monthly') {
-        const list = (watchedSchedules ?? []) as InstallmentScheduleFormData[]
-        const lastMonthly = [...list]
-          .reverse()
-          .find((s) => s.kind === 'regular' && s.recurrence_type === 'monthly' && s.start_date)
-        const startDate = lastMonthly
-          ? computeChainedStart(lastMonthly, day)
-          : computeDefaultStartDate('monthly', day, null)
-        append({
-          kind,
-          payment_method: 'boleto',
-          quantity: 1,
-          amount: 0,
-          specific_date: null,
-          recurrence_type: 'monthly',
-          recurrence_day: day,
-          recurrence_month: null,
-          start_date: startDate || null,
-          asset_proposal: null,
-        })
-        return
-      }
-
-      // Balões/reforços: quantidade derivada do span das mensais + saldo distribuído.
-      const span = computeMonthlySpan((watchedSchedules ?? []) as InstallmentScheduleFormData[])
-      const period = PERIOD_MONTHS[recurrence] ?? 1
-      const derived = span ? deriveRecurringFromSpan(span, period, day) : null
-      const quantity = derived?.quantity ?? 1
-      const startISO =
-        derived?.startISO ?? computeDefaultStartDate(recurrence, day, isYearly ? 12 : null)
-      const perAmount = saldo > 0 ? balanceGroupAmount(0, quantity, saldo) : 0
-      const { recurrence_day, recurrence_month } = startISO
-        ? deriveRecurrenceFields(startISO, recurrence)
-        : { recurrence_day: day, recurrence_month: isYearly ? 12 : null }
-      append({
-        kind,
-        payment_method: 'boleto',
-        quantity,
-        amount: perAmount,
-        specific_date: null,
-        recurrence_type: recurrence,
-        recurrence_day,
-        recurrence_month,
-        start_date: startISO || null,
-        asset_proposal: null,
-      })
+      const list = (watchedSchedules ?? []) as InstallmentScheduleFormData[]
+      append(planAppendedSchedule(kind, recurrence, list, saldo))
     },
     [append, watchedSchedules, saldo]
   )
@@ -251,26 +192,13 @@ export function InstallmentLedger({
       const list = (watchedSchedules ?? []) as InstallmentScheduleFormData[]
       const row = list[index]
       if (!row) return
-      const oldTotal = (row.quantity ?? 1) * (row.amount ?? 0)
-      const day = row.recurrence_day ?? (rec === 'yearly' ? 15 : 10)
-      const period = PERIOD_MONTHS[rec] ?? 1
-      const span = computeMonthlySpan(list)
-      const derived = span ? deriveRecurringFromSpan(span, period, day) : null
-      const quantity = derived?.quantity ?? row.quantity ?? 1
-      const startISO =
-        derived?.startISO ??
-        row.start_date ??
-        computeDefaultStartDate(rec, day, rec === 'yearly' ? 12 : null)
-      const amount = quantity > 0 ? Math.round(oldTotal / quantity) : (row.amount ?? 0)
-      const recFields = startISO
-        ? deriveRecurrenceFields(startISO, rec)
-        : { recurrence_day: day, recurrence_month: rec === 'yearly' ? 12 : null }
-      form.setValue(`installment_schedules.${index}.recurrence_type`, rec)
-      form.setValue(`installment_schedules.${index}.quantity`, quantity)
-      form.setValue(`installment_schedules.${index}.amount`, amount)
-      form.setValue(`installment_schedules.${index}.start_date`, startISO || null)
-      form.setValue(`installment_schedules.${index}.recurrence_day`, recFields.recurrence_day)
-      form.setValue(`installment_schedules.${index}.recurrence_month`, recFields.recurrence_month)
+      const next = recomputeGroupForPeriodicity(row, rec, list)
+      form.setValue(`installment_schedules.${index}.recurrence_type`, next.recurrence_type)
+      form.setValue(`installment_schedules.${index}.quantity`, next.quantity)
+      form.setValue(`installment_schedules.${index}.amount`, next.amount)
+      form.setValue(`installment_schedules.${index}.start_date`, next.start_date)
+      form.setValue(`installment_schedules.${index}.recurrence_day`, next.recurrence_day)
+      form.setValue(`installment_schedules.${index}.recurrence_month`, next.recurrence_month)
     },
     [watchedSchedules, form]
   )
@@ -501,6 +429,7 @@ export function InstallmentLedger({
                           chainedLocked={chainedLocked}
                           onUnlock={() => setUnlocked((s) => new Set(s).add(index))}
                           onPeriodicityChange={(rec) => handlePeriodicityChange(index, rec)}
+                          valorPropostaCents={valorPropostaCents}
                         />
                       )
                     })}
@@ -605,6 +534,8 @@ interface InstallmentRowProps {
   chainedLocked?: boolean
   onUnlock?: () => void
   onPeriodicityChange: (recurrence: Recurrence) => void
+  /** Base (centavos) para o input em % da entrega das chaves. */
+  valorPropostaCents?: number
 }
 
 function InstallmentRow({
@@ -620,6 +551,7 @@ function InstallmentRow({
   chainedLocked = false,
   onUnlock,
   onPeriodicityChange,
+  valorPropostaCents = 0,
 }: InstallmentRowProps) {
   const kind = (schedule?.kind ?? fallbackKind) as InstallmentKind
   const recurrence = schedule?.recurrence_type as Recurrence | null | undefined
@@ -686,10 +618,21 @@ function InstallmentRow({
           name={`installment_schedules.${index}.amount`}
           render={({ field: f }) => (
             <FormItem className={valorSpan}>
-              <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
-              <FormControl>
-                <CurrencyInput value={f.value} onChange={f.onChange} disabled={disabled} />
-              </FormControl>
+              {isKeyDelivery ? (
+                <EntryAmountField
+                  value={f.value}
+                  onChange={f.onChange}
+                  disabled={disabled}
+                  baseCents={valorPropostaCents}
+                />
+              ) : (
+                <>
+                  <FormLabel className={CONSOLE_LABEL}>Valor *</FormLabel>
+                  <FormControl>
+                    <CurrencyInput value={f.value} onChange={f.onChange} disabled={disabled} />
+                  </FormControl>
+                </>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -700,7 +643,9 @@ function InstallmentRow({
           name={`installment_schedules.${index}.payment_method`}
           render={({ field: f }) => (
             <FormItem className={formaSpan}>
-              <FormLabel className={CONSOLE_LABEL}>Forma *</FormLabel>
+              <FormLabel className={cn(CONSOLE_LABEL, isKeyDelivery && 'flex h-7 items-center')}>
+                Forma *
+              </FormLabel>
               <Select value={f.value} onValueChange={f.onChange} disabled={disabled}>
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -726,7 +671,7 @@ function InstallmentRow({
             name={`installment_schedules.${index}.specific_date`}
             render={({ field: f }) => (
               <FormItem className={dateSpan}>
-                <FormLabel className={CONSOLE_LABEL}>Data *</FormLabel>
+                <FormLabel className={cn(CONSOLE_LABEL, 'flex h-7 items-center')}>Data *</FormLabel>
                 <FormControl>
                   <DatePicker
                     value={f.value}

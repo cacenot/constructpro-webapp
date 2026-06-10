@@ -39,11 +39,16 @@ function dominantKind(cells: MonthlyCell[]): InstallmentKind {
 
 interface Props {
   schedules: SaleFormData['installment_schedules'] | undefined
+  /** Índice global da proposta (quando "mesmo índice"); herdado por grupos sem índice próprio. */
+  globalIndexCode?: string | null
   className?: string
 }
 
-export function InstallmentCalendar({ schedules, className }: Props) {
-  const breakdown = React.useMemo(() => computeMonthlyBreakdown(schedules ?? []), [schedules])
+export function InstallmentCalendar({ schedules, globalIndexCode = null, className }: Props) {
+  const breakdown = React.useMemo(
+    () => computeMonthlyBreakdown(schedules ?? [], globalIndexCode),
+    [schedules, globalIndexCode]
+  )
   const years = React.useMemo(() => {
     const ys = new Set<number>()
     for (const key of breakdown.keys()) ys.add(Number(key.slice(0, 4)))
@@ -130,11 +135,12 @@ function CalendarPopover({
 }) {
   const [yr, mo] = hover.key.split('-')
   const total = cells.reduce((s, c) => s + c.amount, 0)
-  const left = Math.max(8, Math.min(hover.x - 100, window.innerWidth - 208))
+  const WIDTH = 232
+  const left = Math.max(8, Math.min(hover.x - WIDTH / 2, window.innerWidth - WIDTH - 8))
   return (
     <div
       role="tooltip"
-      style={{ position: 'fixed', left, top: hover.y + 8, width: 200 }}
+      style={{ position: 'fixed', left, top: hover.y + 8, width: WIDTH }}
       className="z-50 rounded-lg border border-border bg-popover p-3 text-xs shadow-lg"
     >
       <p className="mb-2 font-semibold">
@@ -146,17 +152,26 @@ function CalendarPopover({
         <>
           {cells.map((c, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: cells in a month popover are ephemeral display-only items
-            <div key={i} className="mb-1.5 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <span className={cn('size-2 rounded-[2px]', KIND_DOT[c.kind])} />
-                {INSTALLMENT_KIND_LABELS[c.kind]}
+            <div key={i} className="mb-1.5 flex items-start justify-between gap-2">
+              <span className="flex min-w-0 items-start gap-1.5">
+                <span className={cn('mt-1 size-2 shrink-0 rounded-[2px]', KIND_DOT[c.kind])} />
+                <span className="min-w-0">
+                  <span className="block leading-tight">{INSTALLMENT_KIND_LABELS[c.kind]}</span>
+                  {c.indexCode && (
+                    <span className="block font-mono text-[0.6rem] leading-tight text-muted-foreground">
+                      {c.indexCode}
+                    </span>
+                  )}
+                </span>
               </span>
-              <span className="tabular-nums">{c.amount ? money(c.amount) : 'a definir'}</span>
+              <span className="shrink-0 whitespace-nowrap tabular-nums">
+                {c.amount ? money(c.amount) : 'a definir'}
+              </span>
             </div>
           ))}
-          <div className="mt-1 flex justify-between border-t border-border pt-1.5 font-semibold">
+          <div className="mt-1 flex justify-between gap-2 border-t border-border pt-1.5 font-semibold">
             <span>Total</span>
-            <span className="tabular-nums">{money(total)}</span>
+            <span className="shrink-0 whitespace-nowrap tabular-nums">{money(total)}</span>
           </div>
           <p className="mt-1 text-[0.6rem] text-muted-foreground">
             {cells.length} parcela{cells.length > 1 ? 's' : ''} no mês

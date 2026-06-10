@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { balanceGroupAmount } from '@/lib/installment-utils'
+import { distributeBalanceToGroup } from '@/lib/installment-utils'
 import { computeProposalVitals, isProposalBalanced } from '@/lib/proposal-vitals'
 import type { InstallmentKind, InstallmentScheduleFormData } from '@/schemas/sale.schema'
 import { InstallmentLedger } from './installment-ledger'
@@ -105,6 +105,13 @@ export function ProposalWorkbench({
   const watchedAgencyRate = useWatch({ control: form.control, name: 'commission_agency_rate' })
   const sameIndexForAll = (useWatch({ control: form.control, name: 'same_index_for_all' }) ??
     true) as boolean
+  const watchedIndexCode = useWatch({ control: form.control, name: 'index_type_code' }) as
+    | string
+    | null
+    | undefined
+  // Índice efetivo para o calendário: o global só vale quando "mesmo índice";
+  // com índice por grupo, cada parcela usa o seu (resolvido no breakdown).
+  const calendarIndexCode = sameIndexForAll ? (watchedIndexCode ?? null) : null
 
   // Valor da proposta: estado client-side; default = preço de tabela enquanto não editado.
   const [valorPropostaCents, setValorPropostaCents] = React.useState<number | null>(
@@ -232,14 +239,8 @@ export function ProposalWorkbench({
   const handleDistribute = React.useCallback(
     (kind: InstallmentKind) => {
       const schedules = form.getValues('installment_schedules') as InstallmentScheduleFormData[]
-      const indices = schedules.map((s, i) => ({ s, i })).filter((x) => x.s.kind === kind)
-      const qty = indices.reduce((sum, x) => sum + (x.s.quantity ?? 0), 0)
-      if (qty <= 0) return
-      for (const { i, s } of indices) {
-        form.setValue(
-          `installment_schedules.${i}.amount`,
-          balanceGroupAmount(s.amount ?? 0, qty, vitals.saldo)
-        )
+      for (const { index, amount } of distributeBalanceToGroup(schedules, kind, vitals.saldo)) {
+        form.setValue(`installment_schedules.${index}.amount`, amount)
       }
     },
     [form, vitals.saldo]
@@ -494,6 +495,7 @@ export function ProposalWorkbench({
                 vitals={vitals}
                 hasUnit={unitPriceCents > 0}
                 schedules={watchedSchedules}
+                globalIndexCode={calendarIndexCode}
                 onDistribute={handleDistribute}
               />
             </aside>

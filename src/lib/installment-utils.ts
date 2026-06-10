@@ -145,31 +145,49 @@ export function computeChainedStart(
 export interface MonthlyCell {
   kind: InstallmentKind
   amount: number
+  /** Índice de correção efetivo da parcela (por-grupo, senão o global). Entrada = null. */
+  indexCode: string | null
 }
 
-/** Mapa YYYY-MM → parcelas daquele mês (tipo + valor por parcela). */
+/**
+ * Mapa YYYY-MM → parcelas daquele mês (tipo, valor e índice por parcela).
+ * O índice efetivo é o do grupo (`index_type_code`) ou, na falta, o índice global
+ * `globalIndexCode` (proposta com "mesmo índice"). Entradas nunca têm índice.
+ */
 export function computeMonthlyBreakdown(
-  schedules: SaleFormData['installment_schedules']
+  schedules: SaleFormData['installment_schedules'],
+  globalIndexCode: string | null = null
 ): Map<string, MonthlyCell[]> {
   const map = new Map<string, MonthlyCell[]>()
-  const push = (dateStr: string, kind: InstallmentKind, amount: number) => {
+  const push = (
+    dateStr: string,
+    kind: InstallmentKind,
+    amount: number,
+    indexCode: string | null
+  ) => {
     if (!dateStr) return
     const key = dateStr.slice(0, 7)
     const arr = map.get(key) ?? []
-    arr.push({ kind, amount })
+    arr.push({ kind, amount, indexCode })
     map.set(key, arr)
   }
   for (const s of schedules) {
     const amount = s.amount ?? 0
+    const indexCode = s.kind === 'entry' ? null : (s.index_type_code ?? globalIndexCode ?? null)
     if (s.kind === 'entry' || s.kind === 'key_delivery' || s.recurrence_type == null) {
-      if (s.specific_date) push(s.specific_date, s.kind, amount)
+      if (s.specific_date) push(s.specific_date, s.kind, amount, indexCode)
     } else if (s.recurrence_type === 'yearly') {
       if (!s.start_date) continue
       const start = new Date(`${s.start_date}T12:00:00`)
       for (let i = 0; i < (s.quantity ?? 1); i++) {
         const d = new Date(start)
         d.setFullYear(d.getFullYear() + i)
-        push(formatDateISO(d.getFullYear(), d.getMonth() + 1, d.getDate()), s.kind, amount)
+        push(
+          formatDateISO(d.getFullYear(), d.getMonth() + 1, d.getDate()),
+          s.kind,
+          amount,
+          indexCode
+        )
       }
     } else {
       const interval = intervalMap[s.recurrence_type] ?? 1
@@ -177,11 +195,165 @@ export function computeMonthlyBreakdown(
       const start = new Date(`${s.start_date}T12:00:00`)
       for (let i = 0; i < (s.quantity ?? 1); i++) {
         const d = addMonthsClamped(start, i * interval, start.getDate())
-        push(formatDateISO(d.getFullYear(), d.getMonth() + 1, d.getDate()), s.kind, amount)
+        push(
+          formatDateISO(d.getFullYear(), d.getMonth() + 1, d.getDate()),
+          s.kind,
+          amount,
+          indexCode
+        )
       }
     }
   }
   return map
+}
+
+// ─── Group planning (lógica de UI extraída para teste puro) ────────────────────
+
+/** Meses entre ocorrências de cada periodicidade (inclui yearly = 12). */
+const PERIOD_MONTHS: Record<RecurrenceType, number> = {
+  monthly: 1,
+  bimonthly: 2,
+  quarterly: 3,
+  semestral: 6,
+  yearly: 12,
+}
+
+/**
+ * Monta o próximo schedule a adicionar (sem tocar no form).
+ * - Mensais regulares encadeiam após o último grupo mensal (sem sobreposição).
+ * - Balões/reforços derivam a quantidade do span das mensais e distribuem o saldo.
+ */
+export function planAppendedSchedule(
+  kind: 'regular' | 'balloon' | 'extra',
+  recurrence: RecurrenceType,
+  schedules: InstallmentScheduleFormData[],
+  saldoCents: number
+): InstallmentScheduleFormData {
+  const isYearly = recurrence === 'yearly'
+  const day = isYearly ? 15 : 10
+
+  // Mensais encadeiam (sem sobreposição) após o último grupo mensal.
+  if (kind === 'regular' && recurrence === 'monthly') {
+    const lastMonthly = [...schedules]
+      .reverse()
+      .find((s) => s.kind === 'regular' && s.recurrence_type === 'monthly' && s.start_date)
+    let startDate: string | null
+    if (lastMonthly) {
+      // Encadeia logo após o fim do último grupo mensal.
+      startDate = computeChainedStart(lastMonthly, day)
+    } else {
+      // Sem grupo mensal anterior: se houver entrada, inicia no mês seguinte à
+      // última entrada; caso contrário, na próxima ocorrência do dia default.
+      const lastEntryDate = schedules
+        .filter((s) => s.kind === 'entry' && s.specific_date)
+        .map((s) => s.specific_date as string)
+        .sort()
+        .at(-1)
+      if (lastEntryDate) {
+        const next = addMonthsClamped(new Date(`${lastEntryDate}T12:00:00`), 1, day)
+        startDate = formatDateISO(next.getFullYear(), next.getMonth() + 1, next.getDate())
+      } else {
+        startDate = computeDefaultStartDate('monthly', day, null)
+      }
+    }
+    return {
+      kind,
+      payment_method: 'boleto',
+      quantity: 1,
+      amount: 0,
+      specific_date: null,
+      recurrence_type: 'monthly',
+      recurrence_day: day,
+      recurrence_month: null,
+      start_date: startDate || null,
+      asset_proposal: null,
+    }
+  }
+
+  // Balões/reforços: quantidade derivada do span das mensais + saldo distribuído.
+  const span = computeMonthlySpan(schedules)
+  const period = PERIOD_MONTHS[recurrence] ?? 1
+  const derived = span ? deriveRecurringFromSpan(span, period, day) : null
+  const quantity = derived?.quantity ?? 1
+  const startISO =
+    derived?.startISO ?? computeDefaultStartDate(recurrence, day, isYearly ? 12 : null)
+  const perAmount = saldoCents > 0 ? balanceGroupAmount(0, quantity, saldoCents) : 0
+  const { recurrence_day, recurrence_month } = startISO
+    ? deriveRecurrenceFields(startISO, recurrence)
+    : { recurrence_day: day, recurrence_month: isYearly ? 12 : null }
+  return {
+    kind,
+    payment_method: 'boleto',
+    quantity,
+    amount: perAmount,
+    specific_date: null,
+    recurrence_type: recurrence,
+    recurrence_day,
+    recurrence_month,
+    start_date: startISO || null,
+    asset_proposal: null,
+  }
+}
+
+export interface PeriodicityRecompute {
+  recurrence_type: RecurrenceType
+  quantity: number
+  amount: number
+  start_date: string | null
+  recurrence_day: number
+  recurrence_month: number | null
+}
+
+/**
+ * Recalcula um grupo (reforço/balão) ao trocar a sazonalidade: deriva a quantidade
+ * pelo novo span das mensais e reparte o total antigo (muda o valor por parcela).
+ */
+export function recomputeGroupForPeriodicity(
+  row: InstallmentScheduleFormData,
+  rec: RecurrenceType,
+  schedules: InstallmentScheduleFormData[]
+): PeriodicityRecompute {
+  const oldTotal = (row.quantity ?? 1) * (row.amount ?? 0)
+  const day = row.recurrence_day ?? (rec === 'yearly' ? 15 : 10)
+  const period = PERIOD_MONTHS[rec] ?? 1
+  const span = computeMonthlySpan(schedules)
+  const derived = span ? deriveRecurringFromSpan(span, period, day) : null
+  const quantity = derived?.quantity ?? row.quantity ?? 1
+  const startISO =
+    derived?.startISO ??
+    row.start_date ??
+    computeDefaultStartDate(rec, day, rec === 'yearly' ? 12 : null)
+  const amount = quantity > 0 ? Math.round(oldTotal / quantity) : (row.amount ?? 0)
+  const recFields = startISO
+    ? deriveRecurrenceFields(startISO, rec)
+    : { recurrence_day: day, recurrence_month: rec === 'yearly' ? 12 : null }
+  return {
+    recurrence_type: rec,
+    quantity,
+    amount,
+    start_date: startISO || null,
+    recurrence_day: recFields.recurrence_day,
+    recurrence_month: recFields.recurrence_month,
+  }
+}
+
+/**
+ * Calcula os novos valores por parcela ao distribuir o saldo num grupo (kind).
+ * Retorna pares {index, amount} para o chamador aplicar no form. Vazio se o grupo
+ * não tem parcelas. Grupos com vários schedules compartilham a quantidade total.
+ */
+export function distributeBalanceToGroup(
+  schedules: InstallmentScheduleFormData[],
+  kind: InstallmentKind,
+  saldoCents: number
+): { index: number; amount: number }[] {
+  const members = schedules.map((s, index) => ({ s, index })).filter((x) => x.s.kind === kind)
+  const qty = members.reduce((sum, x) => sum + (x.s.quantity ?? 0), 0)
+  if (qty <= 0) return []
+  return members.map(({ s, index }) => ({
+    index,
+    amount: balanceGroupAmount(s.amount ?? 0, qty, saldoCents),
+  }))
 }
 
 // ─── Existing helpers (kept / refactored) ─────────────────────────────────────

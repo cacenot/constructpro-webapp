@@ -27,6 +27,8 @@ interface ProposalVitalsProps {
   hasUnit: boolean
   className?: string
   schedules?: SaleFormData['installment_schedules']
+  /** Índice global da proposta (quando "mesmo índice"), para o calendário exibir o índice por parcela. */
+  globalIndexCode?: string | null
   /** Para o controle "Distribuir": delega ao workbench/ledger que tem acesso ao form. */
   onDistribute?: (groupKind: InstallmentKind) => void
 }
@@ -41,11 +43,22 @@ export function ProposalVitals({
   hasUnit,
   className,
   schedules,
+  globalIndexCode = null,
   onDistribute,
 }: ProposalVitalsProps) {
   const { total, diff, diffPercent, entryTotal, entryPercent, financed, count, contractEnd } =
     vitals
   const hasPlan = total > 0
+
+  // Índice de correção efetivo por grupo (o do grupo, senão o global). Entrada = sem índice.
+  const indexByKind = React.useMemo(() => {
+    const map = new Map<InstallmentKind, string | null>()
+    for (const s of schedules ?? []) {
+      if (s.kind === 'entry' || map.has(s.kind)) continue
+      map.set(s.kind, s.index_type_code ?? globalIndexCode ?? null)
+    }
+    return map
+  }, [schedules, globalIndexCode])
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -210,6 +223,11 @@ export function ProposalVitals({
                 <dt className="text-xs text-muted-foreground">
                   {GROUP_LABELS[g.kind]}
                   <span className="ml-1.5 tabular-nums text-muted-foreground/70">×{g.count}</span>
+                  {indexByKind.get(g.kind) && (
+                    <span className="ml-1.5 font-mono text-[0.625rem] uppercase text-muted-foreground/70">
+                      {indexByKind.get(g.kind)}
+                    </span>
+                  )}
                 </dt>
                 <dd className="text-xs font-medium">
                   <AnimatedNumber value={g.subtotal} format={money} />
@@ -224,7 +242,7 @@ export function ProposalVitals({
       {vitals.count > 0 && (
         <div className="space-y-2">
           <span className={CONSOLE_LABEL}>Calendário de parcelas</span>
-          <InstallmentCalendar schedules={schedules} />
+          <InstallmentCalendar schedules={schedules} globalIndexCode={globalIndexCode} />
         </div>
       )}
     </div>
