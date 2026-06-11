@@ -1,19 +1,14 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { LayoutDashboard, ReceiptText } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { AppLayout } from '@/components/app-layout'
 import { CarteiraCompositionBar } from '@/components/financeiro/carteira-composition-bar'
 import { InstallmentDetailDrawer } from '@/components/financeiro/installment-detail-drawer'
 import { InstallmentDetailPanel } from '@/components/financeiro/installment-detail-panel'
-import { InstallmentsAgingBlock } from '@/components/financeiro/installments-aging-block'
-import { InstallmentsByProjectBlock } from '@/components/financeiro/installments-by-project-block'
-import { InstallmentsCashflowBlock } from '@/components/financeiro/installments-cashflow-block'
 import { InstallmentsFilters } from '@/components/financeiro/installments-filters'
 import { InstallmentsTable } from '@/components/financeiro/installments-table'
 import { PayInstallmentDialog } from '@/components/financeiro/pay-installment-dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type {
   InstallmentDetailResponse,
   InstallmentSummaryItemResponse,
@@ -22,10 +17,6 @@ import { installmentKeys } from '@/hooks/use-installments'
 import { useInstallmentsTable } from '@/hooks/use-installments-table'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { handleApiError, throwApiError } from '@/lib/api-error'
-
-// Revela a aba ativa: fade + slide-up sutil, 200ms, ease-out. Neutralizado em
-// reduced-motion pela regra global em globals.css.
-const TAB_CONTENT_MOTION = 'animate-in fade-in-0 slide-in-from-bottom-1 duration-200 ease-out'
 
 export default function FinanceiroPage() {
   const {
@@ -42,11 +33,6 @@ export default function FinanceiroPage() {
     handleClearFilters,
     filters,
     sort,
-    view,
-    queryParams,
-    applyAgingBucket,
-    applyMonthFilter,
-    applyProjectFilter,
     selectedInstallmentId,
     setSelectedInstallmentId,
   } = useInstallmentsTable()
@@ -99,9 +85,9 @@ export default function FinanceiroPage() {
     },
     onSuccess: (_data, installmentId) => {
       toast.success('Boleto emitido com sucesso')
-      // Emitir boleto muda status (→ invoiced) e gera boleto_url. A aba Parcelas
-      // lê de `summary` (tabela) e o painel de `detail` — `lists()` (prefixo
-      // distinto) não os alcança, então sem estas duas a UI ficava velha.
+      // Emitir boleto muda status (→ invoiced) e gera boleto_url. A tabela lê de
+      // `summary` e o painel de `detail` — `lists()` (prefixo distinto) não os
+      // alcança, então sem estas duas a UI ficava velha.
       queryClient.invalidateQueries({ queryKey: installmentKeys.lists() })
       queryClient.invalidateQueries({ queryKey: installmentKeys.summaries() })
       queryClient.invalidateQueries({ queryKey: installmentKeys.detail(installmentId) })
@@ -136,110 +122,57 @@ export default function FinanceiroPage() {
       <div className="flex h-full min-h-0 flex-col gap-4">
         <h1 className="shrink-0 text-xl font-semibold tracking-tight">Financeiro</h1>
 
-        <Tabs
-          value={view.tab}
-          onValueChange={view.setTab}
-          className="flex min-h-0 flex-1 flex-col gap-4"
-        >
-          <TabsList variant="line" className="shrink-0">
-            <TabsTrigger value="resumo">
-              <LayoutDashboard className="size-4" />
-              Resumo
-            </TabsTrigger>
-            <TabsTrigger value="parcelas">
-              <ReceiptText className="size-4" />
-              Parcelas
-            </TabsTrigger>
-          </TabsList>
+        {/* Pulso da carteira — filtro-scoped, acompanha o recorte da tabela. */}
+        <CarteiraCompositionBar summary={summary} isLoading={isLoading} className="shrink-0" />
 
-          {/* Pulso da carteira, persistente nas duas abas. Filtro-scoped. */}
-          <CarteiraCompositionBar summary={summary} isLoading={isLoading} className="shrink-0" />
+        <InstallmentsFilters
+          {...filters}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={handleClearFilters}
+        />
 
-          <TabsContent
-            value="resumo"
-            className={`min-h-0 flex-1 overflow-y-auto pb-2 ${TAB_CONTENT_MOTION}`}
-          >
-            <div className="grid gap-6 lg:grid-cols-12">
-              <div className="lg:col-span-5">
-                <InstallmentsAgingBlock
-                  summary={summary}
-                  isLoading={isLoading}
-                  onSelectBucket={applyAgingBucket}
-                />
-              </div>
-              <div className="lg:col-span-7">
-                <InstallmentsCashflowBlock
-                  projectId={filters.projectFilter}
-                  customerId={filters.customerFilter?.id ?? null}
-                  onSelectMonth={applyMonthFilter}
-                />
-              </div>
-              <div className="lg:col-span-12">
-                <InstallmentsByProjectBlock
-                  baseParams={queryParams}
-                  onSelectProject={applyProjectFilter}
-                />
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent
-            value="parcelas"
-            className={`flex min-h-0 flex-1 flex-col gap-4 ${TAB_CONTENT_MOTION}`}
-          >
-            <InstallmentsFilters
-              {...filters}
+        {/* overflow-x-clip: o aside anima com translateX e não pode vazar do layout */}
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-x-clip lg:flex-row lg:items-stretch">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
+            <InstallmentsTable
+              data={data}
+              isLoading={isLoading}
+              isError={isError}
+              onRetry={refetch}
               hasActiveFilters={hasActiveFilters}
               onClearFilters={handleClearFilters}
+              onViewDetails={handleViewDetails}
+              selectedId={selectedInstallmentId}
+              sort={sort.sort}
+              onSort={sort.setSort}
+              total={total}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              onReachEnd={fetchNextPage}
             />
+          </div>
 
-            {/* overflow-x-clip: o aside anima com translateX e não pode vazar do layout */}
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-x-clip lg:flex-row lg:items-stretch">
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border shadow-sm">
-                <InstallmentsTable
-                  data={data}
-                  isLoading={isLoading}
-                  isError={isError}
-                  onRetry={refetch}
-                  hasActiveFilters={hasActiveFilters}
-                  onClearFilters={handleClearFilters}
-                  onViewDetails={handleViewDetails}
-                  selectedId={selectedInstallmentId}
-                  sort={sort.sort}
-                  onSort={sort.setSort}
-                  total={total}
-                  hasNextPage={hasNextPage}
-                  isFetchingNextPage={isFetchingNextPage}
-                  onReachEnd={fetchNextPage}
+          {/* Painel inline (master-detail) só em telas largas; abaixo de lg o mesmo
+              painel vira drawer (ver abaixo). Entra e sai deslizando pela borda
+              direita (transform-only); na saída fica montado até o fim do detail-out. */}
+          {(detailOpen || detailExiting) && isDesktop && (
+            <aside
+              className={`flex min-h-0 w-[27rem] shrink-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm ${
+                detailOpen ? 'animate-detail-in' : 'animate-detail-out'
+              }`}
+            >
+              <div className="flex h-full w-[27rem] shrink-0 flex-col">
+                <InstallmentDetailPanel
+                  installmentId={detailOpen ? selectedInstallmentId : lastInstallmentIdRef.current}
+                  onClose={handleCloseDrawer}
+                  onSelectInstallment={setSelectedInstallmentId}
+                  onPayInstallment={handlePayInstallment}
+                  onIssueBoleto={handleIssueBoleto}
                 />
               </div>
-
-              {/* Painel inline (master-detail) só em telas largas; abaixo de lg
-                  o mesmo painel vira drawer (ver abaixo). Entra e sai deslizando
-                  pela borda direita (transform-only, sem reflow da tabela durante
-                  a animação); na saída fica montado até o fim do detail-out. */}
-              {(detailOpen || detailExiting) && isDesktop && (
-                <aside
-                  className={`flex min-h-0 w-[27rem] shrink-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm ${
-                    detailOpen ? 'animate-detail-in' : 'animate-detail-out'
-                  }`}
-                >
-                  <div className="flex h-full w-[27rem] shrink-0 flex-col">
-                    <InstallmentDetailPanel
-                      installmentId={
-                        detailOpen ? selectedInstallmentId : lastInstallmentIdRef.current
-                      }
-                      onClose={handleCloseDrawer}
-                      onSelectInstallment={setSelectedInstallmentId}
-                      onPayInstallment={handlePayInstallment}
-                      onIssueBoleto={handleIssueBoleto}
-                    />
-                  </div>
-                </aside>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+            </aside>
+          )}
+        </div>
       </div>
 
       {/* Mobile/tablet: o painel da parcela abre como drawer overlay. */}

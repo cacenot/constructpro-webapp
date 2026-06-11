@@ -1,5 +1,9 @@
 // DEFERIDO como débito técnico [EPIC2-T1] — execução pendente
 // Spec criada para documentar cenários planejados
+//
+// ATENÇÃO: não há handlers de mock para /api/v1/agencies — este spec roda
+// autenticado contra a API real. Os testes de escrita (criar/editar/excluir)
+// estão em test.fixme() até existirem mocks: se rodassem, mutariam dados reais.
 import { expect, test } from '@playwright/test'
 
 test.describe('Imobiliárias — CRUD', () => {
@@ -27,7 +31,7 @@ test.describe('Imobiliárias — CRUD', () => {
     await expect(page.locator('table tbody tr')).not.toHaveCount(0)
   })
 
-  test('criação completa — fill form → submit → toast sucesso → redirect lista', async ({
+  test.fixme('criação completa — fill form → submit → toast sucesso → redirect lista', async ({
     page,
   }) => {
     await page.getByRole('button', { name: 'Nova Imobiliária' }).click()
@@ -43,7 +47,7 @@ test.describe('Imobiliárias — CRUD', () => {
     await expect(page).toHaveURL('/imobiliarias')
   })
 
-  test('edição — navegar detalhe → editar → submit → toast sucesso', async ({ page }) => {
+  test.fixme('edição — navegar detalhe → editar → submit → toast sucesso', async ({ page }) => {
     await page.locator('table tbody tr').first().getByRole('button', { name: 'Ações' }).click()
     await page.getByRole('menuitem', { name: 'Ver detalhes' }).click()
 
@@ -56,7 +60,7 @@ test.describe('Imobiliárias — CRUD', () => {
     await expect(page.getByText('Imobiliária atualizada com sucesso!')).toBeVisible()
   })
 
-  test('soft-delete com confirmação → toast → redirect lista', async ({ page }) => {
+  test.fixme('soft-delete com confirmação → toast → redirect lista', async ({ page }) => {
     await page.locator('table tbody tr').first().getByRole('button', { name: 'Ações' }).click()
     await page.getByRole('menuitem', { name: 'Excluir' }).click()
 

@@ -17,8 +17,8 @@ test.describe('Unidades — Listagem', () => {
   test('exibe os filtros de busca e empreendimento', async ({ authenticatedPage: page }) => {
     await page.goto('/unidades')
     await expect(page.getByPlaceholder('Buscar por nome...')).toBeVisible()
-    // Combobox de empreendimento
-    await expect(page.getByRole('combobox')).toBeVisible()
+    // ProjectFilter (Popover+Command, trigger é um botão — overhaul #29)
+    await expect(page.getByRole('button', { name: 'Empreendimento' })).toBeVisible()
   })
 
   test('exibe as unidades mockadas na tabela', async ({ authenticatedPage: page }) => {

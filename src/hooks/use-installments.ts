@@ -8,8 +8,6 @@ type PaginatedInstallmentsResponse = components['schemas']['PaginatedResponse_In
 type InstallmentListSummary = components['schemas']['InstallmentListSummary']
 type PortfolioCashflowResponse = components['schemas']['PortfolioCashflowResponse']
 type CashflowMonth = components['schemas']['CashflowMonth']
-type InstallmentsByProjectResponse = components['schemas']['InstallmentsByProjectResponse']
-type InstallmentProjectBreakdown = components['schemas']['InstallmentProjectBreakdown']
 type ProjectFinancialSummary = components['schemas']['ProjectFinancialSummary']
 
 interface InstallmentsQuery {
@@ -50,8 +48,6 @@ export const installmentKeys = {
   summary: (filters: InstallmentsQuery) => ['installments', 'summary', filters] as const,
   cashflows: () => ['installments', 'cashflow'] as const,
   cashflow: (params: CashflowQuery) => ['installments', 'cashflow', params] as const,
-  byProjects: () => ['installments', 'by-project'] as const,
-  byProject: (filters: InstallmentsQuery) => ['installments', 'by-project', filters] as const,
   financialSummaries: () => ['installments', 'financial-summary'] as const,
   financialSummary: (params: FinancialSummaryQuery) =>
     ['installments', 'financial-summary', params] as const,
@@ -137,25 +133,6 @@ export function useInstallmentsCashflow(params: CashflowQuery) {
   })
 }
 
-export function useInstallmentsByProject(params: InstallmentsQuery) {
-  const { client } = useApiClient()
-
-  return useQuery({
-    queryKey: installmentKeys.byProject(params),
-    queryFn: async () => {
-      const { data, error } = await client.GET('/api/v1/installments/by-project', {
-        params: { query: params },
-      })
-
-      if (error) {
-        throw new Error('Falha ao carregar carteira por empreendimento')
-      }
-
-      return data
-    },
-  })
-}
-
 export function useInstallmentsFinancialSummary(params: FinancialSummaryQuery) {
   const { client } = useApiClient()
 
@@ -186,7 +163,5 @@ export type {
   InstallmentListSummary,
   PortfolioCashflowResponse,
   CashflowMonth,
-  InstallmentsByProjectResponse,
-  InstallmentProjectBreakdown,
   ProjectFinancialSummary,
 }

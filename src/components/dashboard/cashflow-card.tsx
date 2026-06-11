@@ -1,19 +1,16 @@
-import { addMonths, format, parseISO, startOfMonth, subMonths } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useMemo } from 'react'
-import { Bar, BarChart, CartesianGrid, Label, ReferenceLine, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
+import { navigate } from 'vike/client/router'
 import { Card } from '@/components/ui/card'
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart'
 import { LegendDot } from '@/components/ui/legend-dot'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useInstallmentsCashflow } from '@/hooks/use-installments'
+import { cashflowWindow } from '@/lib/dashboard-metrics'
+import { monthDueHref } from '@/lib/installment-aging'
 import { cn, formatCurrency } from '@/lib/utils'
-
-interface InstallmentsCashflowBlockProps {
-  projectId: number | null
-  customerId: number | null
-  onSelectMonth: (monthIso: string) => void
-}
 
 const chartConfig = {
   received: { label: 'Recebido', color: 'var(--color-success)' },
@@ -25,17 +22,6 @@ interface CashflowDatum {
   label: string
   received: number
   due: number
-  correction: number
-  refunded: number
-}
-
-/** Eixo Y em escala compacta (R$ 50k, R$ 1,2M) — milhões dançam menos que dígitos cheios. */
-function compactBRL(value: number): string {
-  if (value >= 1_000_000) {
-    return `R$ ${(value / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}M`
-  }
-  if (value >= 1_000) return `R$ ${Math.round(value / 1_000)}k`
-  return `R$ ${value}`
 }
 
 function monthAbbrev(iso: string): string {
@@ -43,58 +29,35 @@ function monthAbbrev(iso: string): string {
 }
 
 /**
- * Fluxo de caixa da carteira — a linha do tempo do caixa: o que entrou (Recebido,
- * esmeralda) contra o que se espera receber por vencimento (A receber, azul), mês a
- * mês. Uma régua "hoje" separa o realizado do projetado. Clicar num mês recorta a
- * aba Parcelas para os vencimentos daquele mês. Espelha GET /installments/cashflow.
+ * Recebimento 6m — realizado (esmeralda) vs a receber por vencimento (azul),
+ * versão compacta do dashboard. Clicar num mês recorta o /financeiro nos
+ * vencimentos daquele mês. Mesma linguagem de cores do app inteiro.
  */
-export function InstallmentsCashflowBlock({
-  projectId,
-  customerId,
-  onSelectMonth,
-}: InstallmentsCashflowBlockProps) {
-  // Janela de 12 meses centrada à frente (3 atrás + atual + 8 à frente): contexto
-  // recente do realizado e o horizonte de planejamento do caixa. Estável no mês.
-  const { from, to, currentLabel, rangeCaption } = useMemo(() => {
-    const base = startOfMonth(new Date())
-    return {
-      from: format(subMonths(base, 3), 'yyyy-MM'),
-      to: format(addMonths(base, 8), 'yyyy-MM'),
-      currentLabel: format(base, 'MMM', { locale: ptBR }).replace('.', ''),
-      rangeCaption: `${format(subMonths(base, 3), 'MMM/yy', { locale: ptBR }).replace('.', '')} – ${format(addMonths(base, 8), 'MMM/yy', { locale: ptBR }).replace('.', '')}`,
-    }
-  }, [])
+export function CashflowCard() {
+  const win = useMemo(() => cashflowWindow(), [])
+  const { data, isLoading, isError } = useInstallmentsCashflow({ from: win.from, to: win.to })
 
-  const { data, isLoading, isError } = useInstallmentsCashflow({
-    from,
-    to,
-    project_id: projectId,
-    customer_id: customerId,
-  })
+  const chartData: CashflowDatum[] = useMemo(
+    () =>
+      (data?.months ?? []).map((month) => ({
+        monthIso: month.month,
+        label: monthAbbrev(month.month),
+        received: (month.received?.cents ?? 0) / 100,
+        due: (month.due_projected?.cents ?? 0) / 100,
+      })),
+    [data]
+  )
 
-  const chartData: CashflowDatum[] = useMemo(() => {
-    return (data?.months ?? []).map((month) => ({
-      monthIso: month.month,
-      label: monthAbbrev(month.month),
-      received: (month.received?.cents ?? 0) / 100,
-      due: (month.due_projected?.cents ?? 0) / 100,
-      correction: (month.correction?.cents ?? 0) / 100,
-      refunded: (month.refunded?.cents ?? 0) / 100,
-    }))
-  }, [data])
+  const hasMovement = chartData.some((d) => d.received > 0 || d.due > 0)
 
-  const hasMovement = chartData.some((d) => d.received > 0 || d.due > 0 || d.correction > 0)
-
-  if (isLoading) return <CashflowBlockSkeleton />
+  if (isLoading) return <CashflowCardSkeleton />
 
   return (
     <Card className="gap-0 overflow-hidden py-0">
       <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 p-5 pb-2">
         <div>
-          <h3 className="text-sm font-semibold">Fluxo de caixa</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Recebido e a receber por mês · {rangeCaption}
-          </p>
+          <h3 className="text-sm font-semibold">Recebimento</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">Realizado vs a receber · 6 meses</p>
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <LegendDot className="bg-success" label="Recebido" />
@@ -103,21 +66,22 @@ export function InstallmentsCashflowBlock({
       </header>
 
       {isError ? (
-        <CashflowNote>Não foi possível carregar o fluxo de caixa.</CashflowNote>
+        <CashflowNote>Não foi possível carregar o recebimento.</CashflowNote>
       ) : !hasMovement ? (
         <CashflowNote>Sem movimentação no período.</CashflowNote>
       ) : (
-        <div className="px-2 pb-2 pt-1">
+        <div className="px-2 pb-3 pt-1">
           <ChartContainer
             config={chartConfig}
-            className="h-64 w-full [&_.recharts-bar_path]:cursor-pointer"
+            className="h-44 w-full [&_.recharts-bar_path]:cursor-pointer"
           >
             <BarChart
+              accessibilityLayer
               data={chartData}
-              margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+              margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
               onClick={(state) => {
                 const datum = state?.activePayload?.[0]?.payload as CashflowDatum | undefined
-                if (datum) onSelectMonth(datum.monthIso)
+                if (datum) navigate(monthDueHref(datum.monthIso))
               }}
             >
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -128,16 +92,7 @@ export function InstallmentsCashflowBlock({
                 tickMargin={8}
                 interval={0}
               />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                width={56}
-                tickFormatter={(value: number) => compactBRL(value)}
-              />
               <ChartTooltip content={<CashflowTooltip />} />
-              <ReferenceLine x={currentLabel} stroke="var(--color-border)" strokeDasharray="4 4">
-                <Label value="hoje" position="top" className="fill-muted-foreground text-[10px]" />
-              </ReferenceLine>
               <Bar dataKey="received" fill="var(--color-received)" radius={[3, 3, 0, 0]} />
               <Bar dataKey="due" fill="var(--color-due)" radius={[3, 3, 0, 0]} />
             </BarChart>
@@ -151,7 +106,7 @@ export function InstallmentsCashflowBlock({
 function CashflowNote({ children }: { children: React.ReactNode }) {
   return (
     <div className="px-5 pb-5">
-      <div className="flex h-40 items-center justify-center rounded-lg border border-dashed">
+      <div className="flex h-36 items-center justify-center rounded-lg border border-dashed">
         <p className="text-sm text-muted-foreground">{children}</p>
       </div>
     </div>
@@ -176,12 +131,6 @@ function CashflowTooltip({
       <div className="flex flex-col gap-1">
         <TooltipRow dotClass="bg-success" label="Recebido" value={datum.received} />
         <TooltipRow dotClass="bg-info" label="A receber" value={datum.due} />
-        {datum.correction > 0 && (
-          <TooltipRow dotClass="bg-warning" label="Correção" value={datum.correction} />
-        )}
-        {datum.refunded > 0 && (
-          <TooltipRow dotClass="bg-muted-foreground" label="Estornos" value={datum.refunded} />
-        )}
       </div>
     </div>
   )
@@ -207,22 +156,22 @@ function TooltipRow({
   )
 }
 
-function CashflowBlockSkeleton() {
+function CashflowCardSkeleton() {
   return (
     <Card className="gap-0 overflow-hidden py-0">
       <header className="flex items-start justify-between gap-4 p-5 pb-2">
         <div className="space-y-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-3 w-56" />
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-3 w-44" />
         </div>
         <div className="flex gap-4">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-16" />
         </div>
       </header>
       <div className="px-5 pb-5 pt-2">
-        <div className="flex h-56 items-end gap-2">
-          {[40, 65, 30, 80, 55, 70, 45, 90, 60, 75, 50, 85].map((h, i) => (
+        <div className="flex h-40 items-end gap-3">
+          {[55, 70, 45, 85, 60, 75].map((h, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: skeleton bars
             <Skeleton key={i} className="flex-1 rounded-t" style={{ height: `${h}%` }} />
           ))}

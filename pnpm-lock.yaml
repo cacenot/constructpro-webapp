@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@cacenot/construct-pro-api-client':
-        specifier: 1.5.0
-        version: 1.5.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)
+        specifier: 1.6.0
+        version: 1.6.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.4))
@@ -404,16 +404,11 @@ packages:
   '@brillout/vite-plugin-server-entry@0.7.17':
     resolution: {integrity: sha512-MfvSytYl51J2B+RrHvRXMdRNc1U2lHG/K9Gw05/jdPY2iYU2YQKdEzsPswfEWnt3fd1TrXF27h/fx5DIRn19jw==}
 
-  '@cacenot/construct-pro-api-client@1.5.0':
-    resolution: {integrity: sha512-4Y8TGDgtcRaCWWBU8xN/chBEFzJggXvDbmpwTkJIcPR6VyqnXjobj9N7lmibxrsfNhNpGq2uq5wDsX6jFeUS4w==, tarball: https://npm.pkg.github.com/download/@cacenot/construct-pro-api-client/1.5.0/da41ffc372b051610d85220bbd8bf7477f205f47}
+  '@cacenot/construct-pro-api-client@1.6.0':
+    resolution: {integrity: sha512-2bIxOFFcn3X5/mjM8M0cFPkZw0TMhFdEFfA4L4kTEZFk7xlr6FEo89V9T360ZqgZCII2G9szNSzD+pfO5pz7FQ==, tarball: https://npm.pkg.github.com/download/@cacenot/construct-pro-api-client/1.6.0/105360e8b889abf5d948db0b097f693fc90f7816}
     peerDependencies:
       '@tanstack/react-query': '>=5.0.0'
       react: '>=18.0.0'
-    peerDependenciesMeta:
-      '@tanstack/react-query':
-        optional: true
-      react:
-        optional: true
 
   '@cloudflare/kv-asset-handler@0.5.0':
     resolution: {integrity: sha512-jxQYkj8dSIzc0cD6cMMNdOc1UVjqSqu8BZdor5s8cGjW2I8BjODt/kWPVdY+u9zj3ms75Q5qaZgnxUad83+eAg==}
@@ -4061,11 +4056,10 @@ snapshots:
       '@brillout/import': 0.2.6
       '@brillout/picocolors': 1.0.30
 
-  '@cacenot/construct-pro-api-client@1.5.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)':
+  '@cacenot/construct-pro-api-client@1.6.0(@tanstack/react-query@5.90.20(react@19.2.4))(react@19.2.4)':
     dependencies:
-      openapi-fetch: 0.9.8
-    optionalDependencies:
       '@tanstack/react-query': 5.90.20(react@19.2.4)
+      openapi-fetch: 0.9.8
       react: 19.2.4
 
   '@cloudflare/kv-asset-handler@0.5.0': {}

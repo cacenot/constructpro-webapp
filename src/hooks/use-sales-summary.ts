@@ -2,7 +2,8 @@ import { type components, useApiClient } from '@cacenot/construct-pro-api-client
 import { useQuery } from '@tanstack/react-query'
 
 type SaleSummaryResponse = components['schemas']['SaleSummaryResponse']
-type PaginatedSaleSummaryResponse = components['schemas']['PaginatedResponse_SaleSummaryResponse_']
+type PaginatedSaleSummaryResponse = components['schemas']['SalesSummaryPaginatedResponse']
+type SalesAggregateSummary = components['schemas']['SalesListSummary']
 
 interface SalesSummaryQuery {
   page?: number
@@ -37,4 +38,4 @@ export function useSalesSummary(params?: SalesSummaryQuery) {
   })
 }
 
-export type { SaleSummaryResponse, PaginatedSaleSummaryResponse }
+export type { SaleSummaryResponse, PaginatedSaleSummaryResponse, SalesAggregateSummary }

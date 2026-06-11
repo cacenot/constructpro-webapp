@@ -19,7 +19,7 @@ export interface Money {
   brl: string
 }
 
-const money = (cents: number): Money => ({
+export const money = (cents: number): Money => ({
   cents,
   decimal: (cents / 100).toFixed(2),
   brl: (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
@@ -114,6 +114,8 @@ export interface UnitFactory {
   project_id: number
   area: string
   price_cents: number
+  price: Money
+  price_per_sqm: Money
   status: 'available' | 'reserved' | 'sold'
   bedrooms: number | null
   bathrooms: number | null
@@ -133,6 +135,9 @@ export function unit(overrides: Partial<UnitFactory> = {}): UnitFactory {
     project_id: 1,
     area: '72.50',
     price_cents: 50000000,
+    // Contrato WireMoney: a UI lê price.brl/price_per_sqm.brl direto do response.
+    price: money(50000000),
+    price_per_sqm: money(689655), // 500.000,00 / 72,5 m²
     status: 'available',
     bedrooms: 2,
     bathrooms: 1,

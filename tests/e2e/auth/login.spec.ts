@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test'
 test.use({ storageState: { cookies: [], origins: [] } })
 
 /**
- * Spec: Página de Login
+ * Spec: Página de Login (Auth v2 — AuthShell blueprint)
  *
  * Testa apenas a UI do formulário (validações client-side).
  * Firebase auth é interceptado para prevenir chamadas reais de rede.
@@ -16,7 +16,9 @@ test.describe('Página de Login', () => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
-        body: JSON.stringify({ error: { code: 400, message: 'INVALID_EMAIL', status: 'INVALID_ARGUMENT' } }),
+        body: JSON.stringify({
+          error: { code: 400, message: 'INVALID_EMAIL', status: 'INVALID_ARGUMENT' },
+        }),
       })
     })
     await page.route('https://securetoken.googleapis.com/**', async (route) => {
@@ -32,16 +34,13 @@ test.describe('Página de Login', () => {
     await expect(page.getByRole('button', { name: 'Entrar' })).toBeEnabled()
   })
 
-  test('exibe o título e subtítulo corretos', async ({ page }) => {
-    // CardTitle do shadcn renderiza como <div>, não <heading>
-    // "Entrar" aparece também no botão — .first() seleciona o título do card
-    await expect(page.getByText('Entrar').first()).toBeVisible()
-    await expect(page.getByText('Acesse sua conta para continuar')).toBeVisible()
+  test('exibe o título da página', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Entrar' })).toBeVisible()
   })
 
   test('exibe os campos email e senha', async ({ page }) => {
-    await expect(page.getByLabel('Email')).toBeVisible()
-    await expect(page.getByLabel('Senha')).toBeVisible()
+    await expect(page.getByLabel('E-mail')).toBeVisible()
+    await expect(page.getByLabel('Senha', { exact: true })).toBeVisible()
   })
 
   test('exibe o botão Entrar', async ({ page }) => {
@@ -52,51 +51,50 @@ test.describe('Página de Login', () => {
     await page.getByRole('button', { name: 'Entrar' }).click()
 
     // Zod valida e react-hook-form exibe mensagens
-    await expect(page.getByText(/email inválido/i)).toBeVisible()
+    await expect(page.getByText('E-mail inválido')).toBeVisible()
     await expect(page.getByText(/mínimo 6 caracteres/i)).toBeVisible()
   })
 
   test('mostra erro de email inválido', async ({ page }) => {
-    await page.getByLabel('Email').fill('nao-e-email')
-    await page.getByLabel('Senha').fill('Senha123')
+    await page.getByLabel('E-mail').fill('nao-e-email')
+    await page.getByLabel('Senha', { exact: true }).fill('Senha123')
     await page.getByRole('button', { name: 'Entrar' }).click()
 
-    await expect(page.getByText('Email inválido')).toBeVisible()
+    await expect(page.getByText('E-mail inválido')).toBeVisible()
   })
 
   test('mostra erro de senha curta', async ({ page }) => {
-    await page.getByLabel('Email').fill('user@test.com')
-    await page.getByLabel('Senha').fill('123')
+    await page.getByLabel('E-mail').fill('user@test.com')
+    await page.getByLabel('Senha', { exact: true }).fill('123')
     await page.getByRole('button', { name: 'Entrar' }).click()
 
     await expect(page.getByText(/mínimo 6 caracteres/i)).toBeVisible()
   })
 
   test('exibe link para recuperação de senha', async ({ page }) => {
-    await expect(page.getByRole('button', { name: /esqueceu a senha/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /esqueceu a senha/i })).toBeVisible()
   })
 
-  test('abre dialog de recuperação de senha ao clicar no link', async ({ page }) => {
-    await page.getByRole('button', { name: /esqueceu a senha/i }).click()
+  test('navega para /recuperar-senha ao clicar no link', async ({ page }) => {
+    await page.getByRole('link', { name: /esqueceu a senha/i }).click()
 
-    await expect(page.getByText('Recuperar senha')).toBeVisible()
-    await expect(
-      page.getByText(/informe seu email e enviaremos um link/i)
-    ).toBeVisible()
+    await expect(page).toHaveURL('/recuperar-senha')
+    await expect(page.getByRole('heading', { name: 'Esqueceu a senha?' })).toBeVisible()
+    await expect(page.getByText(/informe seu e-mail e enviaremos um link/i)).toBeVisible()
   })
 
-  test('dialog de recuperação valida email vazio', async ({ page }) => {
-    await page.getByRole('button', { name: /esqueceu a senha/i }).click()
-    await page.getByRole('button', { name: 'Enviar' }).click()
+  test('página de recuperação valida email vazio', async ({ page }) => {
+    await page.goto('/recuperar-senha')
+    await page.getByRole('button', { name: 'Enviar link de redefinição' }).click()
 
-    await expect(page.getByText('Email inválido')).toBeVisible()
+    await expect(page.getByText('E-mail inválido')).toBeVisible()
   })
 
-  test('fecha dialog de recuperação ao clicar em Cancelar', async ({ page }) => {
-    await page.getByRole('button', { name: /esqueceu a senha/i }).click()
-    await expect(page.getByText('Recuperar senha')).toBeVisible()
+  test('página de recuperação volta para o login', async ({ page }) => {
+    await page.goto('/recuperar-senha')
+    await page.getByRole('link', { name: /voltar para o login/i }).click()
 
-    await page.getByRole('button', { name: 'Cancelar' }).click()
-    await expect(page.getByText('Recuperar senha')).not.toBeVisible()
+    await expect(page).toHaveURL('/login')
+    await expect(page.getByRole('heading', { name: 'Entrar' })).toBeVisible()
   })
 })

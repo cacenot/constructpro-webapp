@@ -21,10 +21,25 @@ export async function registerEmpreendimentosHandlers(page: Page) {
   })
 
   // GET /api/v1/projects/summary — listagem com filtros/paginação
+  // ProjectSummaryResponse: sold_count/total_units/sold_percentage (string)/total_vgv
   await page.route('**/api/v1/projects/summary*', async (route) => {
+    const { money } = factory
     const projects = [
-      factory.project({ id: 1, name: 'Residencial Ipiranga' }),
-      factory.project({ id: 2, name: 'Tower Park', status: 'finished' }),
+      {
+        ...factory.project({ id: 1, name: 'Residencial Ipiranga' }),
+        sold_count: 6,
+        total_units: 10,
+        sold_percentage: '60.00',
+        total_vgv: money(420_000_000),
+      },
+      {
+        ...factory.project({ id: 2, name: 'Tower Park', status: 'finished' }),
+        // 50% (≠ 25% do hero mockado — getByText('25%') do spec do hero é strict)
+        sold_count: 4,
+        total_units: 8,
+        sold_percentage: '50.00',
+        total_vgv: money(360_000_000),
+      },
     ]
     await route.fulfill({
       status: 200,
