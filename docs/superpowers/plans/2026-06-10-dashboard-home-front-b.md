@@ -36,7 +36,7 @@ Expected: o schema contém o campo `amount` no `SaleSummaryResponse` e os blocos
 - Modify: `package.json` / `pnpm-lock.yaml` (via pnpm)
 - Modify: `src/hooks/use-sales-summary.ts` (expor o bloco summary tipado)
 
-- [ ] **Step 1: Atualizar o pacote**
+- [x] **Step 1: Atualizar o pacote**
 
 ```bash
 pnpm update @cacenot/construct-pro-api-client --latest
@@ -45,13 +45,13 @@ pnpm typecheck
 
 Expected: typecheck verde (a extensão é aditiva — response ganha campo `summary` opcional).
 
-- [ ] **Step 2: Conferir o shape real do bloco summary**
+- [x] **Step 2: Conferir o shape real do bloco summary**
 
 Run: `grep -n -A 30 "PaginatedResponse_SaleSummaryResponse_" node_modules/@cacenot/construct-pro-api-client/dist/schema.d.ts | head -50`
 
 Anotar os nomes reais de: bloco agregado de sales (`summary.pipeline.*`, `summary.month.*`), campo `amount` do item, e bloco de units (`summary.by_status.*`). Se divergirem da issue, usar os reais daqui em diante.
 
-- [ ] **Step 3: Tipar o summary no hook de vendas**
+- [x] **Step 3: Tipar o summary no hook de vendas**
 
 Em `src/hooks/use-sales-summary.ts`, o response já vem tipado pelo schema — apenas re-exportar o tipo do agregado para os componentes (ajustar o nome ao schema real):
 
@@ -61,7 +61,7 @@ type SalesAggregateSummary = NonNullable<PaginatedSaleSummaryResponse['summary']
 export type { SaleSummaryResponse, PaginatedSaleSummaryResponse, SalesAggregateSummary }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add package.json pnpm-lock.yaml src/hooks/use-sales-summary.ts
@@ -77,7 +77,7 @@ O `/units/summary` já é consumido pela tabela de `/unidades` (dentro de `use-u
 **Files:**
 - Create: `src/hooks/use-units-inventory.ts`
 
-- [ ] **Step 1: Implementar**
+- [x] **Step 1: Implementar**
 
 ```ts
 // src/hooks/use-units-inventory.ts
@@ -104,7 +104,7 @@ export function useUnitsInventory() {
 }
 ```
 
-- [ ] **Step 2: Verificar e commitar**
+- [x] **Step 2: Verificar e commitar**
 
 Run: `pnpm typecheck && pnpm lint`
 Expected: verde
@@ -123,7 +123,7 @@ Uma chamada (`page_size=3`): `summary` alimenta funil/VGV, `items` alimentam os 
 **Files:**
 - Create: `src/components/dashboard/sales-card.tsx`
 
-- [ ] **Step 1: Implementar**
+- [x] **Step 1: Implementar**
 
 ```tsx
 // src/components/dashboard/sales-card.tsx
@@ -276,7 +276,7 @@ Notas:
 - `sale.unit.project` existe no `UnitSummaryInfo`? **Conferir no schema** (Task 1 Step 2): se `unit` não embute `project`, exibir só `sale.unit?.name` (a issue não muda o item além de `amount`).
 - Acessos `summary.pipeline.*` / `summary.month.*`: nomes da issue #157 — ajustar ao schema real se divergirem.
 
-- [ ] **Step 2: Verificar e commitar**
+- [x] **Step 2: Verificar e commitar**
 
 Run: `pnpm typecheck && pnpm lint`
 Expected: verde
@@ -295,7 +295,7 @@ Estoque na paleta "semáforo imobiliário" (disponível = success, reservada = w
 **Files:**
 - Create: `src/components/dashboard/inventory-card.tsx`
 
-- [ ] **Step 1: Implementar**
+- [x] **Step 1: Implementar**
 
 ```tsx
 // src/components/dashboard/inventory-card.tsx
@@ -432,7 +432,7 @@ function InventoryCardSkeleton() {
 
 Nota: `byStatus[status.key]` com chave literal tipada — se o schema gerar `by_status` como objeto fixo (available/reserved/sold/unavailable), o acesso indexado funciona com `as const` nas keys. Se o typecheck reclamar, trocar por acessos diretos (`byStatus.available`, etc.).
 
-- [ ] **Step 2: Verificar e commitar**
+- [x] **Step 2: Verificar e commitar**
 
 Run: `pnpm typecheck && pnpm lint`
 Expected: verde
@@ -449,7 +449,7 @@ git commit -m "feat(dashboard): InventoryCard — estoque semáforo + progresso 
 **Files:**
 - Modify: `pages/dashboard/+Page.tsx`
 
-- [ ] **Step 1: Adicionar a linha Vendas | Operacional**
+- [x] **Step 1: Adicionar a linha Vendas | Operacional**
 
 Imports novos:
 
@@ -473,14 +473,14 @@ Depois da `<section>` Financeiro (dentro do `div.space-y-8`):
 </div>
 ```
 
-- [ ] **Step 2: Verificar manualmente**
+- [x] **Step 2: Verificar manualmente**
 
 Run: `pnpm dev` (porta 3000) → `http://localhost:3000/dashboard`:
 - funil com counts reais + VGVs; recentes com badge e link para `/vendas/:id`
 - estoque com dots semáforo + "Estoque a vender"; empreendimentos com barra e link
 - mobile: as duas seções empilham
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add pages/dashboard/+Page.tsx
@@ -497,7 +497,7 @@ git commit -m "feat(dashboard): seções Vendas e Operacional na home"
 - Modify: `tests/e2e/mocks/handlers/empreendimentos.ts` (conferir shape de `/projects/summary`)
 - Modify: `tests/e2e/dashboard/dashboard.spec.ts`
 
-- [ ] **Step 1: Estender o handler de `/sales/summary`**
+- [x] **Step 1: Estender o handler de `/sales/summary`**
 
 No handler existente de `**/api/v1/sales/summary*` em `vendas.ts`, adicionar ao body (mantendo os items existentes, agora com `amount: money(...)` em cada um):
 
@@ -520,7 +520,7 @@ summary: {
 
 (import: `const { money } = factory` — exportado na Task 9 do Front A.)
 
-- [ ] **Step 2: Estender o handler de `/units/summary`**
+- [x] **Step 2: Estender o handler de `/units/summary`**
 
 Em `unidades.ts`, adicionar ao body do route de `**/api/v1/units/summary*`:
 
@@ -535,11 +535,11 @@ summary: {
 },
 ```
 
-- [ ] **Step 3: Conferir `/projects/summary` em `empreendimentos.ts`**
+- [x] **Step 3: Conferir `/projects/summary` em `empreendimentos.ts`**
 
 O handler já existe (linha ~24). Garantir que os items têm `sold_count`, `total_units`, `sold_percentage` e `total_vgv` (shape atual do `ProjectSummaryResponse`); completar se a factory antiga não tiver esses campos.
 
-- [ ] **Step 4: Asserts novos no spec do dashboard**
+- [x] **Step 4: Asserts novos no spec do dashboard**
 
 Adicionar a `tests/e2e/dashboard/dashboard.spec.ts`:
 
@@ -562,7 +562,7 @@ test('exibe a seção operacional com estoque e empreendimentos', async ({
 })
 ```
 
-- [ ] **Step 5: Rodar e commitar**
+- [x] **Step 5: Rodar e commitar**
 
 Run: `pnpm test:e2e tests/e2e/dashboard/`
 Expected: 5 testes PASS
@@ -576,12 +576,12 @@ git commit -m "test(dashboard): e2e das seções vendas e operacional"
 
 ### Task 7: Gates finais + PR
 
-- [ ] **Step 1: Gates**
+- [x] **Step 1: Gates**
 
 Run: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
 Expected: verde
 
-- [ ] **Step 2: Push e PR**
+- [x] **Step 2: Push e PR**
 
 ```bash
 git push origin feat/dashboard-home
