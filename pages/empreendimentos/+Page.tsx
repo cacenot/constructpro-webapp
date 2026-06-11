@@ -7,6 +7,7 @@ import { ProjectCardSkeleton } from '@/components/projects/project-card-skeleton
 import { ProjectsPagination } from '@/components/projects/projects-pagination'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   Select,
   SelectContent,
@@ -56,19 +57,16 @@ export default function ProjectsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Empreendimentos</h1>
-            <p className="mt-2 text-muted-foreground">
-              Gerencie seus projetos imobiliários e acompanhe o progresso.
-            </p>
-          </div>
-          <Button className="gap-2" onClick={() => navigate('/empreendimentos/novo')}>
-            <Plus className="size-4" />
-            Novo Empreendimento
-          </Button>
-        </div>
+        <PageHeader
+          title="Empreendimentos"
+          description="Gerencie seus projetos imobiliários e acompanhe o progresso."
+          action={
+            <Button className="gap-2" onClick={() => navigate('/empreendimentos/novo')}>
+              <Plus className="size-4" />
+              Novo Empreendimento
+            </Button>
+          }
+        />
 
         {/* Filtros */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

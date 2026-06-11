@@ -92,7 +92,7 @@ export default function AgencyDetailPage() {
                 <p>Voltar</p>
               </TooltipContent>
             </Tooltip>
-            <h1 className="text-3xl font-bold tracking-tight">{agency.legal_name}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">{agency.legal_name}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Tooltip>

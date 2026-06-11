@@ -103,7 +103,7 @@ test.describe('Corretores — Soft-delete com confirmação', () => {
     authenticatedPage: page,
   }) => {
     await page.goto('/corretores')
-    const actionsBtn = page.getByRole('button').filter({ has: page.locator('svg') }).first()
+    const actionsBtn = page.getByRole('button', { name: 'Ações' }).first()
     await actionsBtn.click()
     await page.getByText('Excluir').click()
     await expect(page.getByRole('alertdialog')).toBeVisible()
@@ -112,7 +112,7 @@ test.describe('Corretores — Soft-delete com confirmação', () => {
 
   test('cancelar fecha dialog sem excluir', async ({ authenticatedPage: page }) => {
     await page.goto('/corretores')
-    const actionsBtn = page.getByRole('button').filter({ has: page.locator('svg') }).first()
+    const actionsBtn = page.getByRole('button', { name: 'Ações' }).first()
     await actionsBtn.click()
     await page.getByText('Excluir').click()
     await page.getByRole('button', { name: 'Cancelar' }).click()
