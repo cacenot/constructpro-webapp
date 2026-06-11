@@ -4,6 +4,8 @@ import { AppLayout } from '@/components/app-layout'
 import { AgingCard } from '@/components/dashboard/aging-card'
 import { CashflowCard } from '@/components/dashboard/cashflow-card'
 import { DashboardVitals } from '@/components/dashboard/dashboard-vitals'
+import { InventoryCard } from '@/components/dashboard/inventory-card'
+import { SalesCard } from '@/components/dashboard/sales-card'
 import { SectionHeader } from '@/components/dashboard/section-header'
 import { useAuth } from '@/contexts/auth-context'
 
@@ -44,6 +46,21 @@ export default function DashboardPage() {
             <CashflowCard />
           </div>
         </section>
+
+        <div className="grid items-start gap-x-4 gap-y-8 lg:grid-cols-2">
+          <section className="space-y-3">
+            <SectionHeader title="Vendas" href="/vendas" linkLabel="Ver vendas" />
+            <SalesCard />
+          </section>
+          <section className="space-y-3">
+            <SectionHeader
+              title="Operacional"
+              href="/empreendimentos"
+              linkLabel="Ver empreendimentos"
+            />
+            <InventoryCard />
+          </section>
+        </div>
       </div>
     </AppLayout>
   )
