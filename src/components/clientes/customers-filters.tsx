@@ -1,5 +1,6 @@
 import { CustomerType, getCustomerTypeOptions } from '@cacenot/construct-pro-api-client'
 import { Search } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -12,12 +13,19 @@ import type { CustomersTableFilters } from '@/hooks/use-customers-table'
 
 const typeOptions = getCustomerTypeOptions('pt-BR')
 
+interface CustomersFiltersProps extends CustomersTableFilters {
+  hasActiveFilters: boolean
+  onClearFilters: () => void
+}
+
 export function CustomersFilters({
   search,
   typeFilter,
   setSearch,
   setTypeFilter,
-}: CustomersTableFilters) {
+  hasActiveFilters,
+  onClearFilters,
+}: CustomersFiltersProps) {
   return (
     <div className="flex items-center gap-3">
       <div className="relative flex-1 max-w-sm">
@@ -45,6 +53,11 @@ export function CustomersFilters({
           })}
         </SelectContent>
       </Select>
+      {hasActiveFilters && (
+        <Button variant="ghost" size="sm" onClick={onClearFilters}>
+          Limpar filtros
+        </Button>
+      )}
     </div>
   )
 }
