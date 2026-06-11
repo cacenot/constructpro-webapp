@@ -6,6 +6,7 @@ import { SettingsSection } from '@/components/configuracoes/settings-section'
 import { ORGANIZACAO_SECTIONS } from '@/components/configuracoes/tenant-config/helpers'
 import { TenantConfigSection } from '@/components/configuracoes/tenant-config-section'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useIsAdmin } from '@/hooks/use-is-admin'
 import { useProfile } from '@/hooks/use-profile'
@@ -81,12 +82,11 @@ export default function OrganizacaoPage() {
   return (
     <AppLayout>
       <div className="mx-auto max-w-7xl pb-12">
-        <header className="mb-8 space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Organização</h1>
-          <p className="text-muted-foreground">
-            Membros e regras de financiamento, cobrança e correção
-          </p>
-        </header>
+        <PageHeader
+          title="Organização"
+          description="Membros e regras de financiamento, cobrança e correção"
+          className="mb-8"
+        />
 
         <SettingsLayout sections={ORGANIZACAO_SECTIONS}>
           <SettingsSection

@@ -64,7 +64,7 @@ export function CustomerHeroHeader({ customer }: CustomerHeroHeaderProps) {
 
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">{customer.full_name}</h1>
+              <h1 className="text-3xl font-semibold tracking-tight">{customer.full_name}</h1>
               <Badge
                 variant="outline"
                 className={cn(

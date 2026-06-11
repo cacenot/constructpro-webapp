@@ -9,6 +9,7 @@ import { ProfileForm } from '@/components/configuracoes/profile-form'
 import { SettingsLayout, type SettingsNavItem } from '@/components/configuracoes/settings-layout'
 import { SettingsSection } from '@/components/configuracoes/settings-section'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/ui/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useProfile } from '@/hooks/use-profile'
 import { handleApiError } from '@/lib/api-error'
@@ -96,10 +97,11 @@ export default function MinhaContaPage() {
   return (
     <AppLayout>
       <div className="mx-auto max-w-4xl pb-12">
-        <header className="mb-8 space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Minha conta</h1>
-          <p className="text-muted-foreground">Gerencie seu perfil, segurança e preferências</p>
-        </header>
+        <PageHeader
+          title="Minha conta"
+          description="Gerencie seu perfil, segurança e preferências"
+          className="mb-8"
+        />
 
         <SettingsLayout sections={SECTIONS}>
           <SettingsSection
