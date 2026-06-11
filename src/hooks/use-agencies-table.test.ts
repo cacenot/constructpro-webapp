@@ -9,26 +9,39 @@ vi.mock('nuqs', () => ({
   parseAsString: {
     withDefault: vi.fn(() => ({ withDefault: vi.fn() })),
   },
-  parseAsInteger: {
-    withDefault: vi.fn(() => ({ withDefault: vi.fn() })),
-  },
   useQueryStates: vi.fn(),
 }))
 
-vi.mock('@tanstack/react-query', () => ({
-  useQuery: vi.fn(),
+vi.mock('./use-infinite-table', () => ({
+  useInfiniteTable: vi.fn(),
 }))
 
 import { useApiClient } from '@cacenot/construct-pro-api-client'
-import { useQuery } from '@tanstack/react-query'
 import { useQueryStates } from 'nuqs'
 import { useAgenciesTable } from './use-agencies-table'
+import { useInfiniteTable } from './use-infinite-table'
 
 const mockUseApiClient = vi.mocked(useApiClient)
-const mockUseQuery = vi.mocked(useQuery)
 const mockUseQueryStates = vi.mocked(useQueryStates)
+const mockUseInfiniteTable = vi.mocked(useInfiniteTable)
 
 const mockSetQueryState = vi.fn()
+
+function infiniteReturn(overrides: Partial<ReturnType<typeof useInfiniteTable>> = {}) {
+  return {
+    rows: [],
+    total: 0,
+    firstResponse: undefined,
+    isLoading: false,
+    isFetchingNextPage: false,
+    hasNextPage: false,
+    fetchNextPage: vi.fn(),
+    error: null,
+    refetch: vi.fn(),
+    isError: false,
+    ...overrides,
+  } as unknown as ReturnType<typeof useInfiniteTable>
+}
 
 describe('useAgenciesTable', () => {
   beforeEach(() => {
@@ -36,43 +49,39 @@ describe('useAgenciesTable', () => {
       client: { GET: vi.fn() } as unknown as ReturnType<typeof useApiClient>['client'],
     })
 
-    mockUseQueryStates.mockReturnValue([
-      { search: '', page: 1 },
-      mockSetQueryState,
-    ] as unknown as ReturnType<typeof useQueryStates>)
+    mockUseQueryStates.mockReturnValue([{ search: '' }, mockSetQueryState] as unknown as ReturnType<
+      typeof useQueryStates
+    >)
 
-    mockUseQuery.mockReturnValue({
-      data: { items: [], total: 0 },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>)
+    mockUseInfiniteTable.mockReturnValue(infiniteReturn())
   })
 
   afterEach(() => {
     vi.clearAllMocks()
   })
 
-  it('retorna interface correta com dados vazios', async () => {
+  it('retorna a interface de scroll infinito (sem pagination)', async () => {
     const { result } = renderHook(() => useAgenciesTable())
 
     await waitFor(() => {
       expect(result.current.data).toEqual([])
       expect(result.current.isLoading).toBe(false)
       expect(result.current.total).toBe(0)
+      expect(result.current.hasNextPage).toBe(false)
       expect(result.current.hasActiveFilters).toBe(false)
+      expect(typeof result.current.fetchNextPage).toBe('function')
       expect(typeof result.current.handleClearFilters).toBe('function')
       expect(typeof result.current.filters.setSearch).toBe('function')
-      expect(typeof result.current.pagination.setPage).toBe('function')
     })
+    // A forma antiga (pagination) não existe mais.
+    expect('pagination' in result.current).toBe(false)
   })
 
-  it('retorna dados quando query tem resultados', async () => {
+  it('expõe rows e total vindos do useInfiniteTable', async () => {
     const agencies = [
       { id: 1, legal_name: 'Imobiliária Teste', cnpj: '11222333000181', creci_j: 'CRECI-J SP 1' },
     ]
-    mockUseQuery.mockReturnValue({
-      data: { items: agencies, total: 1 },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>)
+    mockUseInfiniteTable.mockReturnValue(infiniteReturn({ rows: agencies as never, total: 1 }))
 
     const { result } = renderHook(() => useAgenciesTable())
 
@@ -84,7 +93,7 @@ describe('useAgenciesTable', () => {
 
   it('hasActiveFilters é true quando há busca ativa', async () => {
     mockUseQueryStates.mockReturnValue([
-      { search: 'imob', page: 1 },
+      { search: 'imob' },
       mockSetQueryState,
     ] as unknown as ReturnType<typeof useQueryStates>)
 
@@ -95,40 +104,33 @@ describe('useAgenciesTable', () => {
     })
   })
 
-  it('handleClearFilters reseta search e page para valores default', async () => {
+  it('handleClearFilters reseta apenas a busca', async () => {
     const { result } = renderHook(() => useAgenciesTable())
 
     await waitFor(() => {
       result.current.handleClearFilters()
     })
 
-    expect(mockSetQueryState).toHaveBeenCalledWith({ search: '', page: 1 })
+    expect(mockSetQueryState).toHaveBeenCalledWith({ search: '' })
   })
 
-  it('isLoading é true quando query está carregando', async () => {
-    mockUseQuery.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-    } as unknown as ReturnType<typeof useQuery>)
+  it('setSearch grava o termo de busca no query state', async () => {
+    const { result } = renderHook(() => useAgenciesTable())
+
+    await waitFor(() => {
+      result.current.filters.setSearch('horizonte')
+    })
+
+    expect(mockSetQueryState).toHaveBeenCalledWith({ search: 'horizonte' })
+  })
+
+  it('isLoading reflete o estado do useInfiniteTable', async () => {
+    mockUseInfiniteTable.mockReturnValue(infiniteReturn({ isLoading: true }))
 
     const { result } = renderHook(() => useAgenciesTable())
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(true)
-    })
-  })
-
-  it('paginação calcula totalPages corretamente', async () => {
-    mockUseQuery.mockReturnValue({
-      data: { items: [], total: 25 },
-      isLoading: false,
-    } as unknown as ReturnType<typeof useQuery>)
-
-    const { result } = renderHook(() => useAgenciesTable())
-
-    await waitFor(() => {
-      expect(result.current.pagination.totalPages).toBe(3)
-      expect(result.current.pagination.pageSize).toBe(10)
     })
   })
 })
