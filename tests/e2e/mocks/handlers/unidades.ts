@@ -20,8 +20,9 @@ export async function registerUnidadesHandlers(page: Page) {
     })
   })
 
-  // GET /api/v1/units/summary — listagem paginada com filtros
+  // GET /api/v1/units/summary — listagem paginada + bloco agregado by_status
   await page.route('**/api/v1/units/summary*', async (route) => {
+    const { money } = factory
     const units = [
       factory.unit({ id: 1, name: 'Apto 101', project_id: 1, status: 'available' }),
       factory.unit({ id: 2, name: 'Apto 102', project_id: 1, status: 'sold' }),
@@ -29,7 +30,17 @@ export async function registerUnidadesHandlers(page: Page) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(factory.paginated(units, 2)),
+      body: JSON.stringify({
+        ...factory.paginated(units, 2),
+        summary: {
+          by_status: {
+            available: { count: 47, vgv: money(1_840_000_000) },
+            reserved: { count: 12, vgv: money(460_000_000) },
+            sold: { count: 89, vgv: money(3_350_000_000) },
+            unavailable: { count: 0, vgv: money(0) },
+          },
+        },
+      }),
     })
   })
 

@@ -34,4 +34,30 @@ test.describe('Dashboard — Início', () => {
     await expect(page).toHaveURL(/\/financeiro\?.*duePreset=custom/)
     await expect(page.getByRole('heading', { name: 'Financeiro' })).toBeVisible()
   })
+
+  test('exibe a seção vendas com funil e recentes', async ({ authenticatedPage: page }) => {
+    await page.goto('/dashboard')
+    await expect(page.getByText('Propostas', { exact: true })).toBeVisible()
+    await expect(page.getByText('Fechadas no mês')).toBeVisible()
+    await expect(page.getByText('VGV em negociação')).toBeVisible()
+    // VGV do pipeline mockado: money(395_000_000) → R$ 3.950.000,00
+    await expect(page.getByText('R$ 3.950.000,00')).toBeVisible()
+    await expect(page.getByText('Recentes')).toBeVisible()
+    // Recente vem do item mockado, com cliente embutido e link para o detalhe
+    await expect(page.getByRole('link', { name: /Maria Compradora 1/ })).toBeVisible()
+  })
+
+  test('exibe a seção operacional com estoque e empreendimentos', async ({
+    authenticatedPage: page,
+  }) => {
+    await page.goto('/dashboard')
+    await expect(page.getByText('Disponíveis')).toBeVisible()
+    await expect(page.getByText('Reservadas')).toBeVisible()
+    // VGV disponível mockado: money(1_840_000_000) → R$ 18.400.000,00
+    await expect(page.getByText('Estoque a vender:')).toBeVisible()
+    await expect(page.getByText('R$ 18.400.000,00')).toBeVisible()
+    // Projeto do mock com barra de progresso (6/10 vendidos → 60%)
+    await expect(page.getByRole('link', { name: /Residencial Ipiranga/ })).toBeVisible()
+    await expect(page.getByText('6/10')).toBeVisible()
+  })
 })
