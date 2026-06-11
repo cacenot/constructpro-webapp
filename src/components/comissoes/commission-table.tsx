@@ -1,110 +1,71 @@
-import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import { Percent } from 'lucide-react'
+import { useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { DataTableInfinite } from '@/components/ui/data-table-infinite'
 import type { CommissionItem } from '@/hooks/use-commissions-table'
-import { commissionColumns } from './commission-columns'
+import { createCommissionColumns } from './commission-columns'
+
+// Estável no escopo de módulo: o DataTableRow é memoizado e exige getRowId com
+// referência estável para não re-renderizar a lista inteira a cada página nova.
+const getCommissionRowId = (commission: CommissionItem) => String(commission.id)
 
 interface CommissionTableProps {
   data: CommissionItem[]
   isLoading: boolean
+  isError?: boolean
+  onRetry?: () => void
   hasActiveFilters: boolean
   onClearFilters: () => void
+  total: number
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  onReachEnd?: () => void
 }
-
-const SKELETON_ROWS = 5
 
 export function CommissionTable({
   data,
   isLoading,
+  isError,
+  onRetry,
   hasActiveFilters,
   onClearFilters,
+  total,
+  hasNextPage,
+  isFetchingNextPage,
+  onReachEnd,
 }: CommissionTableProps) {
-  const table = useReactTable({
-    data,
-    columns: commissionColumns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-  })
+  const columns = useMemo(() => createCommissionColumns(), [])
 
   return (
-    <Table>
-      <TableHeader>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
-            {headerGroup.headers.map((header) => (
-              <TableHead key={header.id} className="px-6">
-                {header.isPlaceholder
-                  ? null
-                  : flexRender(header.column.columnDef.header, header.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {isLoading ? (
-          Array.from({ length: SKELETON_ROWS }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows
-            <TableRow key={i}>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-4 w-20" />
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-4 w-16" />
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-4 w-28" />
-              </TableCell>
-              <TableCell className="hidden md:table-cell px-6 py-3">
-                <Skeleton className="h-4 w-24" />
-              </TableCell>
-              <TableCell className="hidden md:table-cell px-6 py-3">
-                <Skeleton className="h-4 w-24" />
-              </TableCell>
-              <TableCell className="hidden lg:table-cell px-6 py-3">
-                <Skeleton className="h-4 w-12" />
-              </TableCell>
-              <TableCell className="hidden lg:table-cell px-6 py-3">
-                <Skeleton className="h-4 w-12" />
-              </TableCell>
-              <TableCell className="px-6 py-3">
-                <Skeleton className="h-4 w-24 ml-auto" />
-              </TableCell>
-            </TableRow>
-          ))
-        ) : data.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={commissionColumns.length} className="px-6 py-12">
-              <div className="flex flex-col items-center justify-center text-center">
-                <p className="text-sm text-muted-foreground">Nenhuma comissão encontrada</p>
-                {hasActiveFilters && (
-                  <Button variant="outline" size="sm" onClick={onClearFilters} className="mt-4">
-                    Limpar filtros
-                  </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ) : (
-          table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id} className="px-6 py-3">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
+    <DataTableInfinite
+      aria-label="Comissões"
+      columns={columns}
+      data={data}
+      isLoading={isLoading}
+      isError={isError}
+      onRetry={onRetry}
+      getRowId={getCommissionRowId}
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      onReachEnd={onReachEnd}
+      endLabel={
+        total > 0 ? `Fim da lista · ${total} ${total === 1 ? 'comissão' : 'comissões'}` : undefined
+      }
+      empty={
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Percent className="size-10 opacity-40" />
+          <p className="text-sm">
+            {hasActiveFilters
+              ? 'Nenhuma comissão encontrada com esses filtros.'
+              : 'Nenhuma comissão no período.'}
+          </p>
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={onClearFilters}>
+              Limpar filtros
+            </Button>
+          )}
+        </div>
+      }
+    />
   )
 }
