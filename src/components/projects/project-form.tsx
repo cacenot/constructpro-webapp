@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowLeft, CalendarIcon, Loader2, Save } from 'lucide-react'
+import { CalendarIcon, Loader2, Save } from 'lucide-react'
 import * as React from 'react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Select,
@@ -29,7 +30,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { UFSelect } from '@/components/ui/uf-select'
 import { capitalizeNameBR } from '@/lib/text-formatters'
 import { cn } from '@/lib/utils'
@@ -54,6 +54,8 @@ interface ProjectFormProps {
   onSubmit: (data: ProjectCreateFormData) => Promise<void>
   /** Called when back button is clicked */
   onBack: () => void
+  /** Href for the back-button in the page header. */
+  backHref?: string
   /** Whether the form is in edit mode */
   isEdit?: boolean
   /** Whether the form is submitting */
@@ -67,6 +69,7 @@ export function ProjectForm({
   initialData,
   onSubmit,
   onBack,
+  backHref,
   isEdit = false,
   isSubmitting = false,
 }: ProjectFormProps) {
@@ -125,28 +128,15 @@ export function ProjectForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
-                <ArrowLeft className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Voltar</p>
-            </TooltipContent>
-          </Tooltip>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {isEdit ? 'Editar Empreendimento' : 'Novo Empreendimento'}
-            </h2>
-            <p className="mt-1 text-muted-foreground">
-              {isEdit
-                ? 'Atualize os dados do empreendimento'
-                : 'Preencha os dados para cadastrar um novo empreendimento'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title={isEdit ? 'Editar Empreendimento' : 'Novo Empreendimento'}
+          description={
+            isEdit
+              ? 'Atualize os dados do empreendimento'
+              : 'Preencha os dados para cadastrar um novo empreendimento'
+          }
+          backHref={backHref}
+        />
 
         {/* Basic Information */}
         <Card>

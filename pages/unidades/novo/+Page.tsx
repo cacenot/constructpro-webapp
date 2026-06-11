@@ -61,6 +61,7 @@ export default function UnitNewPage() {
         <UnitForm
           onSubmit={handleSubmit}
           onBack={handleBack}
+          backHref="/unidades"
           isSubmitting={createMutation.isPending}
         />
       </div>

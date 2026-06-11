@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Loader2, Save } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,8 +13,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
 import { PhoneInput } from '@/components/ui/phone-input'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { capitalizeNameBR } from '@/lib/text-formatters'
 import { type BrokerCreateFormData, brokerCreateSchema } from '@/schemas/broker.schema'
 
@@ -22,6 +22,7 @@ interface BrokerFormProps {
   initialData?: Partial<BrokerCreateFormData>
   onSubmit: (data: BrokerCreateFormData) => Promise<void>
   onBack: () => void
+  backHref?: string
   isEdit?: boolean
   isSubmitting?: boolean
 }
@@ -30,6 +31,7 @@ export function BrokerForm({
   initialData,
   onSubmit,
   onBack,
+  backHref,
   isEdit = false,
   isSubmitting = false,
 }: BrokerFormProps) {
@@ -57,28 +59,15 @@ export function BrokerForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
-                <ArrowLeft className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Voltar</p>
-            </TooltipContent>
-          </Tooltip>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {isEdit ? 'Editar Corretor' : 'Novo Corretor'}
-            </h2>
-            <p className="mt-1 text-muted-foreground">
-              {isEdit
-                ? 'Atualize os dados do corretor'
-                : 'Preencha os dados para cadastrar um novo corretor'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title={isEdit ? 'Editar Corretor' : 'Novo Corretor'}
+          description={
+            isEdit
+              ? 'Atualize os dados do corretor'
+              : 'Preencha os dados para cadastrar um novo corretor'
+          }
+          backHref={backHref}
+        />
 
         <Card>
           <CardHeader>

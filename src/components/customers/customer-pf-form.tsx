@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Loader2, Save } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { BirthDateInput } from '@/components/ui/birth-date-input'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
 import { PhoneInput } from '@/components/ui/phone-input'
 import {
   Select,
@@ -22,7 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { UFSelect } from '@/components/ui/uf-select'
 import { capitalizeNameBR, formatISOToBirthDate, parseBirthDateToISO } from '@/lib/text-formatters'
 import {
@@ -39,6 +39,8 @@ interface CustomerPFFormProps {
   onSubmit: (data: CustomerPFCreateFormData) => Promise<void>
   /** Called when back button is clicked */
   onBack: () => void
+  /** Href for the back-button in the page header. */
+  backHref?: string
   /** Whether the form is in edit mode */
   isEdit?: boolean
   /** Whether the form is submitting */
@@ -65,6 +67,7 @@ export function CustomerPFForm({
   initialData,
   onSubmit,
   onBack,
+  backHref,
   isEdit = false,
   isSubmitting = false,
 }: CustomerPFFormProps) {
@@ -111,28 +114,15 @@ export function CustomerPFForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
-                <ArrowLeft className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Voltar</p>
-            </TooltipContent>
-          </Tooltip>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {isEdit ? 'Editar Cliente' : 'Novo Cliente'} - Pessoa Física
-            </h2>
-            <p className="mt-1 text-muted-foreground">
-              {isEdit
-                ? 'Atualize os dados do cliente'
-                : 'Preencha os dados para cadastrar um novo cliente'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title={`${isEdit ? 'Editar Cliente' : 'Novo Cliente'} — Pessoa Física`}
+          description={
+            isEdit
+              ? 'Atualize os dados do cliente'
+              : 'Preencha os dados para cadastrar um novo cliente'
+          }
+          backHref={backHref}
+        />
 
         {/* Personal Information */}
         <Card>

@@ -177,6 +177,7 @@ export default function UnitEditPage() {
           initialData={initialData}
           onSubmit={handleSubmit}
           onBack={handleBack}
+          backHref="/unidades"
           isEdit
           isSubmitting={updateMutation.isPending}
         />
