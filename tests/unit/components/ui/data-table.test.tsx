@@ -115,6 +115,26 @@ describe('DataTable — skeleton de carregamento', () => {
     expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
   })
 
+  it('anexa loadingMoreRows skeleton rows fiéis após as linhas reais', () => {
+    const { container } = render(
+      <DataTable columns={skeletonColumns} data={rows} loadingMoreRows={3} />
+    )
+    // 2 linhas de dados + 3 de "carregando mais"
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(5)
+    const allRows = container.querySelectorAll('tbody tr')
+    const lastRow = allRows[allRows.length - 1]
+    // a row extra tem o shape de skeleton (âncora com 2 barras na 1ª coluna)
+    expect(lastRow.querySelectorAll('[data-slot="skeleton"]').length).toBeGreaterThan(0)
+  })
+
+  it('não anexa loading rows quando loadingMoreRows é 0', () => {
+    const { container } = render(
+      <DataTable columns={skeletonColumns} data={rows} loadingMoreRows={0} />
+    )
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+    expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
+  })
+
   it('respeita o shape de cada coluna: âncora 2 barras, badge 1, ações 1', () => {
     const { container } = render(
       <DataTable columns={skeletonColumns} data={[]} isLoading skeletonRows={1} />

@@ -85,6 +85,11 @@ export interface DataTableProps<TData> {
    * para preencher a viewport (em vez do número fixo). Ligado pelo `DataTableInfinite`.
    */
   autoFillSkeleton?: boolean
+  /**
+   * Nº de skeleton rows (fiéis ao shape das colunas) anexadas após as linhas reais
+   * enquanto a próxima página carrega. Ligado pelo `DataTableInfinite`. Default 0.
+   */
+  loadingMoreRows?: number
   className?: string
   'aria-label'?: string
 }
@@ -117,6 +122,7 @@ export function DataTable<TData>({
   scrollRef,
   skeletonRows = DEFAULT_SKELETON_ROWS,
   autoFillSkeleton = false,
+  loadingMoreRows = 0,
   className,
   'aria-label': ariaLabel,
 }: DataTableProps<TData>) {
@@ -163,15 +169,24 @@ export function DataTable<TData>({
     if (!autoFillSkeleton || !showSkeleton) return
     const el = innerRef.current
     if (!el) return
+    let raf = 0
     const measure = () => {
       const available = el.clientHeight - HEADER_HEIGHT
       if (available <= 0) return
       setAutoSkeletonRows(Math.max(MIN_SKELETON_ROWS, Math.round(available / estimatedRowHeight)))
     }
+    // Mede agora e re-mede no próximo frame: no primeiro mount (full page load) a
+    // cadeia `h-svh`/flex pode não ter assentado no tick do layout effect, e o
+    // clientHeight inicial vem menor (ou 0) que o final — caindo no fallback. O rAF
+    // relê já com o layout estável. O ResizeObserver cobre os resizes seguintes.
     measure()
+    raf = requestAnimationFrame(measure)
     const observer = new ResizeObserver(measure)
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      cancelAnimationFrame(raf)
+      observer.disconnect()
+    }
   }, [autoFillSkeleton, showSkeleton, estimatedRowHeight])
 
   const effectiveSkeletonRows =
@@ -209,27 +224,7 @@ export function DataTable<TData>({
 
         <tbody>
           {showSkeleton ? (
-            Array.from({ length: effectiveSkeletonRows }).map((_, rowIndex) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows têm índice estável
-              <tr key={rowIndex} className="border-b">
-                {columns.map((column, colIndex) => {
-                  const align = column.meta?.align ?? 'left'
-                  return (
-                    <td
-                      // biome-ignore lint/suspicious/noArrayIndexKey: célula de skeleton
-                      key={column.id ?? colIndex}
-                      className={cn(
-                        'px-2 py-3.5 align-middle sm:px-4',
-                        ALIGN[align],
-                        column.meta?.className
-                      )}
-                    >
-                      <SkeletonCell spec={column.meta?.skeleton} align={align} />
-                    </td>
-                  )
-                })}
-              </tr>
-            ))
+            <SkeletonRows columns={columns} count={effectiveSkeletonRows} />
           ) : isError ? (
             <tr>
               <td colSpan={columnCount} className="py-16 text-center">
@@ -251,16 +246,19 @@ export function DataTable<TData>({
               </td>
             </tr>
           ) : (
-            rows.map((row) => (
-              <DataTableRow
-                key={row.id}
-                row={row}
-                clickable={!!onRowClick}
-                selected={isRowSelected?.(row.original) ?? false}
-                extraClass={rowClassName?.(row.original)}
-                onRowClick={onRowClick}
-              />
-            ))
+            <>
+              {rows.map((row) => (
+                <DataTableRow
+                  key={row.id}
+                  row={row}
+                  clickable={!!onRowClick}
+                  selected={isRowSelected?.(row.original) ?? false}
+                  extraClass={rowClassName?.(row.original)}
+                  onRowClick={onRowClick}
+                />
+              ))}
+              {loadingMoreRows > 0 && <SkeletonRows columns={columns} count={loadingMoreRows} />}
+            </>
           )}
         </tbody>
       </table>
@@ -333,6 +331,39 @@ function DataTableRowInner<TData>({
 }
 
 const DataTableRow = memo(DataTableRowInner) as typeof DataTableRowInner
+
+/**
+ * Linhas de skeleton fiéis ao shape das colunas (mesmo padding, alinhamento e
+ * visibilidade por breakpoint das linhas reais). Usado no carregamento inicial e,
+ * anexado após as linhas reais, no "carregando mais" do scroll infinito.
+ */
+function SkeletonRows<TData>({ columns, count }: { columns: ColumnDef<TData>[]; count: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, rowIndex) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows têm índice estável
+        <tr key={rowIndex} className="border-b">
+          {columns.map((column, colIndex) => {
+            const align = column.meta?.align ?? 'left'
+            return (
+              <td
+                // biome-ignore lint/suspicious/noArrayIndexKey: célula de skeleton
+                key={column.id ?? colIndex}
+                className={cn(
+                  'px-2 py-3.5 align-middle sm:px-4',
+                  ALIGN[align],
+                  column.meta?.className
+                )}
+              >
+                <SkeletonCell spec={column.meta?.skeleton} align={align} />
+              </td>
+            )
+          })}
+        </tr>
+      ))}
+    </>
+  )
+}
 
 /**
  * Conteúdo do skeleton de uma célula, fiel à receita real da coluna. Respeita o

@@ -11,8 +11,6 @@ interface PageHeaderProps {
   backHref?: string
   /** Ações à direita (botão único ou grupo). */
   action?: ReactNode
-  /** `default` = text-3xl (token display); `compact` = text-xl (fill-height). */
-  size?: 'default' | 'compact'
   className?: string
 }
 
@@ -21,14 +19,7 @@ interface PageHeaderProps {
  * (text-3xl/semibold), descrição opcional, back-button opcional e slot de ação.
  * Cobre listas, criação/edição e settings. Hero/detalhe usam componentes próprios.
  */
-export function PageHeader({
-  title,
-  description,
-  backHref,
-  action,
-  size = 'default',
-  className,
-}: PageHeaderProps) {
+export function PageHeader({ title, description, backHref, action, className }: PageHeaderProps) {
   return (
     <div className={cn('flex items-start justify-between gap-4', className)}>
       <div className="flex min-w-0 items-start gap-3">
@@ -47,14 +38,7 @@ export function PageHeader({
           </Tooltip>
         )}
         <div className="min-w-0">
-          <h1
-            className={cn(
-              'font-semibold tracking-tight',
-              size === 'compact' ? 'text-xl' : 'text-3xl'
-            )}
-          >
-            {title}
-          </h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
           {description && <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>}
         </div>
       </div>

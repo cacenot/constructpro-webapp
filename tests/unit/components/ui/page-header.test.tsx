@@ -17,13 +17,6 @@ describe('PageHeader', () => {
     expect(h1.className).toContain('font-semibold')
   })
 
-  it('aplica a variante compact (text-xl)', () => {
-    render(<PageHeader title="Financeiro" size="compact" />)
-    const h1 = screen.getByRole('heading', { level: 1 })
-    expect(h1.className).toContain('text-xl')
-    expect(h1.className).not.toContain('text-3xl')
-  })
-
   it('renderiza a descrição quando fornecida', () => {
     render(<PageHeader title="Corretores" description="Gerencie os corretores parceiros." />)
     expect(screen.getByText('Gerencie os corretores parceiros.')).toBeInTheDocument()
