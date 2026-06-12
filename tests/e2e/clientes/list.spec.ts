@@ -26,16 +26,15 @@ test.describe('Clientes — Listagem', () => {
     await expect(page.getByText('João Silva')).toBeVisible()
   })
 
-  test('exibe o total de clientes no cabeçalho do card', async ({ authenticatedPage: page }) => {
+  test('exibe o total de clientes no endLabel da tabela', async ({ authenticatedPage: page }) => {
     await page.goto('/clientes')
-    // Aguarda os dados carregarem (substituindo 'Carregando...')
-    await expect(page.getByText('2 clientes')).toBeVisible()
+    await expect(page.getByText(/Fim da lista · 2 clientes/)).toBeVisible()
   })
 
   test('exibe as colunas da tabela', async ({ authenticatedPage: page }) => {
     await page.goto('/clientes')
     // Aguarda os dados carregarem antes de verificar colunas
-    await expect(page.getByText('2 clientes')).toBeVisible()
+    await expect(page.getByText(/Fim da lista · 2 clientes/)).toBeVisible()
     await expect(page.getByRole('button', { name: /^ID/ })).toBeVisible()
     await expect(page.getByRole('button', { name: /^Nome/ })).toBeVisible()
   })

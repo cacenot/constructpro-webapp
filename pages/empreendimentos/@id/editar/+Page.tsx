@@ -100,6 +100,7 @@ export default function ProjectEditPage() {
           initialData={initialData}
           onSubmit={handleSubmit}
           onBack={handleBack}
+          backHref={`/empreendimentos/${projectId}`}
           isEdit
           isSubmitting={updateMutation.isPending}
         />

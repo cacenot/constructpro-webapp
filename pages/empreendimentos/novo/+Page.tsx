@@ -42,6 +42,7 @@ export default function ProjectNewPage() {
         <ProjectForm
           onSubmit={handleSubmit}
           onBack={handleBack}
+          backHref="/empreendimentos"
           isSubmitting={createMutation.isPending}
         />
       </div>

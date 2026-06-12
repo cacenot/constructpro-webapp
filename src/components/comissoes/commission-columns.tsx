@@ -1,95 +1,87 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { format, parseISO } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { DateCell, MoneyCell, MutedCell, PrimaryCell } from '@/components/ui/data-table-cells'
 import type { CommissionItem } from '@/hooks/use-commissions-table'
-import { formatCurrency } from '@/lib/utils'
+import { formatId } from '@/lib/utils'
 
-export const commissionColumns: ColumnDef<CommissionItem>[] = [
-  {
-    accessorKey: 'sale_closed_at',
-    header: 'Data',
-    cell: ({ row }) => {
-      const value = row.original.sale_closed_at
-      return (
-        <span className="tabular-nums">
-          {format(parseISO(value), 'dd/MM/yyyy', { locale: ptBR })}
-        </span>
-      )
+export function createCommissionColumns(): ColumnDef<CommissionItem>[] {
+  return [
+    {
+      id: 'broker',
+      header: 'Corretor',
+      cell: ({ row }) => {
+        const { broker, agency } = row.original
+        const agencyName = agency?.trade_name ?? agency?.legal_name ?? undefined
+        return <PrimaryCell title={broker?.full_name ?? '—'} subtitle={agencyName} />
+      },
+      meta: { skeleton: { lines: 2 } },
     },
-  },
-  {
-    accessorKey: 'sale_id',
-    header: 'Venda',
-    cell: ({ row }) => {
-      const saleId = row.original.sale_id
-      return (
-        <a href={`/vendas/${saleId}`} className="font-medium text-primary hover:underline">
-          #{String(saleId).slice(0, 8).toUpperCase()}
+    {
+      id: 'sale',
+      header: 'Venda',
+      cell: ({ row }) => (
+        <a
+          href={`/vendas/${row.original.sale_id}`}
+          className="font-mono text-sm text-primary hover:underline"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {formatId(row.original.sale_id)}
         </a>
-      )
+      ),
+      meta: { className: 'hidden sm:table-cell', headClassName: 'hidden sm:table-cell' },
     },
-  },
-  {
-    accessorKey: 'broker',
-    header: 'Corretor',
-    cell: ({ row }) => {
-      const broker = row.original.broker
-      return <span>{broker?.full_name ?? '—'}</span>
+    {
+      id: 'sale_closed_at',
+      header: 'Data',
+      cell: ({ row }) => <DateCell date={row.original.sale_closed_at} />,
+      meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
     },
-  },
-  {
-    accessorKey: 'agency',
-    header: () => <span className="hidden md:table-cell">Imobiliária</span>,
-    cell: ({ row }) => {
-      const agency = row.original.agency
-      const name = agency?.trade_name ?? agency?.legal_name
-      return <span className="hidden md:table-cell">{name ?? '—'}</span>
+    {
+      id: 'sale_amount',
+      header: 'Valor Venda',
+      cell: ({ row }) => <MoneyCell value={row.original.sale_amount_at_approval.cents / 100} />,
+      meta: {
+        align: 'right',
+        className: 'hidden md:table-cell',
+        headClassName: 'hidden md:table-cell',
+      },
     },
-  },
-  {
-    accessorKey: 'sale_amount_at_approval',
-    header: () => <span className="hidden md:table-cell">Valor Venda</span>,
-    cell: ({ row }) => {
-      const amount = row.original.sale_amount_at_approval
-      return (
-        <span className="hidden md:table-cell tabular-nums text-right">
-          {formatCurrency(amount.cents / 100)}
+    {
+      id: 'broker_rate',
+      header: 'Taxa Corretor',
+      cell: ({ row }) => (
+        <span className="tabular-nums">
+          <MutedCell>{row.original.broker_rate?.formatted ?? null}</MutedCell>
         </span>
-      )
+      ),
+      meta: {
+        align: 'right',
+        className: 'hidden lg:table-cell',
+        headClassName: 'hidden lg:table-cell',
+      },
     },
-  },
-  {
-    accessorKey: 'broker_rate',
-    header: () => <span className="hidden lg:table-cell">Taxa Corretor</span>,
-    cell: ({ row }) => {
-      const rate = row.original.broker_rate
-      return (
-        <span className="hidden lg:table-cell tabular-nums text-right">
-          {rate ? rate.formatted : '—'}
+    {
+      id: 'agency_rate',
+      header: 'Taxa Imob.',
+      cell: ({ row }) => (
+        <span className="tabular-nums">
+          <MutedCell>{row.original.agency_rate?.formatted ?? null}</MutedCell>
         </span>
-      )
+      ),
+      meta: {
+        align: 'right',
+        className: 'hidden lg:table-cell',
+        headClassName: 'hidden lg:table-cell',
+      },
     },
-  },
-  {
-    accessorKey: 'agency_rate',
-    header: () => <span className="hidden lg:table-cell">Taxa Imob.</span>,
-    cell: ({ row }) => {
-      const rate = row.original.agency_rate
-      return (
-        <span className="hidden lg:table-cell tabular-nums text-right">
-          {rate ? rate.formatted : '—'}
+    {
+      id: 'total_amount',
+      header: 'Comissão Total',
+      cell: ({ row }) => (
+        <span className="font-semibold">
+          <MoneyCell value={row.original.total_amount.cents / 100} />
         </span>
-      )
+      ),
+      meta: { align: 'right' },
     },
-  },
-  {
-    accessorKey: 'total_amount',
-    header: () => <span className="text-right">Comissão Total</span>,
-    cell: ({ row }) => {
-      const amount = row.original.total_amount
-      return (
-        <span className="tabular-nums text-right block">{formatCurrency(amount.cents / 100)}</span>
-      )
-    },
-  },
-]
+  ]
+}

@@ -9,6 +9,7 @@ import { InstallmentDetailPanel } from '@/components/financeiro/installment-deta
 import { InstallmentsFilters } from '@/components/financeiro/installments-filters'
 import { InstallmentsTable } from '@/components/financeiro/installments-table'
 import { PayInstallmentDialog } from '@/components/financeiro/pay-installment-dialog'
+import { PageHeader } from '@/components/ui/page-header'
 import type {
   InstallmentDetailResponse,
   InstallmentSummaryItemResponse,
@@ -120,7 +121,7 @@ export default function FinanceiroPage() {
   return (
     <AppLayout fillHeight>
       <div className="flex h-full min-h-0 flex-col gap-4">
-        <h1 className="shrink-0 text-xl font-semibold tracking-tight">Financeiro</h1>
+        <PageHeader title="Financeiro" className="shrink-0" />
 
         {/* Pulso da carteira — filtro-scoped, acompanha o recorte da tabela. */}
         <CarteiraCompositionBar summary={summary} isLoading={isLoading} className="shrink-0" />

@@ -21,9 +21,9 @@ test.describe('Vendas — Listagem', () => {
     ).toBeVisible()
   })
 
-  test('exibe o total de vendas no cabeçalho do card', async ({ authenticatedPage: page }) => {
+  test('exibe o total de vendas no endLabel da tabela', async ({ authenticatedPage: page }) => {
     await page.goto('/vendas')
-    await expect(page.locator('text=3 vendas')).toBeVisible()
+    await expect(page.getByText(/Fim da lista · 3 vendas/)).toBeVisible()
   })
 
   test('navega para /vendas/novo ao clicar em Nova Proposta', async ({

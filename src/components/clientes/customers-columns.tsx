@@ -3,22 +3,22 @@ import { getCustomerTypeOptions } from '@cacenot/construct-pro-api-client'
 
 type CustomerResponse = components['schemas']['CustomerResponse']
 
-import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown, MoreVertical } from 'lucide-react'
+import type { ColumnDef, Table } from '@tanstack/react-table'
 import { navigate } from 'vike/client/router'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { MutedCell, PrimaryCell, RowActionsMenu } from '@/components/ui/data-table-cells'
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import { SortableHeader } from '@/components/ui/sortable-header'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatDocument, formatPhone, whatsappLink } from '@/lib/text-formatters'
 import { formatId } from '@/lib/utils'
+
+export interface CustomersTableMeta {
+  sort: string
+  onSort: (value: string) => void
+}
+
+const typeOptions = getCustomerTypeOptions('pt-BR')
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -29,166 +29,124 @@ function WhatsAppIcon({ className }: { className?: string }) {
   )
 }
 
-const typeOptions = getCustomerTypeOptions('pt-BR')
+export const customersColumns: ColumnDef<CustomerResponse>[] = [
+  {
+    id: 'id',
+    header: ({ table }) => {
+      const meta = table.options.meta as CustomersTableMeta | undefined
+      if (!meta) return 'ID'
+      return <SortableHeader label="ID" field="id" currentSort={meta.sort} onSort={meta.onSort} />
+    },
+    cell: ({ row }) => (
+      <Badge variant="secondary" className="font-mono text-xs tabular-nums">
+        {formatId(row.original.id)}
+      </Badge>
+    ),
+    meta: { skeleton: { variant: 'badge' } },
+  },
+  {
+    id: 'full_name',
+    header: ({ table }) => {
+      const meta = table.options.meta as CustomersTableMeta | undefined
+      if (!meta) return 'Nome'
+      return (
+        <SortableHeader
+          label="Nome"
+          field="full_name"
+          currentSort={meta.sort}
+          onSort={meta.onSort}
+        />
+      )
+    },
+    cell: ({ row }) => (
+      <PrimaryCell
+        title={row.original.full_name}
+        subtitle={formatDocument(row.original.cpf_cnpj)}
+      />
+    ),
+    meta: { skeleton: { lines: 2 } },
+  },
+  {
+    id: 'type',
+    header: 'Tipo',
+    cell: ({ row }) => {
+      const option = typeOptions.find((o) => o.value === row.original.type)
+      return (
+        <Badge variant="outline" className="text-xs">
+          {option?.label ?? row.original.type}
+        </Badge>
+      )
+    },
+    meta: {
+      className: 'hidden md:table-cell',
+      headClassName: 'hidden md:table-cell',
+      skeleton: { variant: 'badge' },
+    },
+  },
+  {
+    id: 'location',
+    header: 'Localização',
+    cell: ({ row }) => {
+      const { city, state } = row.original
+      const location = city && state ? `${city} - ${state}` : (city ?? null)
+      return <MutedCell>{location || null}</MutedCell>
+    },
+    meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
+  },
+  {
+    id: 'phone',
+    header: 'Telefone',
+    cell: ({ row }) => {
+      const { phone } = row.original
+      if (!phone) return <MutedCell>{null}</MutedCell>
+      return (
+        <div className="flex items-center gap-2">
+          <MutedCell>{formatPhone(phone)}</MutedCell>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={whatsappLink(phone)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-success hover:text-success/80 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <WhatsAppIcon className="size-4" />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Abrir WhatsApp</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )
+    },
+    meta: { className: 'hidden sm:table-cell', headClassName: 'hidden sm:table-cell' },
+  },
+  {
+    id: 'actions',
+    header: '',
+    cell: ({ row }) => <CustomerRowActions customer={row.original} />,
+    meta: { align: 'right', skeleton: { variant: 'actions' } },
+  },
+]
 
-function SortIcon({ column, sort }: { column: string; sort: string }) {
-  if (!sort.startsWith(column)) return <ArrowUpDown className="ml-1 size-3 text-muted-foreground" />
-  return sort.endsWith(':asc') ? (
-    <ArrowUp className="ml-1 size-3" />
-  ) : (
-    <ArrowDown className="ml-1 size-3" />
+function CustomerRowActions({ customer }: { customer: CustomerResponse }) {
+  return (
+    <RowActionsMenu>
+      <DropdownMenuItem onClick={() => navigate(`/clientes/${customer.id}`)}>
+        Ver detalhes
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={() => navigate(`/clientes/${customer.id}/editar`)}>
+        Editar
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onClick={() => navigate(`/vendas/novo?cliente=${customer.id}`)}>
+        Nova venda
+      </DropdownMenuItem>
+    </RowActionsMenu>
   )
 }
 
-interface CustomersColumnsCallbacks {
-  sort: string
-  onSort: (value: string) => void
-}
-
-export function createCustomersColumns({
-  sort,
-  onSort,
-}: CustomersColumnsCallbacks): ColumnDef<CustomerResponse>[] {
-  function toggleSort(column: string) {
-    if (sort === `${column}:desc`) {
-      onSort(`${column}:asc`)
-    } else {
-      onSort(`${column}:desc`)
-    }
-  }
-
-  return [
-    {
-      id: 'id',
-      header: () => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 font-medium"
-          onClick={() => toggleSort('id')}
-        >
-          ID
-          <SortIcon column="id" sort={sort} />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <Badge variant="secondary" className="tabular-nums font-mono text-xs shrink-0">
-          {formatId(row.original.id)}
-        </Badge>
-      ),
-    },
-    {
-      id: 'full_name',
-      header: () => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 font-medium"
-          onClick={() => toggleSort('full_name')}
-        >
-          Nome
-          <SortIcon column="full_name" sort={sort} />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="truncate text-sm font-medium">{row.original.full_name}</span>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {formatDocument(row.original.cpf_cnpj)}
-          </span>
-        </div>
-      ),
-    },
-    {
-      id: 'type',
-      header: 'Tipo',
-      cell: ({ row }) => {
-        const option = typeOptions.find((o) => o.value === row.original.type)
-        return (
-          <div className="hidden md:block">
-            <Badge variant="outline" className="text-xs">
-              {option?.label ?? row.original.type}
-            </Badge>
-          </div>
-        )
-      },
-    },
-    {
-      id: 'location',
-      header: () => <span className="hidden md:block">Localização</span>,
-      cell: ({ row }) => {
-        const { city, state } = row.original
-        const location = city && state ? `${city} - ${state}` : (city ?? '')
-        return (
-          <span className="hidden md:block text-sm text-muted-foreground">{location || '—'}</span>
-        )
-      },
-    },
-    {
-      id: 'phone',
-      header: () => <span className="hidden sm:block">Telefone</span>,
-      cell: ({ row }) => {
-        const { phone } = row.original
-        if (!phone) {
-          return <span className="hidden sm:block text-xs text-muted-foreground">—</span>
-        }
-        return (
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-sm tabular-nums text-muted-foreground">{formatPhone(phone)}</span>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href={whatsappLink(phone)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-success hover:text-success/80 transition-colors"
-                >
-                  <WhatsAppIcon className="size-4" />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Abrir WhatsApp</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        )
-      },
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => {
-        const customer = row.original
-        return (
-          <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" className="shrink-0">
-                    <MoreVertical className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Ações</p>
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => navigate(`/clientes/${customer.id}`)}>
-                Ver detalhes
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate(`/clientes/${customer.id}/editar`)}>
-                Editar
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate(`/vendas/novo?cliente=${customer.id}`)}>
-                Nova venda
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
-      },
-    },
-  ]
-}
+// Re-export type for use in table component
+export type { CustomerResponse, Table }

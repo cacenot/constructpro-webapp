@@ -116,6 +116,7 @@ export default function CustomerEditPage() {
             initialData={{ ...initialData, type: 'individual' } as any}
             onSubmit={handleSubmitPF}
             onBack={handleBack}
+            backHref={`/clientes/${customerId}`}
             isEdit
             isSubmitting={updateMutation.isPending}
           />
@@ -125,6 +126,7 @@ export default function CustomerEditPage() {
             initialData={{ ...initialData, type: 'company' } as any}
             onSubmit={handleSubmitPJ}
             onBack={handleBack}
+            backHref={`/clientes/${customerId}`}
             isEdit
             isSubmitting={updateMutation.isPending}
           />

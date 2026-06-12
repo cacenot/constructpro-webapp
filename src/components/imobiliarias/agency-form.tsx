@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Loader2, Save } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,14 +13,15 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
 import { PhoneInput } from '@/components/ui/phone-input'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { type AgencyCreateFormData, agencyCreateSchema } from '@/schemas/agency.schema'
 
 interface AgencyFormProps {
   initialData?: Partial<AgencyCreateFormData>
   onSubmit: (data: AgencyCreateFormData) => Promise<void>
   onBack: () => void
+  backHref?: string
   isEdit?: boolean
   isSubmitting?: boolean
 }
@@ -29,6 +30,7 @@ export function AgencyForm({
   initialData,
   onSubmit,
   onBack,
+  backHref,
   isEdit = false,
   isSubmitting = false,
 }: AgencyFormProps) {
@@ -58,28 +60,15 @@ export function AgencyForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
-                <ArrowLeft className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Voltar</p>
-            </TooltipContent>
-          </Tooltip>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {isEdit ? 'Editar Imobiliária' : 'Nova Imobiliária'}
-            </h2>
-            <p className="mt-1 text-muted-foreground">
-              {isEdit
-                ? 'Atualize os dados da imobiliária'
-                : 'Preencha os dados para cadastrar uma nova imobiliária'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title={isEdit ? 'Editar Imobiliária' : 'Nova Imobiliária'}
+          description={
+            isEdit
+              ? 'Atualize os dados da imobiliária'
+              : 'Preencha os dados para cadastrar uma nova imobiliária'
+          }
+          backHref={backHref}
+        />
 
         <Card>
           <CardHeader>

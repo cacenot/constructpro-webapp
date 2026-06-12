@@ -43,6 +43,7 @@ export default function AgencyNewPage() {
         <AgencyForm
           onSubmit={handleSubmit}
           onBack={() => navigate('/imobiliarias')}
+          backHref="/imobiliarias"
           isSubmitting={createMutation.isPending}
         />
       </div>

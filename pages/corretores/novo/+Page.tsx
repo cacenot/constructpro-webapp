@@ -42,6 +42,7 @@ export default function BrokerNewPage() {
         <BrokerForm
           onSubmit={handleSubmit}
           onBack={() => navigate('/corretores')}
+          backHref="/corretores"
           isSubmitting={createMutation.isPending}
         />
       </div>

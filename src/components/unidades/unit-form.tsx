@@ -1,6 +1,6 @@
 import { getUnitCategoryOptions } from '@cacenot/construct-pro-api-client'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Loader2, Save } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 import * as React from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { AreaInput } from '@/components/ui/area-input'
@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
 import { ProjectAutocomplete, type SelectedProject } from '@/components/ui/project-autocomplete'
 import {
   Select,
@@ -28,7 +29,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   getUnitFeaturesSuggestions,
   UNIT_TEXT_LIMITS,
@@ -53,6 +53,8 @@ interface UnitFormProps {
   onSubmit: (data: UnitFormData) => Promise<void>
   /** Called when back button is clicked */
   onBack: () => void
+  /** Href for the back-button in the page header. */
+  backHref?: string
   /** Whether the form is in edit mode */
   isEdit?: boolean
   /** Whether the form is submitting */
@@ -66,6 +68,7 @@ export function UnitForm({
   initialData,
   onSubmit,
   onBack,
+  backHref,
   isEdit = false,
   isSubmitting = false,
 }: UnitFormProps) {
@@ -129,28 +132,15 @@ export function UnitForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
-                <ArrowLeft className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Voltar</p>
-            </TooltipContent>
-          </Tooltip>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {isEdit ? 'Editar Unidade' : 'Nova Unidade'}
-            </h2>
-            <p className="mt-1 text-muted-foreground">
-              {isEdit
-                ? 'Atualize os dados da unidade'
-                : 'Preencha os dados para cadastrar uma nova unidade'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title={isEdit ? 'Editar Unidade' : 'Nova Unidade'}
+          description={
+            isEdit
+              ? 'Atualize os dados da unidade'
+              : 'Preencha os dados para cadastrar uma nova unidade'
+          }
+          backHref={backHref}
+        />
 
         {/* Identification */}
         <Card>

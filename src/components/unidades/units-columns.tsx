@@ -1,205 +1,150 @@
-import type { components } from '@cacenot/construct-pro-api-client'
 import { translateUnitCategory } from '@cacenot/construct-pro-api-client'
-
-type UnitSummaryResponse = components['schemas']['UnitSummaryResponse']
-
 import type { ColumnDef } from '@tanstack/react-table'
-import { ArrowDown, ArrowUp, ArrowUpDown, MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 import { navigate } from 'vike/client/router'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { MoneyCell, MutedCell, PrimaryCell, RowActionsMenu } from '@/components/ui/data-table-cells'
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import { SortableHeader } from '@/components/ui/sortable-header'
+import type { UnitSummaryResponse } from '@/hooks/use-units-table'
 import { formatArea, formatId } from '@/lib/utils'
 import { UnitDeleteDialog } from './unit-delete-dialog'
 import { UnitStatusBadge } from './unit-status-badge'
 
-function SortIcon({ column, sort }: { column: string; sort: string }) {
-  if (!sort.startsWith(column)) return <ArrowUpDown className="ml-1 size-3 text-muted-foreground" />
-  return sort.endsWith(':asc') ? (
-    <ArrowUp className="ml-1 size-3" />
-  ) : (
-    <ArrowDown className="ml-1 size-3" />
-  )
-}
-
-interface UnitsColumnsCallbacks {
+export interface UnitsTableMeta {
   sort: string
   onSort: (value: string) => void
-  onRowClick: (unit: UnitSummaryResponse) => void
+  onViewDetails: (unit: UnitSummaryResponse) => void
 }
 
-export function createUnitsColumns({
-  sort,
-  onSort,
-  onRowClick,
-}: UnitsColumnsCallbacks): ColumnDef<UnitSummaryResponse>[] {
-  function toggleSort(column: string) {
-    if (sort === `${column}:desc`) {
-      onSort(`${column}:asc`)
-    } else {
-      onSort(`${column}:desc`)
-    }
-  }
-
-  return [
-    {
-      id: 'id',
-      header: () => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 font-medium"
-          onClick={() => toggleSort('id')}
-        >
-          ID
-          <SortIcon column="id" sort={sort} />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
-          {formatId(row.original.id)}
-        </span>
-      ),
+export const unitsColumns: ColumnDef<UnitSummaryResponse>[] = [
+  {
+    id: 'id',
+    header: ({ table }) => {
+      const meta = table.options.meta as UnitsTableMeta | undefined
+      if (!meta) return 'ID'
+      return <SortableHeader label="ID" field="id" currentSort={meta.sort} onSort={meta.onSort} />
     },
-    {
-      id: 'name',
-      header: () => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 font-medium"
-          onClick={() => toggleSort('name')}
-        >
-          Nome
-          <SortIcon column="name" sort={sort} />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <div className="flex min-w-0 max-w-[180px] flex-col gap-0.5 lg:max-w-[260px]">
-          <span className="truncate text-sm font-medium">{row.original.name}</span>
-          <span className="truncate text-xs text-muted-foreground">
-            {translateUnitCategory(row.original.category, 'pt-BR')}
-          </span>
-        </div>
-      ),
+    cell: ({ row }) => (
+      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+        {formatId(row.original.id)}
+      </span>
+    ),
+  },
+  {
+    id: 'name',
+    header: ({ table }) => {
+      const meta = table.options.meta as UnitsTableMeta | undefined
+      if (!meta) return 'Nome'
+      return (
+        <SortableHeader label="Nome" field="name" currentSort={meta.sort} onSort={meta.onSort} />
+      )
     },
-    {
-      id: 'project',
-      header: () => <span className="hidden sm:block">Empreendimento</span>,
-      cell: ({ row }) => (
-        <span className="hidden sm:block text-sm text-muted-foreground truncate max-w-[160px]">
-          {row.original.project_name}
-        </span>
-      ),
+    cell: ({ row }) => (
+      <PrimaryCell
+        title={row.original.name}
+        subtitle={translateUnitCategory(row.original.category, 'pt-BR')}
+      />
+    ),
+    meta: { skeleton: { lines: 2 } },
+  },
+  {
+    id: 'project',
+    header: 'Empreendimento',
+    cell: ({ row }) => (
+      <MutedCell>
+        {row.original.project_name ? (
+          <span className="block truncate max-w-[180px]">{row.original.project_name}</span>
+        ) : null}
+      </MutedCell>
+    ),
+    meta: { className: 'hidden sm:table-cell', headClassName: 'hidden sm:table-cell' },
+  },
+  {
+    id: 'area',
+    header: ({ table }) => {
+      const meta = table.options.meta as UnitsTableMeta | undefined
+      if (!meta) return 'Área'
+      return (
+        <SortableHeader label="Área" field="area" currentSort={meta.sort} onSort={meta.onSort} />
+      )
     },
-    {
-      id: 'area',
-      header: () => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 font-medium hidden md:flex"
-          onClick={() => toggleSort('area')}
-        >
-          Área
-          <SortIcon column="area" sort={sort} />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <span className="hidden md:block text-sm tabular-nums text-muted-foreground">
-          {formatArea(row.original.area)}
-        </span>
-      ),
+    cell: ({ row }) => (
+      <MutedCell>
+        <span className="tabular-nums">{formatArea(row.original.area)}</span>
+      </MutedCell>
+    ),
+    meta: {
+      align: 'right',
+      className: 'hidden md:table-cell',
+      headClassName: 'hidden md:table-cell',
     },
-    {
-      id: 'price',
-      header: () => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 font-medium"
-          onClick={() => toggleSort('price_cents')}
-        >
-          Preço
-          <SortIcon column="price_cents" sort={sort} />
-        </Button>
-      ),
-      cell: ({ row }) => (
-        <span className="text-sm font-semibold tabular-nums text-foreground">
-          {row.original.price.brl}
-        </span>
-      ),
+  },
+  {
+    id: 'price',
+    header: ({ table }) => {
+      const meta = table.options.meta as UnitsTableMeta | undefined
+      if (!meta) return 'Preço'
+      return (
+        <SortableHeader
+          label="Preço"
+          field="price_cents"
+          currentSort={meta.sort}
+          onSort={meta.onSort}
+        />
+      )
     },
-    {
-      id: 'status',
-      header: 'Status',
-      cell: ({ row }) => {
-        const { status } = row.original
-        if (!status) return null
-        return <UnitStatusBadge status={status} />
-      },
+    cell: ({ row }) => <MoneyCell value={row.original.price.cents / 100} />,
+    meta: { align: 'right' },
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    cell: ({ row }) => {
+      const { status } = row.original
+      if (!status) return null
+      return <UnitStatusBadge status={status} />
     },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => <UnitRowActions unit={row.original} onRowClick={onRowClick} />,
+    meta: { skeleton: { variant: 'badge' } },
+  },
+  {
+    id: 'actions',
+    header: '',
+    cell: ({ row, table }) => {
+      const meta = table.options.meta as UnitsTableMeta | undefined
+      return <UnitRowActions unit={row.original} onViewDetails={meta?.onViewDetails} />
     },
-  ]
-}
+    meta: { align: 'right', skeleton: { variant: 'actions' } },
+  },
+]
 
 function UnitRowActions({
   unit,
-  onRowClick,
+  onViewDetails,
 }: {
   unit: UnitSummaryResponse
-  onRowClick: (unit: UnitSummaryResponse) => void
+  onViewDetails?: (unit: UnitSummaryResponse) => void
 }) {
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: stop row-level onClick from firing
-    // biome-ignore lint/a11y/useKeyWithClickEvents: stop row-level onClick from firing
-    <div onClick={(e) => e.stopPropagation()}>
-      <DropdownMenu>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="shrink-0">
-                <MoreVertical className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Ações</p>
-          </TooltipContent>
-        </Tooltip>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => onRowClick(unit)}>Ver detalhes</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate(`/unidades/${unit.id}/editar`)}>
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate(`/vendas/novo?unidade=${unit.id}`)}>
-            Nova venda
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
-            Excluir
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <>
+      <RowActionsMenu>
+        <DropdownMenuItem onClick={() => onViewDetails?.(unit)}>Ver detalhes</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate(`/unidades/${unit.id}/editar`)}>
+          Editar
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate(`/vendas/novo?unidade=${unit.id}`)}>
+          Nova venda
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => setDeleteOpen(true)}
+        >
+          Excluir
+        </DropdownMenuItem>
+      </RowActionsMenu>
 
       <UnitDeleteDialog
         unitId={unit.id}
@@ -207,6 +152,6 @@ function UnitRowActions({
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
       />
-    </div>
+    </>
   )
 }

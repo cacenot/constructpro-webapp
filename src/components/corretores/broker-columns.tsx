@@ -1,17 +1,8 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { MoreVertical } from 'lucide-react'
 import { useState } from 'react'
 import { navigate } from 'vike/client/router'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { MutedCell, PrimaryCell, RowActionsMenu } from '@/components/ui/data-table-cells'
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import type { BrokerResponse } from '@/hooks/use-brokers-table'
 import { formatDocument, formatPhone } from '@/lib/text-formatters'
 import { BrokerDeleteDialog } from './broker-delete-dialog'
@@ -22,46 +13,34 @@ export function createBrokerColumns(): ColumnDef<BrokerResponse>[] {
       id: 'full_name',
       header: 'Nome',
       cell: ({ row }) => (
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="truncate text-sm font-medium">{row.original.full_name}</span>
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {formatDocument(row.original.cpf)}
-          </span>
-        </div>
+        <PrimaryCell title={row.original.full_name} subtitle={formatDocument(row.original.cpf)} />
       ),
+      meta: { skeleton: { lines: 2 } },
     },
     {
       id: 'creci',
       header: 'CRECI',
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">{row.original.creci}</span>
-      ),
+      cell: ({ row }) => <MutedCell>{row.original.creci}</MutedCell>,
     },
     {
       id: 'email',
-      header: () => <span className="hidden md:block">E-mail</span>,
-      cell: ({ row }) => (
-        <span className="hidden md:block text-sm text-muted-foreground truncate max-w-[180px]">
-          {row.original.email || '—'}
-        </span>
-      ),
+      header: 'E-mail',
+      cell: ({ row }) => <MutedCell>{row.original.email}</MutedCell>,
+      meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
     },
     {
       id: 'phone',
-      header: () => <span className="hidden md:block">Telefone</span>,
+      header: 'Telefone',
       cell: ({ row }) => (
-        <span className="hidden md:block text-sm text-muted-foreground tabular-nums">
-          {row.original.phone ? formatPhone(row.original.phone) : '—'}
-        </span>
+        <MutedCell>{row.original.phone ? formatPhone(row.original.phone) : null}</MutedCell>
       ),
+      meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
     },
     {
       id: 'actions',
       header: '',
-      cell: ({ row }) => {
-        const broker = row.original
-        return <BrokerRowActions broker={broker} />
-      },
+      cell: ({ row }) => <BrokerRowActions broker={row.original} />,
+      meta: { align: 'right', skeleton: { variant: 'actions' } },
     },
   ]
 }
@@ -71,36 +50,21 @@ function BrokerRowActions({ broker }: { broker: BrokerResponse }) {
 
   return (
     <>
-      <DropdownMenu>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" className="shrink-0">
-                <MoreVertical className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Ações</p>
-          </TooltipContent>
-        </Tooltip>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => navigate(`/corretores/${broker.id}`)}>
-            Ver detalhes
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate(`/corretores/${broker.id}/editar`)}>
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
-            Excluir
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <RowActionsMenu>
+        <DropdownMenuItem onClick={() => navigate(`/corretores/${broker.id}`)}>
+          Ver detalhes
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate(`/corretores/${broker.id}/editar`)}>
+          Editar
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => setDeleteOpen(true)}
+        >
+          Excluir
+        </DropdownMenuItem>
+      </RowActionsMenu>
 
       <BrokerDeleteDialog
         brokerId={broker.id}

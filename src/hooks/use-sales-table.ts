@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useApiClient } from '@cacenot/construct-pro-api-client'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/auth-context'
-import { type SaleSummaryResponse, useSalesSummary } from '@/hooks/use-sales-summary'
+import type { SaleSummaryResponse } from '@/hooks/use-sales-summary'
+import { useInfiniteTable } from './use-infinite-table'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 50
 
 export interface SalesTableFilters {
   search: string
@@ -15,66 +17,84 @@ export interface SalesTableFilters {
   setOnlyMySales: (value: boolean) => void
 }
 
-export interface SalesTablePagination {
-  page: number
-  totalPages: number
-  total: number
-  pageSize: number
-  isLoading: boolean
-  setPage: (page: number) => void
-}
-
 export interface UseSalesTableReturn {
   data: SaleSummaryResponse[]
   isLoading: boolean
+  isError: boolean
+  refetch: () => void
   total: number
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
   hasActiveFilters: boolean
   handleClearFilters: () => void
   filters: SalesTableFilters
-  pagination: SalesTablePagination
+}
+
+type SaleStatusFilter = 'closed' | 'pending_signature' | 'pending_payment' | 'lost' | 'proposal'
+
+// Tipagem solta espelhando o contrato de `useSalesSummary`: `search`/`user_id` não
+// constam da operação OpenAPI mas o backend os consome — passar como objeto tipado
+// (não literal inline) é aceito pelo openapi-fetch, igual ao hook de summary.
+interface SalesSummaryQuery {
+  page?: number
+  page_size?: number
+  search?: string
+  status?: SaleStatusFilter[]
+  user_id?: string
 }
 
 export function useSalesTable(): UseSalesTableReturn {
+  const { client } = useApiClient()
   const { user } = useAuth()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [periodFilter, setPeriodFilter] = useState('all')
   const [onlyMySales, setOnlyMySales] = useState(false)
-  const [page, setPage] = useState(1)
 
+  // O input atualiza `search` a cada tecla (UI responsiva), mas a busca usa um valor
+  // debounced para não refetchar a cada caractere.
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search)
-      setPage(1)
-    }, 300)
+    const timer = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(timer)
   }, [search])
 
-  const queryParams = useMemo(() => {
-    const params: {
-      page: number
-      page_size: number
-      search?: string
-      status?: ('closed' | 'pending_signature' | 'pending_payment' | 'lost' | 'proposal')[]
-      user_id?: string
-    } = { page, page_size: PAGE_SIZE }
-
+  // Parâmetros de filtro (sem page) — chave do infinite query.
+  const filterParams = useMemo(() => {
+    const params: SalesSummaryQuery = {}
     if (debouncedSearch) params.search = debouncedSearch
-    if (statusFilter !== 'all')
-      params.status = [
-        statusFilter as 'closed' | 'pending_signature' | 'pending_payment' | 'lost' | 'proposal',
-      ]
+    if (statusFilter !== 'all') params.status = [statusFilter as SaleStatusFilter]
     if (onlyMySales && user) params.user_id = user.uid
-
     return params
-  }, [page, debouncedSearch, statusFilter, onlyMySales, user])
+  }, [debouncedSearch, statusFilter, onlyMySales, user])
 
-  const { data, isLoading } = useSalesSummary(queryParams)
+  const fetchPage = useCallback(
+    async (page: number) => {
+      const query: SalesSummaryQuery = { ...filterParams, page, page_size: PAGE_SIZE }
+      const { data, error } = await client.GET('/api/v1/sales/summary', {
+        params: { query },
+      })
+      if (error) throw new Error('Falha ao carregar vendas')
+      return { items: data?.items ?? [], total: data?.total ?? 0 }
+    },
+    [client, filterParams]
+  )
 
-  const sales = data?.items ?? []
-  const total = data?.total ?? 0
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const {
+    rows,
+    total,
+    isLoading,
+    isError,
+    refetch,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteTable<SaleSummaryResponse>({
+    queryKey: ['sales-table', filterParams],
+    fetchPage,
+    pageSize: PAGE_SIZE,
+  })
 
   const hasActiveFilters = !!(
     search ||
@@ -88,13 +108,21 @@ export function useSalesTable(): UseSalesTableReturn {
     setStatusFilter('all')
     setPeriodFilter('all')
     setOnlyMySales(false)
-    setPage(1)
   }
 
   return {
-    data: sales,
+    data: rows,
     isLoading,
+    isError,
+    refetch: () => {
+      refetch()
+    },
     total,
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage: () => {
+      fetchNextPage()
+    },
     hasActiveFilters,
     handleClearFilters,
     filters: {
@@ -103,26 +131,9 @@ export function useSalesTable(): UseSalesTableReturn {
       periodFilter,
       onlyMySales,
       setSearch,
-      setStatusFilter: (value) => {
-        setStatusFilter(value)
-        setPage(1)
-      },
-      setPeriodFilter: (value) => {
-        setPeriodFilter(value)
-        setPage(1)
-      },
-      setOnlyMySales: (value) => {
-        setOnlyMySales(value)
-        setPage(1)
-      },
-    },
-    pagination: {
-      page,
-      totalPages,
-      total,
-      pageSize: PAGE_SIZE,
-      isLoading,
-      setPage,
+      setStatusFilter,
+      setPeriodFilter,
+      setOnlyMySales,
     },
   }
 }

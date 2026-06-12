@@ -2,19 +2,10 @@ import { SaleStatus } from '@cacenot/construct-pro-api-client'
 import type { ColumnDef } from '@tanstack/react-table'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { MoreVertical } from 'lucide-react'
 import { navigate } from 'vike/client/router'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { PrimaryCell, RowActionsMenu } from '@/components/ui/data-table-cells'
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import type { SaleSummaryResponse } from '@/hooks/use-sales-summary'
 import { formatDocument } from '@/lib/text-formatters'
 import { formatId } from '@/lib/utils'
@@ -36,72 +27,61 @@ export function createSalesColumns({
       id: 'id',
       header: 'ID',
       cell: ({ row }) => (
-        <Badge variant="secondary" className="tabular-nums font-mono text-xs shrink-0">
+        <Badge variant="secondary" className="shrink-0 font-mono text-xs tabular-nums">
           {formatId(row.original.id)}
         </Badge>
       ),
+      meta: { skeleton: { variant: 'badge' } },
     },
     {
       id: 'unit',
-      header: 'Unidade / Empreendimento',
-      cell: ({ row }) => {
-        const { unit } = row.original
-        return (
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="truncate text-sm font-medium">
-              {unit?.name || 'Unidade não informada'}
-            </span>
-            <span className="text-xs text-muted-foreground truncate">
-              {unit?.project?.name || 'Empreendimento não informado'}
-            </span>
-          </div>
-        )
-      },
+      header: 'Unidade / Empreend.',
+      cell: ({ row }) => (
+        <PrimaryCell
+          title={row.original.unit?.name || 'Unidade não informada'}
+          subtitle={row.original.unit?.project?.name || 'Empreendimento não informado'}
+        />
+      ),
+      meta: { skeleton: { lines: 2 } },
     },
     {
       id: 'customer',
       header: 'Cliente',
-      cell: ({ row }) => {
-        const { customer } = row.original
-        return (
-          <div className="hidden md:flex flex-col gap-0.5 w-48">
-            <span className="truncate text-sm">{customer?.full_name || 'Não informado'}</span>
-            <span className="text-xs text-muted-foreground truncate">
-              {formatDocument(customer?.cpf_cnpj) || 'CPF/CNPJ não informado'}
-            </span>
-          </div>
-        )
+      cell: ({ row }) => (
+        <PrimaryCell
+          title={row.original.customer?.full_name || 'Não informado'}
+          subtitle={formatDocument(row.original.customer?.cpf_cnpj) || undefined}
+        />
+      ),
+      meta: {
+        className: 'hidden md:table-cell',
+        headClassName: 'hidden md:table-cell',
+        skeleton: { lines: 2 },
       },
     },
     {
       id: 'status',
       header: 'Status',
-      cell: ({ row }) => {
-        const { status } = row.original
-        if (!status) return null
-        return (
-          <div className="w-28 shrink-0">
-            <SaleStatusBadge status={status} />
-          </div>
-        )
-      },
+      cell: ({ row }) =>
+        row.original.status ? <SaleStatusBadge status={row.original.status} /> : null,
+      meta: { skeleton: { variant: 'badge' } },
     },
     {
       id: 'created_at',
       header: 'Vendedor / Data',
-      cell: ({ row }) => {
-        const { created_at, user } = row.original
-        return (
-          <div className="hidden md:flex flex-col gap-0.5 w-40">
-            <span className="text-sm font-medium">{user?.display_name || 'Não informado'}</span>
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(created_at), {
-                addSuffix: true,
-                locale: ptBR,
-              })}
-            </span>
-          </div>
-        )
+      cell: ({ row }) => (
+        <PrimaryCell
+          title={row.original.user?.display_name || 'Não informado'}
+          subtitle={formatDistanceToNow(new Date(row.original.created_at), {
+            addSuffix: true,
+            locale: ptBR,
+          })}
+        />
+      ),
+      meta: {
+        className: 'hidden md:table-cell',
+        headClassName: 'hidden md:table-cell',
+        skeleton: { lines: 2 },
       },
     },
     {
@@ -114,50 +94,34 @@ export function createSalesColumns({
         const canPayEntry = sale.status === 'pending_signature' || sale.status === 'pending_payment'
 
         return (
-          <DropdownMenu>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" className="shrink-0">
-                    <MoreVertical className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Ações</p>
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Ações</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}`)}>
-                Ver detalhes
+          <RowActionsMenu>
+            <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}`)}>
+              Ver detalhes
+            </DropdownMenuItem>
+            {isProposal && (
+              <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}/editar`)}>
+                Editar
               </DropdownMenuItem>
-              {isProposal && (
-                <DropdownMenuItem onClick={() => navigate(`/vendas/${sale.id}/editar`)}>
-                  Editar
-                </DropdownMenuItem>
-              )}
-              {isProposal && <DropdownMenuSeparator />}
-              {isProposal && (
-                <DropdownMenuItem onClick={() => onApproveSale(sale)}>
-                  Aprovar proposta
-                </DropdownMenuItem>
-              )}
-              {(canSign || canPayEntry) && <DropdownMenuSeparator />}
-              {canSign && (
-                <DropdownMenuItem onClick={() => onSignContract(sale)}>
-                  Assinar contrato
-                </DropdownMenuItem>
-              )}
-              {canPayEntry && (
-                <DropdownMenuItem onClick={() => onPayEntry(sale)}>
-                  Confirmar sinal
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
+            {isProposal && <DropdownMenuSeparator />}
+            {isProposal && (
+              <DropdownMenuItem onClick={() => onApproveSale(sale)}>
+                Aprovar proposta
+              </DropdownMenuItem>
+            )}
+            {(canSign || canPayEntry) && <DropdownMenuSeparator />}
+            {canSign && (
+              <DropdownMenuItem onClick={() => onSignContract(sale)}>
+                Assinar contrato
+              </DropdownMenuItem>
+            )}
+            {canPayEntry && (
+              <DropdownMenuItem onClick={() => onPayEntry(sale)}>Confirmar sinal</DropdownMenuItem>
+            )}
+          </RowActionsMenu>
         )
       },
+      meta: { align: 'right', skeleton: { variant: 'actions' } },
     },
   ]
 }

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowLeft, Loader2, Save } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,8 +13,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { PageHeader } from '@/components/ui/page-header'
 import { PhoneInput } from '@/components/ui/phone-input'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { capitalizeNameBR } from '@/lib/text-formatters'
 import {
   type CustomerPJCreateFormData,
@@ -30,6 +30,8 @@ interface CustomerPJFormProps {
   onSubmit: (data: CustomerPJCreateFormData) => Promise<void>
   /** Called when back button is clicked */
   onBack: () => void
+  /** Href for the back-button in the page header. */
+  backHref?: string
   /** Whether the form is in edit mode */
   isEdit?: boolean
   /** Whether the form is submitting */
@@ -43,6 +45,7 @@ export function CustomerPJForm({
   initialData,
   onSubmit,
   onBack,
+  backHref,
   isEdit = false,
   isSubmitting = false,
 }: CustomerPJFormProps) {
@@ -79,28 +82,15 @@ export function CustomerPJForm({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type="button" variant="ghost" size="icon" onClick={onBack}>
-                <ArrowLeft className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Voltar</p>
-            </TooltipContent>
-          </Tooltip>
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">
-              {isEdit ? 'Editar Cliente' : 'Novo Cliente'} - Pessoa Jurídica
-            </h2>
-            <p className="mt-1 text-muted-foreground">
-              {isEdit
-                ? 'Atualize os dados da empresa'
-                : 'Preencha os dados para cadastrar uma nova empresa'}
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title={`${isEdit ? 'Editar Cliente' : 'Novo Cliente'} — Pessoa Jurídica`}
+          description={
+            isEdit
+              ? 'Atualize os dados da empresa'
+              : 'Preencha os dados para cadastrar uma nova empresa'
+          }
+          backHref={backHref}
+        />
 
         {/* Company Information */}
         <Card>

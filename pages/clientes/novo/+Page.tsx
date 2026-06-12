@@ -1,6 +1,5 @@
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { navigate } from 'vike/client/router'
@@ -11,8 +10,7 @@ import {
   type CustomerTypeOption,
   CustomerTypeSelector,
 } from '@/components/customers'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { PageHeader } from '@/components/ui/page-header'
 import { handleApiError, throwApiError } from '@/lib/api-error'
 import type { CustomerPFCreateFormData, CustomerPJCreateFormData } from '@/schemas/customer.schema'
 
@@ -66,40 +64,25 @@ export default function CustomerNewPage() {
       <div className="mx-auto max-w-3xl">
         {!customerType ? (
           <div className="space-y-6">
-            <div className="flex items-start gap-4">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="mt-1"
-                    onClick={() => navigate('/clientes')}
-                  >
-                    <ArrowLeft className="size-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Voltar</p>
-                </TooltipContent>
-              </Tooltip>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">Novo Cliente</h1>
-                <p className="mt-1 text-muted-foreground">Cadastre um novo cliente na sua base.</p>
-              </div>
-            </div>
+            <PageHeader
+              title="Novo Cliente"
+              description="Cadastre um novo cliente na sua base."
+              backHref="/clientes"
+            />
             <CustomerTypeSelector onSelect={setCustomerType} />
           </div>
         ) : customerType === 'individual' ? (
           <CustomerPFForm
             onSubmit={handleSubmitPF}
             onBack={handleBack}
+            backHref="/clientes"
             isSubmitting={createMutation.isPending}
           />
         ) : (
           <CustomerPJForm
             onSubmit={handleSubmitPJ}
             onBack={handleBack}
+            backHref="/clientes"
             isSubmitting={createMutation.isPending}
           />
         )}

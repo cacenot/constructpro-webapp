@@ -97,6 +97,7 @@ export default function AgencyEditPage() {
           }}
           onSubmit={handleSubmit}
           onBack={() => navigate(`/imobiliarias/${agencyId}`)}
+          backHref={`/imobiliarias/${agencyId}`}
           isEdit
           isSubmitting={updateMutation.isPending}
         />

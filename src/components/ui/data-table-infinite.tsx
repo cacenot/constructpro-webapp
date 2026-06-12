@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { useRef } from 'react'
 import { DataTable, type DataTableProps } from '@/components/ui/data-table'
-import { Skeleton } from '@/components/ui/skeleton'
 import { useIntersection } from '@/hooks/use-intersection'
 
 export interface DataTableInfiniteProps<TData>
@@ -55,17 +54,6 @@ export function DataTableInfinite<TData>({
     <>
       {hasNextPage && !isLoading && <div ref={sentinelRef} aria-hidden className="h-px w-full" />}
 
-      {isFetchingNextPage && (
-        <div aria-live="polite" className="divide-y border-t">
-          {Array.from({ length: LOADING_MORE_ROWS }).map((_, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: ghost rows de carregamento
-            <div key={index} className="px-4 py-3.5">
-              <Skeleton className="h-4 w-[40%] min-w-24" />
-            </div>
-          ))}
-        </div>
-      )}
-
       {!hasNextPage && hasRows && !isLoading && endLabel != null && (
         <div className="border-t px-4 py-4 text-center text-xs tabular-nums text-muted-foreground">
           {endLabel}
@@ -80,6 +68,8 @@ export function DataTableInfinite<TData>({
       isLoading={isLoading}
       scrollRef={scrollRef}
       bottomSlot={bottomSlot}
+      autoFillSkeleton
+      loadingMoreRows={isFetchingNextPage ? LOADING_MORE_ROWS : 0}
       {...rest}
     />
   )

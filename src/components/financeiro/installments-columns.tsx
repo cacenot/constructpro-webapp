@@ -6,12 +6,13 @@ import {
 import type { ColumnDef } from '@tanstack/react-table'
 import { format, formatDistanceToNow, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { ArrowDown, ArrowUp, ArrowUpDown, ExternalLink, Info } from 'lucide-react'
+import { ExternalLink, Info } from 'lucide-react'
 import { navigate } from 'vike/client/router'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { SortableHeader } from '@/components/ui/sortable-header'
 import type { InstallmentSummaryItemResponse } from '@/hooks/use-installments'
 import { installmentDaysOverdue, isInstallmentOverdue } from '@/lib/installment-overdue'
 import { formatDocument } from '@/lib/text-formatters'
@@ -152,57 +153,13 @@ function CustomerCell({
   )
 }
 
-function SortableHeader({
-  label,
-  field,
-  currentSort,
-  onSort,
-}: {
-  label: string
-  field: string
-  currentSort?: string
-  onSort: (field: string) => void
-}) {
-  const parts = currentSort?.split(':') ?? ['', 'asc']
-  const [currentField, currentDir] = parts
-  const isActive = currentField === field
-
-  const handleClick = () => {
-    if (isActive && currentDir === 'asc') {
-      onSort(`${field}:desc`)
-    } else {
-      onSort(`${field}:asc`)
-    }
-  }
-
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="-ml-3 h-8 gap-1 text-[0.6875rem] font-medium uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground"
-      onClick={handleClick}
-    >
-      {label}
-      {isActive ? (
-        currentDir === 'asc' ? (
-          <ArrowUp className="size-3.5" />
-        ) : (
-          <ArrowDown className="size-3.5" />
-        )
-      ) : (
-        <ArrowUpDown className="size-3.5 opacity-40" />
-      )}
-    </Button>
-  )
-}
-
 export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = [
   {
     id: 'customer',
     header: 'Cliente',
     // No mobile a célula trunca (max-w) para Valor e Status caberem na viewport;
     // o nome completo está a um toque (painel de detalhe).
-    meta: { className: 'max-w-24 sm:max-w-48 md:max-w-none' },
+    meta: { className: 'max-w-24 sm:max-w-48 md:max-w-none', skeleton: { lines: 2 } },
     cell: ({ row }) => {
       const { customer } = row.original
       if (!customer) return <span className="text-muted-foreground">—</span>
@@ -214,7 +171,11 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
     header: 'Unidade',
     // Mobile mostra o essencial de triagem (cliente, valor, status); unidade
     // entra a partir de md e vencimento a partir de sm (atraso já está no badge).
-    meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
+    meta: {
+      className: 'hidden md:table-cell',
+      headClassName: 'hidden md:table-cell',
+      skeleton: { lines: 2 },
+    },
     cell: ({ row }) => {
       const { unit, project } = row.original
       if (!unit && !project) return <span className="text-muted-foreground">—</span>
@@ -230,6 +191,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
   },
   {
     id: 'amount',
+    meta: { skeleton: { lines: 2 } },
     header: ({ table }) => {
       const meta = table.options.meta as InstallmentsTableMeta | undefined
       if (!meta) return 'Valor'
@@ -272,7 +234,11 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
   },
   {
     id: 'due_date',
-    meta: { className: 'hidden sm:table-cell', headClassName: 'hidden sm:table-cell' },
+    meta: {
+      className: 'hidden sm:table-cell',
+      headClassName: 'hidden sm:table-cell',
+      skeleton: { lines: 2 },
+    },
     header: ({ table }) => {
       const meta = table.options.meta as InstallmentsTableMeta | undefined
       if (!meta) return 'Vencimento'
@@ -306,6 +272,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
   {
     id: 'status',
     header: 'Status',
+    meta: { skeleton: { variant: 'badge' } },
     cell: ({ row }) => {
       const { status } = row.original
       if (!status) return null

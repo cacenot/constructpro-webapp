@@ -94,6 +94,7 @@ export default function BrokerEditPage() {
           }}
           onSubmit={handleSubmit}
           onBack={() => navigate(`/corretores/${brokerId}`)}
+          backHref={`/corretores/${brokerId}`}
           isEdit
           isSubmitting={updateMutation.isPending}
         />
