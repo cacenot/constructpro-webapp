@@ -15,6 +15,7 @@ export function createBrokerColumns(): ColumnDef<BrokerResponse>[] {
       cell: ({ row }) => (
         <PrimaryCell title={row.original.full_name} subtitle={formatDocument(row.original.cpf)} />
       ),
+      meta: { skeleton: { lines: 2 } },
     },
     {
       id: 'creci',
@@ -39,7 +40,7 @@ export function createBrokerColumns(): ColumnDef<BrokerResponse>[] {
       id: 'actions',
       header: '',
       cell: ({ row }) => <BrokerRowActions broker={row.original} />,
-      meta: { align: 'right' },
+      meta: { align: 'right', skeleton: { variant: 'actions' } },
     },
   ]
 }

@@ -8,7 +8,7 @@ type UnitSummaryResponse = components['schemas']['UnitSummaryResponse']
 
 export type { UnitSummaryResponse }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 const DEFAULT_SORT = 'id:desc'
 
 export interface UnitsTableFilters {

@@ -73,6 +73,70 @@ describe('DataTable — linha clicável', () => {
   })
 })
 
+const skeletonColumns: ColumnDef<Row>[] = [
+  {
+    id: 'name',
+    header: 'Nome',
+    cell: ({ row }) => <span>{row.original.name}</span>,
+    meta: { skeleton: { lines: 2 } },
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    cell: () => <span>badge</span>,
+    meta: { skeleton: { variant: 'badge' } },
+  },
+  {
+    id: 'hidden_col',
+    header: 'Oculta',
+    cell: () => <span>x</span>,
+    meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
+  },
+  {
+    id: 'actions',
+    header: '',
+    cell: () => <span>...</span>,
+    meta: { align: 'right', skeleton: { variant: 'actions' } },
+  },
+]
+
+describe('DataTable — skeleton de carregamento', () => {
+  it('mostra exatamente skeletonRows linhas quando isLoading e sem dados', () => {
+    const { container } = render(
+      <DataTable columns={skeletonColumns} data={[]} isLoading skeletonRows={5} />
+    )
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(5)
+  })
+
+  it('não mostra skeleton quando há dados, mesmo com isLoading', () => {
+    const { container } = render(<DataTable columns={skeletonColumns} data={rows} isLoading />)
+    // 2 linhas de dados, nenhuma de skeleton
+    expect(container.querySelectorAll('tbody tr')).toHaveLength(2)
+    expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0)
+  })
+
+  it('respeita o shape de cada coluna: âncora 2 barras, badge 1, ações 1', () => {
+    const { container } = render(
+      <DataTable columns={skeletonColumns} data={[]} isLoading skeletonRows={1} />
+    )
+    const cells = container.querySelectorAll('tbody tr td')
+    // 4 colunas declaradas
+    expect(cells).toHaveLength(4)
+    // coluna 'name' (lines: 2) → 2 barras de skeleton
+    expect(cells[0].querySelectorAll('[data-slot="skeleton"]')).toHaveLength(2)
+    // coluna 'status' (badge) → 1 pill
+    const badge = cells[1].querySelector('[data-slot="skeleton"]')
+    expect(badge).not.toBeNull()
+    expect(badge?.className).toContain('rounded-full')
+    // coluna 'hidden_col' (default, 1 linha) → 1 barra, e mantém a classe de breakpoint
+    expect(cells[2].querySelectorAll('[data-slot="skeleton"]')).toHaveLength(1)
+    expect(cells[2].className).toContain('hidden md:table-cell')
+    // coluna 'actions' → 1 box quadrado
+    const box = cells[3].querySelector('[data-slot="skeleton"]')
+    expect(box?.className).toContain('size-8')
+  })
+})
+
 describe('DataTable — seleção (data-state)', () => {
   it('aplica data-state=selected quando isRowSelected retorna true', () => {
     render(

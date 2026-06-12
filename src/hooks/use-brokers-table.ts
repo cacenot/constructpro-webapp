@@ -8,7 +8,7 @@ type BrokerResponse = components['schemas']['BrokerResponse']
 
 export type { BrokerResponse }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 export interface BrokersTableFilters {
   search: string

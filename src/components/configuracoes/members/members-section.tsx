@@ -48,6 +48,13 @@ export function MembersSection() {
         </Tooltip>
       </div>
 
+      {/*
+        Diferente das listas de domínio (fill-height + scroll infinito), membros vive
+        num Card de altura natural dentro do SettingsLayout (master-detail). Sem um
+        container de altura fixa o scroll infinito não tem onde ancorar, então aqui a
+        paginação por offset (com URL-state via nuqs) é a escolha correta — não o
+        padrão DataTableInfinite. Decisão intencional, não um desvio do plano.
+      */}
       <Card className="overflow-hidden border-border/50">
         <MembersTable
           data={data}

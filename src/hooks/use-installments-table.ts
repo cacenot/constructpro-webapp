@@ -11,7 +11,7 @@ import {
   installmentKeys,
 } from './use-installments'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 const DEFAULT_SORT = 'due_date:asc'
 // Sem filtro de vencimento por padrão: o console abre sobre a carteira inteira
 // (o Pulso agrega toda a base; os deep-links do dashboard chegam por cima deste default).

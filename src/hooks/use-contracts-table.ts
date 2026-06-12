@@ -1,7 +1,7 @@
 import type { components } from '@cacenot/construct-pro-api-client'
 import { useApiClient } from '@cacenot/construct-pro-api-client'
 import { subDays, subYears } from 'date-fns'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteTable } from './use-infinite-table'
 
 type ContractResponse = components['schemas']['ContractResponse']
@@ -19,7 +19,7 @@ export interface ContractTableRow extends ContractResponse {
 
 export type { ContractResponse, SaleResponse }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 export interface ContractsTableFilters {
   search: string
@@ -114,6 +114,11 @@ export function useContractsTable(): UseContractsTableReturn {
     onlyOverdueContracts,
   ])
 
+  // Cache de vendas por id, persistente entre páginas e renders. O scroll infinito
+  // pagina os contratos, mas cada venda referenciada é estável durante a sessão, então
+  // uma vez buscada não refazemos o fetch ao paginar nem ao reabrir a mesma página.
+  const salesCacheRef = useRef<Map<number, SaleResponse | null>>(new Map())
+
   const fetchPage = useCallback(
     async (page: number) => {
       const query: ContractsListQuery = { ...filterParams, page, page_size: PAGE_SIZE }
@@ -124,20 +129,32 @@ export function useContractsTable(): UseContractsTableReturn {
 
       const contracts = data?.items ?? []
 
-      // O item da lista carrega só `sale_id`; buscamos as vendas da página para
-      // enriquecer cada linha com cliente/empreendimento/unidade (subtítulo da âncora).
-      const saleIds = Array.from(new Set(contracts.map((contract) => contract.sale_id)))
-      const salesMap = new Map<number, SaleResponse>()
-      if (saleIds.length > 0) {
-        const { data: salesData } = await client.GET('/api/v1/sales', {
-          params: { query: { page: 1, page_size: 100 } },
-        })
-        for (const sale of salesData?.items ?? []) salesMap.set(sale.id, sale)
+      // O item da lista carrega só `sale_id`; enriquecemos cada linha com a venda
+      // (cliente/empreendimento/unidade — subtítulo da âncora). A lista de vendas não
+      // aceita filtro por conjunto de ids, então buscamos cada venda pelo id exato
+      // (`/sales/{id}`), em paralelo e só as ainda não cacheadas. Antes usávamos uma
+      // janela fixa das 100 vendas mais recentes, o que deixava a âncora vazia para
+      // contratos cuja venda caísse fora dessa janela (qualquer página além da 1ª).
+      const cache = salesCacheRef.current
+      const missingIds = Array.from(new Set(contracts.map((contract) => contract.sale_id))).filter(
+        (saleId) => !cache.has(saleId)
+      )
+
+      if (missingIds.length > 0) {
+        const fetched = await Promise.all(
+          missingIds.map(async (saleId) => {
+            const { data: sale } = await client.GET('/api/v1/sales/{sale_id}', {
+              params: { path: { sale_id: saleId } },
+            })
+            return [saleId, sale ?? null] as const
+          })
+        )
+        for (const [saleId, sale] of fetched) cache.set(saleId, sale)
       }
 
       const items: ContractTableRow[] = contracts.map((contract) => ({
         ...contract,
-        sale: salesMap.get(contract.sale_id) ?? null,
+        sale: cache.get(contract.sale_id) ?? null,
       }))
 
       return { items, total: data?.total ?? 0 }

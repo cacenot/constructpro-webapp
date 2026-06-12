@@ -31,6 +31,7 @@ export function createSalesColumns({
           {formatId(row.original.id)}
         </Badge>
       ),
+      meta: { skeleton: { variant: 'badge' } },
     },
     {
       id: 'unit',
@@ -41,6 +42,7 @@ export function createSalesColumns({
           subtitle={row.original.unit?.project?.name || 'Empreendimento não informado'}
         />
       ),
+      meta: { skeleton: { lines: 2 } },
     },
     {
       id: 'customer',
@@ -51,13 +53,18 @@ export function createSalesColumns({
           subtitle={formatDocument(row.original.customer?.cpf_cnpj) || undefined}
         />
       ),
-      meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
+      meta: {
+        className: 'hidden md:table-cell',
+        headClassName: 'hidden md:table-cell',
+        skeleton: { lines: 2 },
+      },
     },
     {
       id: 'status',
       header: 'Status',
       cell: ({ row }) =>
         row.original.status ? <SaleStatusBadge status={row.original.status} /> : null,
+      meta: { skeleton: { variant: 'badge' } },
     },
     {
       id: 'created_at',
@@ -71,7 +78,11 @@ export function createSalesColumns({
           })}
         />
       ),
-      meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
+      meta: {
+        className: 'hidden md:table-cell',
+        headClassName: 'hidden md:table-cell',
+        skeleton: { lines: 2 },
+      },
     },
     {
       id: 'actions',
@@ -110,7 +121,7 @@ export function createSalesColumns({
           </RowActionsMenu>
         )
       },
-      meta: { align: 'right' },
+      meta: { align: 'right', skeleton: { variant: 'actions' } },
     },
   ]
 }

@@ -13,6 +13,7 @@ export function createCommissionColumns(): ColumnDef<CommissionItem>[] {
         const agencyName = agency?.trade_name ?? agency?.legal_name ?? undefined
         return <PrimaryCell title={broker?.full_name ?? '—'} subtitle={agencyName} />
       },
+      meta: { skeleton: { lines: 2 } },
     },
     {
       id: 'sale',

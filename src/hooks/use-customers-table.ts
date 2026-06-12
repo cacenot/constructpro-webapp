@@ -8,7 +8,7 @@ type CustomerResponse = components['schemas']['CustomerResponse']
 
 export type { CustomerResponse }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 const DEFAULT_SORT = 'id:desc'
 
 export interface CustomersTableFilters {

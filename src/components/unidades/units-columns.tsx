@@ -45,6 +45,7 @@ export const unitsColumns: ColumnDef<UnitSummaryResponse>[] = [
         subtitle={translateUnitCategory(row.original.category, 'pt-BR')}
       />
     ),
+    meta: { skeleton: { lines: 2 } },
   },
   {
     id: 'project',
@@ -103,6 +104,7 @@ export const unitsColumns: ColumnDef<UnitSummaryResponse>[] = [
       if (!status) return null
       return <UnitStatusBadge status={status} />
     },
+    meta: { skeleton: { variant: 'badge' } },
   },
   {
     id: 'actions',
@@ -111,7 +113,7 @@ export const unitsColumns: ColumnDef<UnitSummaryResponse>[] = [
       const meta = table.options.meta as UnitsTableMeta | undefined
       return <UnitRowActions unit={row.original} onViewDetails={meta?.onViewDetails} />
     },
-    meta: { align: 'right' },
+    meta: { align: 'right', skeleton: { variant: 'actions' } },
   },
 ]
 

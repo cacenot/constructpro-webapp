@@ -15,6 +15,7 @@ export function createAgencyColumns(): ColumnDef<AgencyResponse>[] {
       cell: ({ row }) => (
         <PrimaryCell title={row.original.legal_name} subtitle={formatDocument(row.original.cnpj)} />
       ),
+      meta: { skeleton: { lines: 2 } },
     },
     {
       id: 'trade_name',
@@ -49,7 +50,7 @@ export function createAgencyColumns(): ColumnDef<AgencyResponse>[] {
       id: 'actions',
       header: '',
       cell: ({ row }) => <AgencyRowActions agency={row.original} />,
-      meta: { align: 'right' },
+      meta: { align: 'right', skeleton: { variant: 'actions' } },
     },
   ]
 }

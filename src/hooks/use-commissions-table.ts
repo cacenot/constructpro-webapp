@@ -8,7 +8,7 @@ import { useInfiniteTable } from './use-infinite-table'
 export type CommissionItem = components['schemas']['CommissionReportItemResponse']
 export type CommissionSummary = components['schemas']['CommissionTotals']
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 export interface BrokerFilterValue {
   id: number

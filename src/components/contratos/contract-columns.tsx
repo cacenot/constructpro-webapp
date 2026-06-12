@@ -18,6 +18,7 @@ export function createContractColumns(): ColumnDef<ContractTableRow>[] {
           {formatId(row.original.id)}
         </Badge>
       ),
+      meta: { skeleton: { variant: 'badge' } },
     },
     {
       id: 'customer',
@@ -34,6 +35,7 @@ export function createContractColumns(): ColumnDef<ContractTableRow>[] {
           />
         )
       },
+      meta: { skeleton: { lines: 2 } },
     },
     {
       id: 'principal',
@@ -54,6 +56,7 @@ export function createContractColumns(): ColumnDef<ContractTableRow>[] {
           <ContractOverdueBadge isOverdue={row.original.is_overdue} />
         </div>
       ),
+      meta: { skeleton: { variant: 'badge' } },
     },
     {
       id: 'signed_at',
@@ -73,7 +76,7 @@ export function createContractColumns(): ColumnDef<ContractTableRow>[] {
       id: 'actions',
       header: '',
       cell: ({ row }) => <ContractRowActions contract={row.original} />,
-      meta: { align: 'right' },
+      meta: { align: 'right', skeleton: { variant: 'actions' } },
     },
   ]
 }

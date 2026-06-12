@@ -38,6 +38,7 @@ export function createMembersColumns({
           />
         )
       },
+      meta: { skeleton: { lines: 2 } },
       // A âncora compõe avatar + PrimaryCell lado a lado (spec §2.7 opção a): a
       // receita base não carrega avatar, então a coluna o renderiza inline.
       cell: ({ row }) => (
@@ -75,6 +76,7 @@ export function createMembersColumns({
     {
       id: 'roles',
       header: 'Permissões',
+      meta: { skeleton: { variant: 'badge' } },
       cell: ({ row }) => {
         const roles = row.original.roles
         if (!roles || roles.length === 0) {
@@ -111,6 +113,7 @@ export function createMembersColumns({
     {
       id: 'actions',
       header: '',
+      meta: { align: 'right', skeleton: { variant: 'actions' } },
       cell: ({ row }) => {
         const member = row.original
         return (
@@ -128,7 +131,6 @@ export function createMembersColumns({
           </RowActionsMenu>
         )
       },
-      meta: { align: 'right' },
     },
   ]
 }

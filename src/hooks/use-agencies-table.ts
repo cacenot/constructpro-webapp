@@ -8,7 +8,7 @@ type AgencyResponse = components['schemas']['AgencyResponse']
 
 export type { AgencyResponse }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 export interface AgenciesTableFilters {
   search: string

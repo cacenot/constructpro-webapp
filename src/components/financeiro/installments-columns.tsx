@@ -159,7 +159,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
     header: 'Cliente',
     // No mobile a célula trunca (max-w) para Valor e Status caberem na viewport;
     // o nome completo está a um toque (painel de detalhe).
-    meta: { className: 'max-w-24 sm:max-w-48 md:max-w-none' },
+    meta: { className: 'max-w-24 sm:max-w-48 md:max-w-none', skeleton: { lines: 2 } },
     cell: ({ row }) => {
       const { customer } = row.original
       if (!customer) return <span className="text-muted-foreground">—</span>
@@ -171,7 +171,11 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
     header: 'Unidade',
     // Mobile mostra o essencial de triagem (cliente, valor, status); unidade
     // entra a partir de md e vencimento a partir de sm (atraso já está no badge).
-    meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
+    meta: {
+      className: 'hidden md:table-cell',
+      headClassName: 'hidden md:table-cell',
+      skeleton: { lines: 2 },
+    },
     cell: ({ row }) => {
       const { unit, project } = row.original
       if (!unit && !project) return <span className="text-muted-foreground">—</span>
@@ -187,6 +191,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
   },
   {
     id: 'amount',
+    meta: { skeleton: { lines: 2 } },
     header: ({ table }) => {
       const meta = table.options.meta as InstallmentsTableMeta | undefined
       if (!meta) return 'Valor'
@@ -229,7 +234,11 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
   },
   {
     id: 'due_date',
-    meta: { className: 'hidden sm:table-cell', headClassName: 'hidden sm:table-cell' },
+    meta: {
+      className: 'hidden sm:table-cell',
+      headClassName: 'hidden sm:table-cell',
+      skeleton: { lines: 2 },
+    },
     header: ({ table }) => {
       const meta = table.options.meta as InstallmentsTableMeta | undefined
       if (!meta) return 'Vencimento'
@@ -263,6 +272,7 @@ export const installmentsColumns: ColumnDef<InstallmentSummaryItemResponse>[] = 
   {
     id: 'status',
     header: 'Status',
+    meta: { skeleton: { variant: 'badge' } },
     cell: ({ row }) => {
       const { status } = row.original
       if (!status) return null

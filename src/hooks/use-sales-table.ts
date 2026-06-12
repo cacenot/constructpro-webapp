@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/auth-context'
 import type { SaleSummaryResponse } from '@/hooks/use-sales-summary'
 import { useInfiniteTable } from './use-infinite-table'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 export interface SalesTableFilters {
   search: string

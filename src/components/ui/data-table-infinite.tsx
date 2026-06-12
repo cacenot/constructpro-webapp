@@ -80,6 +80,7 @@ export function DataTableInfinite<TData>({
       isLoading={isLoading}
       scrollRef={scrollRef}
       bottomSlot={bottomSlot}
+      autoFillSkeleton
       {...rest}
     />
   )

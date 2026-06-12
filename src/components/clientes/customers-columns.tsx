@@ -42,6 +42,7 @@ export const customersColumns: ColumnDef<CustomerResponse>[] = [
         {formatId(row.original.id)}
       </Badge>
     ),
+    meta: { skeleton: { variant: 'badge' } },
   },
   {
     id: 'full_name',
@@ -63,6 +64,7 @@ export const customersColumns: ColumnDef<CustomerResponse>[] = [
         subtitle={formatDocument(row.original.cpf_cnpj)}
       />
     ),
+    meta: { skeleton: { lines: 2 } },
   },
   {
     id: 'type',
@@ -75,7 +77,11 @@ export const customersColumns: ColumnDef<CustomerResponse>[] = [
         </Badge>
       )
     },
-    meta: { className: 'hidden md:table-cell', headClassName: 'hidden md:table-cell' },
+    meta: {
+      className: 'hidden md:table-cell',
+      headClassName: 'hidden md:table-cell',
+      skeleton: { variant: 'badge' },
+    },
   },
   {
     id: 'location',
@@ -121,7 +127,7 @@ export const customersColumns: ColumnDef<CustomerResponse>[] = [
     id: 'actions',
     header: '',
     cell: ({ row }) => <CustomerRowActions customer={row.original} />,
-    meta: { align: 'right' },
+    meta: { align: 'right', skeleton: { variant: 'actions' } },
   },
 ]
 

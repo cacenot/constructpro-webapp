@@ -8,10 +8,35 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { AlertTriangle } from 'lucide-react'
-import { memo, type ReactNode, type RefObject } from 'react'
+import {
+  memo,
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+
+/**
+ * Forma do skeleton de uma coluna no carregamento inicial. Espelha a receita de
+ * célula real (`data-table-cells`) para o estado de loading não destoar do
+ * conteúdo que o substitui: âncora de duas linhas, pill de badge, box de ações.
+ * Default (sem declaração): uma barra de texto de uma linha.
+ */
+export interface SkeletonSpec {
+  variant?: 'text' | 'badge' | 'actions'
+  /** Linhas de texto (variant `text`). Use 2 para âncora/valor+legenda. Default 1. */
+  lines?: 1 | 2
+  /** Largura da barra principal (ex.: `w-[60%]`, `w-24`). Default por alinhamento. */
+  width?: string
+  /** Largura da 2ª barra quando `lines: 2`. Default por alinhamento. */
+  subWidth?: string
+}
 
 // Alinhamento e classes por coluna, lidos do `meta` de cada ColumnDef. Aditivo:
 // colunas que não declaram nada herdam o default (esquerda, padding padrão).
@@ -23,6 +48,8 @@ declare module '@tanstack/react-table' {
     className?: string
     /** Classe extra na célula de cabeçalho. */
     headClassName?: string
+    /** Forma do skeleton desta coluna no carregamento inicial. */
+    skeleton?: SkeletonSpec
   }
 }
 
@@ -53,11 +80,20 @@ export interface DataTableProps<TData> {
   /** Ref do container de scroll — usado como raiz do IntersectionObserver. */
   scrollRef?: RefObject<HTMLDivElement | null>
   skeletonRows?: number
+  /**
+   * Em layout fill-height, mede o container e renderiza skeleton rows suficientes
+   * para preencher a viewport (em vez do número fixo). Ligado pelo `DataTableInfinite`.
+   */
+  autoFillSkeleton?: boolean
   className?: string
   'aria-label'?: string
 }
 
 const DEFAULT_SKELETON_ROWS = 12
+const MIN_SKELETON_ROWS = 6
+const HEADER_HEIGHT = 44 // <thead> h-11
+const ROW_HEIGHT_TWO_LINE = 64 // py-3.5 + duas barras
+const ROW_HEIGHT_ONE_LINE = 48 // py-3.5 + uma barra
 
 /**
  * Tabela base do projeto: header sticky, container de scroll fill-height (só as
@@ -80,6 +116,7 @@ export function DataTable<TData>({
   bottomSlot,
   scrollRef,
   skeletonRows = DEFAULT_SKELETON_ROWS,
+  autoFillSkeleton = false,
   className,
   'aria-label': ariaLabel,
 }: DataTableProps<TData>) {
@@ -97,9 +134,52 @@ export function DataTable<TData>({
   const columnCount = columns.length
   const showSkeleton = isLoading && rows.length === 0
 
+  // Ref interno garantido (o `scrollRef` externo é opcional): usamos para medir o
+  // container e o repassamos ao chamador quando fornecido.
+  const innerRef = useRef<HTMLDivElement | null>(null)
+  const setScrollNode = useCallback(
+    (node: HTMLDivElement | null) => {
+      innerRef.current = node
+      if (scrollRef) scrollRef.current = node
+    },
+    [scrollRef]
+  )
+
+  // Altura estimada da linha = a da célula mais alta. Como a âncora (2 linhas) está
+  // sempre visível, tabelas com qualquer coluna `lines: 2` usam a estimativa maior.
+  const estimatedRowHeight = useMemo(
+    () =>
+      columns.some((column) => column.meta?.skeleton?.lines === 2)
+        ? ROW_HEIGHT_TWO_LINE
+        : ROW_HEIGHT_ONE_LINE,
+    [columns]
+  )
+
+  const [autoSkeletonRows, setAutoSkeletonRows] = useState<number | null>(null)
+
+  // Preenche a viewport: mede a altura disponível e converte em nº de skeleton rows,
+  // reagindo a resize. Só ativo no fill-height (DataTableInfinite) e durante o loading.
+  useLayoutEffect(() => {
+    if (!autoFillSkeleton || !showSkeleton) return
+    const el = innerRef.current
+    if (!el) return
+    const measure = () => {
+      const available = el.clientHeight - HEADER_HEIGHT
+      if (available <= 0) return
+      setAutoSkeletonRows(Math.max(MIN_SKELETON_ROWS, Math.round(available / estimatedRowHeight)))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [autoFillSkeleton, showSkeleton, estimatedRowHeight])
+
+  const effectiveSkeletonRows =
+    autoFillSkeleton && autoSkeletonRows != null ? autoSkeletonRows : skeletonRows
+
   return (
     <div
-      ref={scrollRef}
+      ref={setScrollNode}
       className={cn('min-h-0 flex-1 overflow-auto overscroll-contain bg-card', className)}
     >
       <table className="w-full caption-bottom text-sm" aria-label={ariaLabel}>
@@ -129,15 +209,25 @@ export function DataTable<TData>({
 
         <tbody>
           {showSkeleton ? (
-            Array.from({ length: skeletonRows }).map((_, rowIndex) => (
+            Array.from({ length: effectiveSkeletonRows }).map((_, rowIndex) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows têm índice estável
               <tr key={rowIndex} className="border-b">
-                {columns.map((_column, colIndex) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: células de skeleton
-                  <td key={colIndex} className="px-4 py-3.5">
-                    <Skeleton className="h-4 w-[60%] min-w-12" />
-                  </td>
-                ))}
+                {columns.map((column, colIndex) => {
+                  const align = column.meta?.align ?? 'left'
+                  return (
+                    <td
+                      // biome-ignore lint/suspicious/noArrayIndexKey: célula de skeleton
+                      key={column.id ?? colIndex}
+                      className={cn(
+                        'px-2 py-3.5 align-middle sm:px-4',
+                        ALIGN[align],
+                        column.meta?.className
+                      )}
+                    >
+                      <SkeletonCell spec={column.meta?.skeleton} align={align} />
+                    </td>
+                  )
+                })}
               </tr>
             ))
           ) : isError ? (
@@ -243,3 +333,49 @@ function DataTableRowInner<TData>({
 }
 
 const DataTableRow = memo(DataTableRowInner) as typeof DataTableRowInner
+
+/**
+ * Conteúdo do skeleton de uma célula, fiel à receita real da coluna. Respeita o
+ * alinhamento (`meta.align`) para que valores monetários encostem à direita como o
+ * conteúdo que substituem.
+ */
+function SkeletonCell({
+  spec,
+  align,
+}: {
+  spec?: SkeletonSpec
+  align: 'left' | 'right' | 'center'
+}) {
+  const variant = spec?.variant ?? 'text'
+
+  if (variant === 'actions') {
+    return (
+      <div className="flex justify-end">
+        <Skeleton className="size-8 rounded-md" />
+      </div>
+    )
+  }
+
+  const justify =
+    align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'
+
+  if (variant === 'badge') {
+    return (
+      <div className={cn('flex', justify)}>
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+    )
+  }
+
+  const items =
+    align === 'right' ? 'items-end' : align === 'center' ? 'items-center' : 'items-start'
+  const mainWidth = spec?.width ?? (align === 'right' ? 'w-16' : 'w-[62%]')
+  const subWidth = spec?.subWidth ?? (align === 'right' ? 'w-12' : 'w-[42%]')
+
+  return (
+    <div className={cn('flex flex-col gap-2', items)}>
+      <Skeleton className={cn('h-4 min-w-16', mainWidth)} />
+      {spec?.lines === 2 && <Skeleton className={cn('h-3 min-w-12', subWidth)} />}
+    </div>
+  )
+}
